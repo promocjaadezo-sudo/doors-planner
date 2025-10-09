@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta http-equiv="Cache-Control" content="no-store"/>
+<title>Planner Produkcji Drzwi — v5.6.27</title>
+<style>
+:root{--bg:#0f172a;--panel:#1f2937;--muted:#94a3b8;--b:#374151;--acc:#2563eb;--ok:#16a34a;--warn:#d97706;--err:#dc2626}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:#e5e7eb}
+header{position:sticky;top:0;z-index:60;background:rgba(15,23,42,.92);backdrop-filter:saturate(180%) blur(6px);border-bottom:1px solid #1e293b}
+.wrap{max-width:1280px;margin:0 auto;padding:16px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.card{background:var(--panel);border-radius:14px;padding:14px;box-shadow:0 6px 18px rgba(0,0,0,.35);margin:0 0 12px}
+.btn{border:0;border-radius:10px;padding:8px 12px;background:#334155;color:#e5e7eb;cursor:pointer}
+.btn.gray{background:#475569;color:#e5e7eb}
+.btn.primary{background:var(--acc);color:#fff}.btn.red{background:var(--err)}.btn.green{background:var(--ok)}.btn.amber{background:var(--warn)}
+.hidden{display:none!important}
+input,select,textarea{background:#111827;color:#e5e7eb;border:1px solid var(--b);border-radius:10px;padding:8px 10px;width:100%}
+label{font-size:12px;color:#94a3b8}.list{display:flex;flex-direction:column;gap:8px}.muted{color:#94a3b8;font-size:12px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.table{overflow:auto; max-height:55vh} table{width:100%;border-collapse:collapse}
+th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left} th{background:#111827;position:sticky;top:0}
+.pill{display:inline-block;background:#0b1222;border:1px solid #2b3a59;border-radius:999px;padding:2px 8px;font-size:11px;color:#9fb3d1}
+.oktxt{color:#86efac}.err{color:#fca5a5}
+/* sync indicator badge shown next to status in detail rows */
+.status-text{display:inline-block}
+.sync-badge{display:inline-block;min-width:1em;margin-left:6px;font-size:12px;opacity:.95}
+.sync-badge.pending{color:var(--warn)}
+.sync-badge.error{color:var(--err)}
+.sync-badge.ok{color:var(--ok)}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <div class="row" style="gap:8px">
+    <button class="btn" data-nav="dash">Strona główna</button>
+    <button class="btn" data-nav="tasks">Listy</button>
+  <button class="btn" id="open-split" title="Listy podzielone w nowej karcie">Podział</button>
+  <button class="btn" data-nav="split" title="Szybki tryb (w aplikacji)">Szybki tryb</button>
+    <button class="btn" data-nav="order">Zlecenia</button>
+    <button class="btn" data-nav="proc">Procesy</button>
+    <button class="btn" data-nav="opcat">Katalog operacji</button>
+    <button class="btn" data-nav="emp">Pracownicy</button>
+    <button class="btn" data-nav="as">Montaż/Reklamacje</button>
+    <button class="btn" data-nav="map">Mapy</button>
+    <button class="btn" data-nav="monitor">Monitoring</button>
+    <button class="btn" data-nav="mrp">MRP</button>
+    <button class="btn" data-nav="wh">Magazyn</button>
+    <button class="btn" data-nav="backup">Backup</button>
+    <button class="btn" data-nav="migr">Migracja</button>
+    <button class="btn" data-nav="settings">Ustawienia</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="row" style="justify-content:space-between"><h1>Planner Produkcji Drzwi — v5.6.27</h1></div>
+
+  <div class="card" id="p-dash">
+    <h3>Panel</h3>
+    <div class="grid3">
+      <div class="card"><div>Zlecenia</div><div id="dash-orders" class="pill">0</div></div>
+      <div class="card"><div>Procesy</div><div id="dash-proc" class="pill">0</div></div>
+      <div class="card"><div>Operacje</div><div id="dash-ops" class="pill">0</div></div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="p-tasks">
+    <div class="row" style="justify-content:space-between">
+      <h3>Listy produkcyjne</h3>
+      <div class="row">
+        <span class="pill" id="tasks-count">0</span>
+        <select id="tasks-filter-order"></select>
+        <select id="tasks-filter-status"><option value="">Wszystkie</option><option value="todo">todo</option><option value="run">run</option><option value="done">done</option></select>
+  <button class="btn" id="tasks-gen-by-emp" title="Generuj listy zadań pogrupowane według pracownika">Generuj wg prac.</button>
+  <button class="btn" id="tasks-export-csv-by-emp" title="Eksportuj listy pracowników do CSV">Eksport CSV</button>
+  <button class="btn" id="tasks-show-by-emp" title="Pokaż/ukryj podział na pracowników">Pokaż podział</button>
+      </div>
+    </div>
+    <div id="tasks-list" class="list"></div>
+    <div id="tasks-by-worker" class="list" style="margin-top:12px"></div>
+  </div>
+
+  <div class="card hidden" id="p-split">
+    <div class="row" style="justify-content:space-between">
+      <h3>Szybki tryb — listy podzielone</h3>
+      <div class="row">
+        <button class="btn" id="split-open-new" title="Otwórz w nowej karcie">Otwórz w karcie</button>
+        <button class="btn" id="split-reload" title="Przeładuj zawartość">Przeładuj</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+      <h4 style="margin:0">Listy pracowników</h4>
+      <div class="row" style="gap:8px">
+        <label class="muted" for="flt-status">Status</label>
+        <select id="flt-status"><option value="">Wszystkie</option><option value="todo">todo</option><option value="run">run</option><option value="done">done</option></select>
+        <button id="export-all" class="btn">Eksport wszyscy (CSV)</button>
+        <button id="reload" class="btn">Przeładuj z localStorage</button>
+      </div>
+    </div>
+    <div id="p-split-container"></div>
+  </div>
+
+  <div class="card hidden" id="p-order">
+    <div class="row" style="justify-content:space-between"><h3>Zlecenia</h3></div>
+    <form class="grid3" id="order-form">
+      <input type="hidden" id="o-id">
+      <div><label>Nr zlecenia</label><input id="o-name" required></div>
+      <div><label>Klient</label><input id="o-client"></div>
+      <div><label>Model</label><input id="o-model" placeholder="np. HYGGE-80"></div>
+      <div><label>Ilość sztuk</label><input id="o-qty" type="number" min="1" value="1"></div>
+      <div><label>Data przyjęcia</label><input id="o-start" type="date"></div>
+      <div>
+        <label>Ilość tygodni</label>
+        <select id="o-weeks">
+          <option value="1">1 tydzień</option>
+          <option value="2" selected>2 tygodnie</option>
+          <option value="3">3 tygodnie</option>
+          <option value="4">4 tygodnie</option>
+          <option value="5">5 tygodni</option>
+          <option value="6">6 tygodni</option>
+          <option value="7">7 tygodni</option>
+          <option value="8">8 tygodni</option>
+          <option value="9">9 tygodni</option>
+          <option value="10">10 tygodni</option>
+        </select>
+      </div>
+      <div><label>Termin (auto)</label><input id="o-end" type="date"></div>
+      <div><label>Proces</label><select id="o-proc"></select></div>
+      <div><label>Uwagi</label><textarea id="o-notes" rows="2"></textarea></div>
+    <div><label>Termin montażu</label><input id="o-install" type="date"></div>
+  <div><label>Adres montażu</label><input id="o-addr" placeholder="ulica nr, miejscowość"></div>
+  <div><label>Kod montażu</label><input id="o-post" placeholder="kod miejsca / 00-000" ></div>
+  <div><label>Telefon</label><input id="o-phone" placeholder="+48 600 000 000" pattern="\+?[0-9\s]{6,}" title="Minimum 6 cyfr, opcjonalny '+' na początku"></div>
+      <div style="grid-column:1/-1;text-align:right"><button class="btn primary" type="submit">Zapisz</button></div>
+    </form>
+    <div class="table" style="margin-top:8px">
+      <table>
+        <thead>
+          <tr>
+            <th>Nr zlecenia</th>
+            <th>Klient</th>
+            <th>Model</th>
+            <th>Ilość</th>
+            <th>Data przyjęcia</th>
+            <th>Termin</th>
+            <th>Montaż</th>
+            <th>Kod montażu</th>
+            <th>Akcje</th>
+          </tr>
+        </thead>
+        <tbody id="ord-tb"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card hidden" id="p-opcat">
+    <div class="row" style="justify-content:space-between">
+      <h3>Katalog operacji</h3><span class="pill" id="op-count">0</span>
+      <div class="row">
+          <button class="btn" id="op-normalize">Porządkuj</button>
+          <button class="btn" id="op-sort-az">Sortuj A→Z</button>
+          <select id="op-comp-select" style="min-width:160px;margin-left:8px"><option value="">— wybierz komponent —</option></select>
+          <button class="btn" id="op-sort-comp" style="margin-left:6px">Sortuj po komponencie</button>
+          <button class="btn green" id="op-save-db" style="margin-left:6px">Zapisz do DB</button>
+        </div>
+    </div>
+    <form class="grid3" id="op-form">
+      <input type="hidden" id="op-id">
+      <div><label>Nr (kolejność)</label><input id="op-no" type="number" min="1" value="1"></div>
+      <div><label>Nazwa</label><input id="op-name" required></div>
+      <div><label>Czas [min] (≥1)</label><input id="op-time" type="number" min="1" value="10"></div>
+      <div><label>Domyślna liczba prac. (≥1)</label><input id="op-workers" type="number" min="1" value="1"></div>
+      <div style="grid-column:1/-1"><label>Komponenty (;)</label>
+        <input id="op-skills" placeholder="np. piła; wkręty; listwa">
+      </div>
+      <div style="grid-column:1/-1"><label>Domyślni pracownicy (multi)</label>
+        <select id="op-emp" multiple size="5" style="height:140px"></select>
+      </div>
+      <div style="grid-column:1/-1;text-align:right">
+        <button class="btn primary" type="submit">Dodaj / Zapisz</button>
+      </div>
+      <div class="muted" id="op-msg"></div>
+    </form>
+    <div class="table" style="margin-top:8px">
+      <table>
+        <thead>
+          <tr><th>Nr</th><th>Nazwa</th><th>min</th><th>prac.</th><th>komponenty</th><th>domyślni prac.</th><th>Akcje</th></tr>
+        </thead>
+        <tbody id="op-tb"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card hidden" id="p-proc">
+    <div class="row" style="justify-content:space-between"><h3>Procesy</h3><span class="pill" id="proc-count">0</span></div>
+    <form class="grid3" id="proc-form">
+      <input type="hidden" id="proc-id">
+      <div><label>Nazwa procesu</label><input id="proc-name" required></div>
+      <div><label>Dodaj z katalogu</label><select id="proc-op-select"></select></div>
+      <div style="grid-column:1/-1" class="row">
+        <button class="btn" id="proc-add-op" type="button">➕ Dodaj operację</button>
+        <button class="btn primary" type="submit">Zapisz proces</button>
+      </div>
+    </form>
+    <div><b>Operacje w procesie</b></div>
+    <div class="list" id="proc-ops"></div>
+    <div class="list" id="proc-list"></div>
+  </div>
+
+  <div class="card hidden" id="p-emp">
+    <div class="row" style="justify-content:space-between"><h3>Pracownicy</h3><button class="btn" id="emp-add">Dodaj</button></div>
+    <div class="table"><table><thead><tr><th>Imię i nazwisko</th><th>cap%</th><th>h/d</th><th>Akcje</th></tr></thead><tbody id="emp-tb"></tbody></table></div>
+  </div>
+
+  <div class="card hidden" id="p-as">
+    <div class="row" style="justify-content:space-between">
+      <h3>Montaż / Reklamacje</h3>
+      <button class="btn" data-refresh-as>Odśwież z bazy</button>
+    </div>
+    <form class="grid3" id="as-form">
+      <input type="hidden" id="as-id">
+      <div><label>Typ</label><select id="as-type"><option>montaż</option><option>reklamacja</option></select></div>
+      <div><label>Zlecenie</label><select id="as-order"></select></div>
+      <div style="display:none">
+        <input id="as-order-phone" placeholder="phone">
+        <input id="as-order-placecode" placeholder="placecode">
+      </div>
+      <div><label>Status</label><select id="as-status"><option>nowe</option><option>w toku</option><option>zamknięte</option></select></div>
+      <div><label>Termin montażu</label><input id="as-install" type="date"></div>
+      <div><label>Godzina wyjazdu</label><input id="as-go" type="time"></div>
+      <div><label>Godzina wizyty</labe><input id="as-visit" type="time"></div>
+      <div style="grid-column:1/-1"><label>Opis</label><textarea id="as-desc" rows="2"></textarea></div>
+      <div style="grid-column:1/-1;text-align:right"><button class="btn primary" type="submit">Zapisz</button></div>
+    </form>
+    <div class="list" id="as-list"></div>
+  </div>
+
+  <div class="card hidden" id="p-map"><h3>Mapy Model↔Proces</h3><div class="muted">Placeholder.</div></div>
+  <div class="card hidden" id="p-monitor"><h3>Monitoring postępów</h3><div class="muted">Placeholder.</div></div>
+  <div class="card hidden" id="p-mrp">
+    <div class="row" style="justify-content:space-between">
+      <h3>Zakupy (MRP)</h3>
+      <button class="btn green" id="mrp-generate">Generuj listę zakupów</button>
+    </div>
+    <div class="list" id="mrp-list"></div>
+  </div>
+  <div class="card hidden" id="p-wh"><h3>Magazyn</h3><div class="muted">Placeholder.</div></div>
+  <div class="card hidden" id="p-backup"><h3>Backup</h3><div class="muted">Placeholder.</div></div>
+  <div class="card hidden" id="p-migr"><h3>Migracja</h3><div class="muted">Placeholder.</div></div>
+
+  <div class="card hidden" id="p-settings">
+    <div class="row" style="justify-content:space-between"><h3>Ustawienia</h3></div>
+    <div class="grid3">
+      <div><label>Tryb</label><select id="set-mode"><option value="local">localStorage</option><option value="firebase" selected>Firebase</option></select></div>
+      <div><label>App ID</label><input id="set-appid" value="doors-demo"></div>
+      <div><label>User ID</label><input id="set-userid" value="hala-1"></div>
+    </div>
+  <div class="list" style="margin-top:8px">
+      <label>Firebase config (JSON)</label>
+      <textarea id="set-fb" rows="8">{
+  "apiKey": "AIzaSyD93UqqsHWoAUBV7g8OVKAnajIfGDX_ZdY",
+  "authDomain": "doors-planner.firebaseapp.com",
+  "projectId": "doors-planner",
+  "storageBucket": "doors-planner.appspot.com",
+  "messagingSenderId": "513098608067",
+  "appId": "1:513098608067:web:1fe3855b3470ca7ef22176"
+}</textarea>
+      <div class="row">
+        <button class="btn primary" id="set-test">Test &amp; Connect</button>
+        <button class="btn green"   id="set-save">Zapisz do DB</button>
+        <button class="btn"         id="set-load">Wczytaj z DB</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+  <label style="font-size:13px"><input type="checkbox" id="set-autosave-assign" checked> Auto-save do Firebase przy ważnych zmianach (np. przypisania)</label>
+      </div>
+      <div class="row" style="margin-top:8px">
+    <label style="font-size:13px"><input type="checkbox" id="set-autoload-db"> Automatycznie wczytaj z Firebase przy starcie (jeśli tryb = Firebase)</label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label style="font-size:13px">Threshold wąskich gardeł: <input id="set-monitor-threshold" type="number" min="1" value="5" style="width:80px;margin-left:8px"></label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label style="font-size:13px"><input type="checkbox" id="set-monitor-alerts" checked> Włącz alerty monitoringu (baner gdy threshold przekroczony)</label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label style="font-size:13px"><input type="checkbox" id="set-auto-cleanup"> Automatyczne czyszczenie zleceń (usuń zadania po zamknięciu wszystkich)</label>
+      </div>
+    <div class="row" style="margin-top:8px">
+  <label style="font-size:13px"><input type="checkbox" id="set-spellcheck-enforce"> Wymuszaj sprawdzanie pisowni (PL) dla wszystkich pól</label>
+    </div>
+      <div class="row" style="margin-top:8px;gap:8px">
+        <button class="btn" id="export-tasks">Eksport zadań (.json)</button>
+        <input type="file" id="import-tasks-file" accept=".json" style="display:none">
+        <button class="btn" id="import-tasks">Import zadań</button>
+      </div>
+      <div class="muted" id="set-info"></div>
+    </div>
+  </div>
+</div>
+
+<!-- in-page confirmation modal to avoid native confirm suppression -->
+<div id="app-confirm-modal" class="card hidden" style="position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:200000;min-width:320px">
+  <div style="display:flex;justify-content:space-between;align-items:center"><b>Potwierdź</b><button id="app-confirm-close" class="btn">×</button></div>
+  <div id="app-confirm-msg" style="margin-top:8px" class="muted"></div>
+  <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
+    <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="app-confirm-noask"> Nie pokazuj ponownie</label>
+    <div class="row"><button class="btn" id="app-confirm-cancel">Anuluj</button><button class="btn primary" id="app-confirm-ok">Usuń</button></div>
+  </div>
+</div>
+<!-- in-page preview modal for orders -->
+<div id="app-preview-modal" class="card hidden" style="position:fixed;left:50%;top:10%;transform:translate(-50%,0);z-index:200000;min-width:420px;max-width:90%;max-height:80vh;overflow:auto">
+  <div style="display:flex;justify-content:space-between;align-items:center"><b>Podgląd zlecenia</b><button id="app-preview-close" class="btn">×</button></div>
+  <div id="app-preview-body" style="margin-top:8px" class="muted"></div>
+  <div style="margin-top:12px;display:flex;justify-content:flex-end;align-items:center">
+    <div class="row"><button class="btn" id="app-preview-copy">Kopiuj</button><button class="btn primary" id="app-preview-ok">Zamknij</button></div>
+  </div>
+</div>
+<script src="../js/app-helpers.js"></script>
+<script src="../js/base-utils.js"></script>
+<script src="../js/base-store.js"></script>
+<script src="../js/base-main.js"></script>
+<script>
+(function(){
+  // create on-page developer log panel with visible toggle so user can read logs without DevTools
+  try{
+    const initDevLog = ()=>{
+      const devLogEl = document.createElement('div');
+      devLogEl.id = 'dev-log';
+      Object.assign(devLogEl.style, {
+        position: 'fixed', right: '12px', bottom: '48px', maxWidth: '420px', maxHeight: '40vh', overflow: 'auto',
+        background: 'rgba(8,8,12,0.95)', color: '#cbd5e1', padding: '8px', borderRadius: '8px', fontSize: '12px', zIndex: '99999', boxShadow: '0 6px 18px rgba(0,0,0,.5)', border: '1px solid rgba(255,255,255,0.04)'
+      });
+      devLogEl.innerHTML = '<b style="display:block;margin-bottom:6px">Dev log</b>';
+
+      const toggle = document.createElement('button');
+      toggle.type = 'button'; toggle.id = 'dev-log-toggle'; toggle.textContent = 'DevLog';
+      Object.assign(toggle.style, { position:'fixed', right:'12px', bottom:'12px', zIndex:'100000', padding:'8px 10px', borderRadius:'8px', border:'1px solid rgba(0,0,0,0.2)', background:'#f59e0b', color:'#071019', fontWeight:'700', cursor:'pointer', boxShadow:'0 6px 18px rgba(245,158,11,0.12)' });
+      toggle.addEventListener('click', ()=>{
+        if(document.body.contains(devLogEl)){ document.body.removeChild(devLogEl); toggle.textContent='DevLog'; } else { document.body.appendChild(devLogEl); toggle.textContent='Hide'; }
+      });
+
+      // ensure we don't append duplicates
+      if(!document.getElementById('dev-log-toggle')) document.body.appendChild(toggle);
+      if(!document.getElementById('dev-log')) document.body.appendChild(devLogEl);
+
+      window.logDev = function(){
+        try{
+          // Respect runtime flag: state.storage.devLogEnabled === false disables dev logging
+          const enabled = !(window.state && window.state.storage && window.state.storage.devLogEnabled === false);
+          if(!enabled) return;
+          const args = Array.from(arguments).map(a=> (typeof a==='object'?JSON.stringify(a):String(a)) );
+          const line = document.createElement('div');
+          line.textContent = args.join(' ');
+          devLogEl.appendChild(line);
+          devLogEl.scrollTop = devLogEl.scrollHeight;
+          console.log.apply(console, arguments);
+        }catch(_){ try{ console.log.apply(console, arguments); }catch(__){} }
+      };
+      // alias for simpler calls
+      window.plog = window.logDev;
+
+      // DEBUG: temporary on-screen overlay to show scroll anchor and restore info
+      (function createScrollDebugOverlay(){
+        try{
+          var s = document.createElement('div');
+          s.id = '__scroll_debug_overlay';
+          s.style.position = 'fixed';
+          s.style.right = '8px';
+          s.style.bottom = '8px';
+          s.style.zIndex = 99999;
+          s.style.background = 'rgba(0,0,0,0.7)';
+          s.style.color = '#fff';
+          s.style.fontSize = '12px';
+          s.style.padding = '8px';
+          s.style.borderRadius = '6px';
+          s.style.maxWidth = '320px';
+          s.style.fontFamily = 'monospace';
+          s.style.lineHeight = '1.2';
+          s.innerText = 'scroll-debug init...';
+          document.body && document.body.appendChild(s);
+
+          window.__scrollDebug = { overlay: s };
+
+          function render(){
+            var o = window.__scrollAnchor || null;
+            var last = window.__lastScrollRestore || null;
+            var now = { winY: window.scrollY, innerTableY: (function(){
+              var t = document.querySelector('.table');
+              return t ? t.scrollTop : 0;
+            })() };
+            s.innerText = 'ANCHOR:\n' + (o ? JSON.stringify(o) : 'null') + '\n\nLAST_RESTORE:\n' + (last ? JSON.stringify(last) : 'null') + '\n\nNOW:\n' + JSON.stringify(now);
+          }
+
+          window.setInterval(render, 500);
+        }catch(e){
+          console.warn('scroll-debug overlay failed', e);
+        }
+      })();
+    };
+    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initDevLog); else initDevLog();
+  }catch(_){/* ignore */}
+
+  const qs=s=>document.querySelector(s), qsa=s=>Array.from(document.querySelectorAll(s));
+  const storeKey='door_v5627_state';
+
+  let state={storage:{mode:'firebase',appId:'doors-demo',userId:'hala-1',fbConfig:{
+    "apiKey": "AIzaSyD93UqqsHWoAUBV7g8OVKAnajIfGDX_ZdY",
+    "authDomain": "doors-planner.firebaseapp.com",
+    "projectId": "doors-planner",
+    "storageBucket": "doors-planner.appspot.com",
+    "messagingSenderId": "513098608067",
+    "appId": "1:513098608067:web:1fe3855b3470ca7ef22176"
+  }},
+    employees:[],operationsCatalog:[],processes:[],orders:[],tasks:[],after:[],PROC_TMP:[],page:'dash',_timers:{}};
+  // UI flags
+  state.uiShowTasksByEmpTable = false;
+  // If operationsCatalog is empty, seed with common operations (FUTRYNA, SKRZYDŁO, DODATKOWE)
+  if(!(state.operationsCatalog && state.operationsCatalog.length)){
+    state.operationsCatalog = [];
+    let i = 1;
+    const addOp = (name, time=10, skills=[])=>{ state.operationsCatalog.push({id: uid(), no: i++, name, time, workers:1, skills, defaultAssignees:[]}); };
+    // FUTRYNA
+    addOp('Frezowanie na CNC (belki futryny)', 40, ['CNC','belki']);
+    addOp('Sklejanie belek (futryna)', 20, ['sklejanie','belki']);
+    addOp('Kontrola wymiarów (futryna)', 10, ['kontrola']);
+    addOp('Szlifowanie (futryna)', 15, ['szlifowanie']);
+    addOp('Szczotkowanie (futryna)', 12, ['szczotkowanie']);
+    addOp('Malowanie (futryna)', 30, ['malowanie']);
+    addOp('Okuwanie (futryna)', 8, ['okucia']);
+    // SKRZYDŁO
+    addOp('Wycięcie belek pod skrzydło', 35, ['CNC','belki']);
+    addOp('Sklejenie belek (skrzydło)', 20, ['sklejanie','belki']);
+    addOp('Wycięcie sklejki', 25, ['sklejka']);
+    addOp('Przygotowanie forniru', 18, ['fornir']);
+    addOp('Fornirowanie', 30, ['fornirowanie']);
+    addOp('Przygotowanie rurek pod elektronikę', 12, ['elektronika']);
+    addOp('Montaż rurek pod elektronikę', 18, ['elektronika']);
+    addOp('Przycięcie poprzeczek', 10, ['poprzeczki']);
+    addOp('Montaż poprzeczek', 12, ['poprzeczki']);
+    addOp('Przycięcie styropianu', 5, ['styropian']);
+    addOp('Montaż styropianu', 8, ['styropian']);
+    addOp('Przycięcie naciągu', 6, ['naciag']);
+    addOp('Montaż naciągu', 8, ['naciag']);
+    addOp('Sklejanie w prasie', 25, ['prasa']);
+    addOp('Frezowanie na CNC (skrzydło)', 40, ['CNC']);
+    addOp('Szlifowanie (skrzydło)', 15, ['szlifowanie']);
+    addOp('Szczotkowanie (skrzydło)', 12, ['szczotkowanie']);
+    addOp('Malowanie (skrzydło)', 30, ['malowanie']);
+    addOp('Okuwanie (skrzydło)', 8, ['okucia']);
+    // DODATKOWE
+    addOp('Przygotowanie zestawu do drzwi', 10, ['zestaw']);
+    addOp('Przygotowanie antaby', 8, ['antaba']);
+    addOp('Zamówienie szyb', 5, ['szyby']);
+    addOp('Malowanie szyb', 15, ['szyby','malowanie']);
+    addOp('Klejenie szyb', 20, ['szyby','klejenie']);
+    addOp('Polerowanie zamków i wypalenie logo', 12, ['zamki','polerowanie']);
+    addOp('Wymiary szyby (szer, H)', 4, ['szyby','wymiary']);
+  }
+
+  // show details for a specific order (or process) for a given employee card
+  function showOrderDetails(empId, orderId, hostEl){
+    try{
+      if(!hostEl) return;
+      const isProc = !orderId;
+      // collect tasks from state.tasks that match employee and order/proc
+      const tasksFromState = (state.tasks||[]).filter(t=> (t.assignees || (t.assignee?[t.assignee]:[])).some(a=> (a && ((a.id||a) === empId))) && ((isProc && !t.orderId) || t.orderId === orderId));
+      // if rendering a process (no orderId), also include process-assigned operations (state.processes)
+      let combinedTasks = tasksFromState.slice();
+      if(isProc){
+        try{
+          (state.processes||[]).forEach(proc=>{
+            (proc.operations||[]).forEach(op=>{
+              if(op.assignee && (op.assignee.id || op.assignee) && ((op.assignee.id || op.assignee) === empId)){
+                // if a real task already exists for this opName and assignee, skip synthesizing a duplicate
+                const existsReal = (state.tasks||[]).some(rt=>{
+                  const as = rt.assignees || (rt.assignee ? [rt.assignee] : []);
+                  const hasAssignee = Array.isArray(as) && as.some(a=> (a && ((a.id||a) === empId)) );
+                  return hasAssignee && (rt.opName || '') === (op.name || '');
+                });
+                if(!existsReal){
+                  // synthesize a task-like object for display; mark as _synth so we can create a real task when user starts it
+                  combinedTasks.push({ id: '', orderId: null, opName: op.name, estMin: op.time||0, status: 'todo', _source: 'process', processName: proc.name, _synth: true });
+                }
+              }
+            });
+          });
+        }catch(e){ (window.logDev||console.log)('[showOrderDetails] process ops collect error', e && e.message); }
+      }
+      const tasks = combinedTasks;
+      const orderObj = (state.orders||[]).find(o=>o.id===orderId) || {};
+      let html = '';
+      if(isProc){ html += `<div><b>Operacje procesu</b></div>`; }
+      else { html += `<div><b>Zlecenie: ${escapeHtml(orderObj.name||orderId||'')}</b> • <span class="muted">Klient: ${escapeHtml(orderObj.client||'')}</span></div>`; if(orderObj.notes) html += `<div class="muted">Opis: ${escapeHtml(orderObj.notes)}</div>`; }
+      if(tasks.length===0){ html += `<div class="muted">Brak zadań dla wybranego zlecenia/pracy</div>`; }
+      else {
+        html += `<table style="width:100%;border-collapse:collapse;margin-top:6px"><thead><tr><th>Operacja</th><th>Est.[m]</th><th>Status</th><th>Akcje</th></tr></thead><tbody>`;
+        tasks.forEach(tt=>{
+          // for synthesized process ops, there may be no task id in state; disable persistence actions for them
+          const tid = tt.id || '';
+          // allow Start/Zamknij for synthetic rows (no id) – handler utworzy realne zadanie na klik
+          const startDisabled = (tt.status==='run') ? 'disabled' : '';
+          const doneDisabled = (tt.status==='done') ? 'disabled' : '';
+          // status cell now includes a sync badge placeholder to reflect pending/error/success states without full rerender
+          const syncSym = tt._syncPending ? '⏳' : (tt._syncError ? '⚠️' : (tt._lastSync ? '✔️' : ''));
+          const syncTitle = tt._syncPending ? 'Zapisywanie…' : (tt._syncError ? 'Błąd zapisu' : (tt._lastSync ? 'Zapisano' : ''));
+          const syncClass = tt._syncPending ? 'sync-badge pending' : (tt._syncError ? 'sync-badge error' : (tt._lastSync ? 'sync-badge ok' : ''));
+          html += `<tr><td>${escapeHtml(tt.opName||'')}</td><td>${tt.estMin||0}</td><td><span class="status-text">${escapeHtml(tt.status||'')}</span> <span class="${syncClass}" title="${syncTitle}">${syncSym}</span></td><td><button class="btn" data-task-start="${tid}" ${startDisabled}>Start</button> <button class="btn" data-task-done="${tid}" ${doneDisabled}>Zamknij</button></td></tr>`;
+        });
+        html += `</tbody></table>`;
+      }
+      hostEl.innerHTML = html;
+      // expose context for synthetic actions
+      try{ hostEl.setAttribute('data-emp', empId||''); hostEl.setAttribute('data-order', orderId||''); }catch(_){ }
+      // re-wire start/done buttons in the details pane to use global delegate
+    }catch(e){ (window.logDev||console.log)('[showOrderDetails] error', e && e.message); }
+  }
+  // seed some default processes if none exist
+  if(!(state.processes && state.processes.length)){
+    const findByName = n => state.operationsCatalog.find(o=>o.name && o.name.indexOf(n)!==-1);
+    const procAdd = (name, opNames)=>{
+      const ops = (opNames||[]).map(n=>{ const o = state.operationsCatalog.find(x=>x.name===n); return o?{name:o.name,time:o.time||0}:{name:n,time:0}; });
+      state.processes.push({id:uid(), name, operations: ops});
+    };
+    procAdd('Proces: Futryna', ['Frezowanie na CNC (belki futryny)','Sklejanie belek (futryna)','Kontrola wymiarów (futryna)','Szlifowanie (futryna)','Szczotkowanie (futryna)','Malowanie (futryna)','Okuwanie (futryna)']);
+    procAdd('Proces: Skrzydło', ['Wycięcie belek pod skrzydło','Sklejenie belek (skrzydło)','Wycięcie sklejki','Fornirowanie','Frezowanie na CNC (skrzydło)','Szlifowanie (skrzydło)','Malowanie (skrzydło)','Okuwanie (skrzydło)']);
+    procAdd('Proces: Drzwi kompletne', ['Frezowanie na CNC (belki futryny)','Sklejanie belek (futryna)','Wycięcie belek pod skrzydło','Sklejenie belek (skrzydło)','Sklejanie w prasie','Fornirowanie','Malowanie (skrzydło)','Okuwanie (skrzydło)']);
+  }
+  // ensure all requested operations exist (no duplicates by lowercased name)
+  const ensureOp = (name, time=10, skills=[])=>{
+    if(!name) return;
+    const exists = (state.operationsCatalog||[]).some(o=> (o.name||'').toLowerCase() === name.toLowerCase());
+    if(!exists){ state.operationsCatalog.push({id:uid(), no:(state.operationsCatalog||[]).length+1, name, time, workers:1, skills, defaultAssignees:[]}); }
+  };
+  // operations from user list
+  [
+    'Wycięcie belek pod futrynę', 'Frezowanie na CNC 40 m', 'Sklejanie belek', 'Kontrola wymiarów', 'Szlifowanie', 'Szczotkowanie', 'Malowanie', 'Okuwanie',
+    'Wycięcie belek pod skrzydło', 'Sklejenie belek', 'Wycięcie sklejki', 'Przygotowanie forniru zgodnie z zamówieniem', 'Fornirowanie', 'Przygotowanie rurek pod elektronikę', 'Montaż rurek pod elektronikę',
+    'Przycięcie poprzeczek', 'Montaż poprzeczek', 'Przycięcie styropianu', 'Montaż styropianu', 'Przycięcie naciągu', 'Montaż naciągu', 'Sklejanie w prasie', 'Frezowanie na CNC',
+    'Przygotowanie zestawu do drzwi', 'Przygotowanie antaby', 'Zamówienie szyb', 'Malowanie szyb', 'Klejenie szyb', 'Polerowanie zamków i wypalenie logo', 'Wymiary szyby (szer, H)'
+  ].forEach(n=>ensureOp(n, 10, []));
+  // persist seeded operations locally only (do NOT auto-write seeded data to DB on startup)
+  try{ save(); }catch(e){ console.warn('seed save error', e && e.message); }
+  // ensure stored autosave preference exists
+  state.storage.autoSaveAssign = state.storage.autoSaveAssign === undefined ? true : !!state.storage.autoSaveAssign;
+  // ensure stored spellcheck enforce preference exists (default: true)
+  state.storage.spellcheckEnforce = state.storage.spellcheckEnforce === undefined ? true : !!state.storage.spellcheckEnforce;
+  try{const raw=localStorage.getItem(storeKey); if(raw) Object.assign(state, JSON.parse(raw)||{});}catch(_){ }
+  // ensure settings object exists and default autoCleanup = true for backward compatibility
+  state.settings = state.settings || {};
+  if (typeof state.settings.autoCleanup === 'undefined') state.settings.autoCleanup = true;
+  // expose state for debugging and console access
+  try{ window.state = state; }catch(e){console.warn('unable to expose state', e);} 
+  
+  const save=()=>{
+    try{
+      // normalize orders before persisting (migrate legacy postal fields)
+      if(Array.isArray(state.orders)) state.orders.forEach(o=>normalizeOrder(o));
+      localStorage.setItem(storeKey, JSON.stringify(state));
+    }catch(_){ }
+    autoSaveDebounced();
+  }
+
+  let autoSaveTimeout;
+  const autoSaveDebounced = () => {
+    clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = setTimeout(() => {
+      if(window.__suppressAutoSave) { (window.logDev||console.log)('[autoSaveDebounced] suppressed due to __suppressAutoSave'); return; }
+      saveToDB();
+    }, 500); // Wait 500ms before saving to DB
+  };
+
+  // call this to trigger optional immediate Firebase save when enabled in settings
+  function maybeAutoSave(reason){
+    try{
+      const enabled = !!state.storage.autoSaveAssign;
+      if(enabled){ saveToDB(); qs('#set-info').textContent = 'Auto-save: ' + (reason||'sync'); }
+    }catch(e){ console.warn('maybeAutoSave error', e); }
+  }
+  
+  function nav(p){
+    const map={dash:'p-dash',tasks:'p-tasks',order:'p-order',proc:'p-proc',opcat:'p-opcat',emp:'p-emp',as:'p-as',
+               map:'p-map',monitor:'p-monitor',mrp:'p-mrp',wh:'p-wh',backup:'p-backup',migr:'p-migr',settings:'p-settings',split:'p-split'};
+    qsa('[id^="p-"]').forEach(el=>el.classList.add('hidden'));
+    qs('#'+(map[p]||'p-dash')).classList.remove('hidden');
+    state.page=p; save();
+    if(p==='order') renderOrderPage();
+    if(p==='tasks') renderTasks();
+    if(p==='opcat') renderOps();
+    if(p==='proc') renderProcPage();
+    if(p==='emp') renderEmployees();
+    if(p==='as') renderASPage();
+    if(p==='mrp') renderMRPPage();
+    if(p==='monitor') try{ renderMonitor(); }catch(_){ /* no-op if monitor renderer missing */ }
+    renderDash();
+  }
+  window.nav=nav;
+  
+  const handleEvents = async (e) => {
+    let t = e.target;
+    while(t && t !== document.body) {
+      if(e.type === 'click') {
+  if(t.dataset.nav) { nav(t.dataset.nav); break; }
+        if(t.id === 'open-split'){
+          try{
+            // Resolve relative to current document (this file lives in /incoming/), so 'worker-list.html' is correct
+            const url = new URL('worker-list.html', location.href).href;
+            const w = window.open(url, '_blank');
+            if(!w) { location.href = url; }
+          }catch(_){
+            // Fallback to same-folder relative path
+            location.href = 'worker-list.html';
+          }
+          break;
+        }
+        if(t.id === 'split-open-new'){
+          try{ const url = new URL('worker-list.html', location.href).href; const w = window.open(url, '_blank'); if(!w) location.href = url; }catch(_){ location.href='worker-list.html'; }
+          break;
+        }
+        if(t.id === 'split-reload'){
+          try{ const iframe = qs('#split-iframe'); if(iframe && iframe.contentWindow){ iframe.contentWindow.location.reload(); } }catch(_){ }
+          break;
+        }
+        if(t.dataset.od) {
+          const id = t.dataset.od; state.orders = state.orders.filter(x => x.id !== id); state.tasks = state.tasks.filter(t => t.orderId !== id); state.after = state.after.filter(a => a.order !== id); save();
+          renderOrderPage(); renderASPage(); renderDash(); break;
+        }
+        if(t.dataset.oed) {
+          const id = t.dataset.oed;
+          const o = state.orders.find(x => x.id === id);
+          if (!o) return;
+          qs('#o-id').value = o.id || '';
+          qs('#o-name').value = o.name || '';
+          qs('#o-client').value = o.client || '';
+          qs('#o-model').value = o.model || '';
+          qs('#o-qty').value = o.quantity || 1;
+          qs('#o-start').value = o.startDate || '';
+          qs('#o-end').value = o.endDate || '';
+          qs('#o-notes').value = o.notes || '';
+          qs('#o-install').value = o.installDate || '';
+          qs('#o-addr').value = o.address || '';
+          qs('#o-post').value = o.postalCode || '';
+          qs('#o-phone').value = o.phone || '';
+          qs('#o-proc').value = o.processId || '';
+          window.scrollTo({top: 0, behavior: 'smooth'});
+          break;
+        }
+        if(t.dataset.ogen) {
+          const id = t.dataset.ogen; const o = state.orders.find(x => x.id === id); if (!o) return;
+          qs('#o-id').value = o.id || '';
+          qs('#o-name').value = o.name || '';
+          qs('#o-client').value = o.client || '';
+          qs('#o-model').value = o.model || '';
+          qs('#o-qty').value = o.quantity || 1;
+          qs('#o-start').value = o.startDate || '';
+          qs('#o-end').value = o.endDate || '';
+          qs('#o-notes').value = o.notes || '';
+          qs('#o-install').value = o.installDate || '';
+          qs('#o-addr').value = o.address || '';
+          if(qs('#o-post')) qs('#o-post').value = o.postalCode || o.post || '';
+          qs('#o-post').value = o.postalCode || '';
+          qs('#o-phone').value = o.phone || '';
+          qs('#o-name').value = o.name || o.number || o.orderNumber || '';
+          qs('#o-proc').value = o.processId || '';
+          // generate tasks using process assigned to the order (or sensible fallback)
+          let p = state.processes.find(x => x.id === (o.processId || ''));
+          if(!p){
+            // try find process by common name or pick first available
+            p = state.processes.find(x=>x.name && x.name.toLowerCase().includes('futryna')) || state.processes[0] || null;
+          }
+          if(!p || !(p.operations||[]).length){ alert('Brak przypisanego procesu do zlecenia lub proces nie zawiera operacji. Wybierz proces w edycji zlecenia.'); break; }
+          state.tasks = state.tasks.filter(t => t.orderId !== o.id);
+          (p.operations || []).forEach(op => state.tasks.push({id: uid(), orderId: o.id, opName: op.name, status: 'todo', elapsedMin: 0, estMin: op.time || 0}));
+          save(); try{ updateOrderProgress(o.id); }catch(_){ } nav('tasks'); break;
+        }
+        if(t.dataset.opEd) {
+          const id = t.dataset.opEd; const o = (state.operationsCatalog || []).find(x => x.id === id); if (!o) return;
+          qs('#op-id').value = o.id || ''; qs('#op-no').value = o.no || 1; qs('#op-name').value = o.name || '';
+          qs('#op-time').value = o.time || 10; qs('#op-workers').value = o.workers || 1;
+          qs('#op-skills').value = (o.skills || []).join(';'); populateOpEmployees();
+          const sel = qs('#op-emp'); const set = new Set((o.defaultAssignees || []).map(a => a.id));
+          Array.from(sel.options || []).forEach(opt => opt.selected = set.has(opt.value)); qs('#op-msg').textContent = ''; break;
+        }
+        if(t.dataset.opDel) {
+          const id = t.dataset.opDel; if (!confirm('Usunąć operację?')) return;
+          state.operationsCatalog = (state.operationsCatalog || []).filter(x => x.id !== id); save(); renderOps();
+          try { if (state.storage.mode === 'firebase' && await ensureFirebase()) { await fbRoot().collection('operationsCatalog').doc(id).delete(); } } catch (e) { console.warn('Błąd usuwania operacji:', e.message); } break;
+        }
+        if(t.dataset.opUp) { moveOp(t.dataset.opUp, 'up'); break; }
+        if(t.dataset.opDown) { moveOp(t.dataset.opDown, 'down'); break; }
+        if(t.dataset.pup) { const i = +t.dataset.pup; const a = state.PROC_TMP; if (i > 0) { [a[i - 1], a[i]] = [a[i], a[i - 1]]; renderProcOps(); } break; }
+        if(t.dataset.pdown) { const i = +t.dataset.pdown; const a = state.PROC_TMP; if (i < a.length - 1) { [a[i + 1], a[i]] = [a[i], a[i + 1]]; renderProcOps(); } break; }
+        if(t.dataset.pdel) { const i = +t.dataset.pdel; state.PROC_TMP.splice(i, 1); renderProcOps(); break; }
+        if(t.dataset.ped) {
+          const p = state.processes.find(x => x.id === t.dataset.ped); if (!p) return; qs('#proc-id').value = p.id;
+          qs('#proc-name').value = p.name;
+          // preserve assignee when loading for edit
+          state.PROC_TMP = (p.operations || []).map(x => ({name: x.name, time: x.time || 0, assignee: x.assignee || null}));
+          renderProcOps(); window.scrollTo({top: 0, behavior: 'smooth'}); break;
+        }
+        if(t.dataset.pdel2) { state.processes = state.processes.filter(x => x.id !== t.dataset.pdel2); save(); renderProcList(); break; }
+        if(t.dataset.taskStart) {
+          let id = t.dataset.taskStart;
+          let task = state.tasks.find(x => x.id === id);
+          // if synthetic (no id) — create a real task from row context so Start works
+          if(!task && (!id || id === '')){
+            try{
+              const row = t.closest && t.closest('[data-emp]');
+              const empId = row ? row.getAttribute('data-emp') : null;
+              const orderIdAttr = row ? row.getAttribute('data-order') : '';
+              // find opName text in same row or nearest table cell
+              let opName = '';
+              try{ const cell = t.closest('tr').querySelector('td'); opName = (cell && cell.innerText)||''; }catch(_){ }
+              const newId = uid(); const newTask = { id: newId, orderId: orderIdAttr||'', opName: opName||'(op)', status: 'todo', estMin: 0, assignees: [] };
+              if(empId) newTask.assignees = [{id: empId}];
+              state.tasks.push(newTask); save(); task = newTask; id = newId;
+              // update DOM attributes on the clicked buttons so later updateTaskRowUIById can find them
+              try{
+                // set dataset on clicked start button
+                t.setAttribute('data-task-start', id);
+                if(t.dataset) t.dataset.taskStart = id;
+                // also set matching data-task-done on sibling button if present
+                const siblingDone = t.closest('tr') && t.closest('tr').querySelector('button[data-task-done]');
+                if(siblingDone){ siblingDone.setAttribute('data-task-done', id); if(siblingDone.dataset) siblingDone.dataset.taskDone = id; }
+              }catch(_){ }
+            }catch(e){ (window.logDev||console.warn)('[taskStart] synth->real create failed', e && e.message); }
+          }
+          if(!task) return;
+          // capture scroll anchor to avoid jumping: remember selector and viewport offset
+          try{ const el = t; const rect = el.getBoundingClientRect(); // find nearest scrollable parent (overflow:auto) or .table
+            let sp = el.closest('.table');
+            if(!sp){ let p = el.parentElement; while(p){ try{ const s = window.getComputedStyle(p); if(/auto|scroll/.test(s.overflow + s.overflowY + s.overflowX || '')){ sp = p; break; } }catch(_){ } p = p.parentElement; } }
+            const scrollParentSelector = sp ? (sp.id? `#${sp.id}` : (sp.className? `.${(sp.className||'').split(' ').join('.')}` : null)) : null;
+            const prevScrollParentTop = sp ? (sp.scrollTop || 0) : 0;
+            window.__scrollAnchor = { selector: `[data-task-start="${id}"]`, anchorClientTop: rect.top, prevWindowY: window.scrollY || window.pageYOffset || 0, scrollParentSelector, prevScrollParentTop };
+            try{ window.__suppressPrevWindowRestore = true; setTimeout(()=>{ try{ window.__suppressPrevWindowRestore = false; }catch(_){ } }, 600); }catch(_){ }
+          }catch(_){ window.__scrollAnchor = null; }
+          task.status = 'run';
+          task.startedAt = task.startedAt || new Date().toISOString();
+          task.startedBy = (state.storage && state.storage.userId) || task.startedBy || null;
+          state._timers[id] = Date.now();
+          save(); try{ updateOrderProgress(task.orderId); }catch(_){ }
+          // If click originated inside per-employee grouped view, update only the affected row to avoid rerendering the whole list (prevents scroll jumps)
+          // treat clicks from per-employee card or from worker preview modal as in-worker view
+          const inWorkerView = (!!t.closest && !!t.closest('#tasks-by-worker')) || !!window.__workerPreviewCtx;
+          if(inWorkerView){ try{ window.__inWorkerAction = true; window.__lastActionTaskId = id; window.__inWorkerActionExpire = Date.now() + 15000; window.__suppressAutoSave = true; setTimeout(()=>{ window.__suppressAutoSave = false; }, 10000); updateTaskRowUI(t, task); }catch(_){ window.__inWorkerAction = false; window.__suppressAutoSave = false; } window.__scrollAnchor = null; }
+          else { renderTasks(); }
+          // persist to DB if configured
+          if(state.storage && state.storage.mode === 'firebase'){ try{ await saveTaskToDB(task.id, { suppressRender: inWorkerView }); }catch(e){ console.warn('taskStart saveToDB error', e && e.message); } }
+          maybeAutoSave('task-start');
+          break;
+        }
+        if(t.dataset.taskPause) {
+          const id = t.dataset.taskPause; const task = state.tasks.find(x => x.id === id); if (!task) return;
+          if (state._timers[id]) { task.elapsedMin = (task.elapsedMin || 0) + (Date.now() - state._timers[id]) / 60000; delete state._timers[id]; }
+          task.status = 'todo'; save(); try{ updateOrderProgress(task.orderId); }catch(_){ }
+          const inWorkerViewPause = ((!!t.closest && !!t.closest('#tasks-by-worker')) || !!window.__workerPreviewCtx);
+          if(inWorkerViewPause){ try{ window.__inWorkerAction = true; window.__lastActionTaskId = id; window.__inWorkerActionExpire = Date.now() + 15000; window.__suppressAutoSave = true; setTimeout(()=>{ window.__suppressAutoSave = false; }, 10000); updateTaskRowUI(t, task); }catch(_){ window.__inWorkerAction = false; window.__suppressAutoSave = false; } }
+          else { renderTasks(); }
+          if(state.storage && state.storage.mode === 'firebase'){ try{ await saveTaskToDB(task.id, { suppressRender: inWorkerViewPause }); }catch(e){ console.warn('taskPause saveToDB error', e && e.message); } }
+          break;
+        }
+        if(t.dataset.taskDone) {
+          let id = t.dataset.taskDone;
+          let task = state.tasks.find(x => x.id === id);
+          // support finishing a synthetic/op-created task similarly
+          if(!task && (!id || id === '')){
+            try{
+              const row = t.closest && t.closest('[data-emp]');
+              const empId = row ? row.getAttribute('data-emp') : null;
+              const orderIdAttr = row ? row.getAttribute('data-order') : '';
+              let opName = '';
+              try{ const cell = t.closest('tr').querySelector('td'); opName = (cell && cell.innerText)||''; }catch(_){ }
+              const newId = uid(); const newTask = { id: newId, orderId: orderIdAttr||'', opName: opName||'(op)', status: 'todo', estMin:0, assignees: [] };
+              if(empId) newTask.assignees = [{id: empId}]; 
+            // Upewnij się że task ma wszystkie potrzebne pola
+            if (newTask.orderId) {
+              const relatedOrder = state.orders.find(o => o.id === newTask.orderId);
+              if (relatedOrder && relatedOrder.processId) {
+                const process = state.processes.find(p => p.id === relatedOrder.processId);
+                if (process) {
+                  newTask.processId = process.id;
+                  newTask.processName = process.name;
+                  newTask.opIndex = process.operations.findIndex(op => op.name === newTask.opName);
+                }
+              }
+            }
+            state.tasks.push(newTask); save(); task = newTask; id = newId;
+              // update DOM attributes on the clicked buttons so later updateTaskRowUIById can find them
+              try{
+                t.setAttribute('data-task-done', id);
+                if(t.dataset) t.dataset.taskDone = id;
+                const siblingStart = t.closest('tr') && t.closest('tr').querySelector('button[data-task-start]');
+                if(siblingStart){ siblingStart.setAttribute('data-task-start', id); if(siblingStart.dataset) siblingStart.dataset.taskStart = id; }
+              }catch(_){ }
+            }catch(e){ (window.logDev||console.warn)('[taskDone] synth->real create failed', e && e.message); }
+          }
+          if(!task) return;
+          // capture scroll anchor for done action too
+          try{ const el = t; const rect = el.getBoundingClientRect(); // find nearest scrollable parent (overflow:auto) or .table
+            let sp = el.closest('.table');
+            if(!sp){ let p = el.parentElement; while(p){ try{ const s = window.getComputedStyle(p); if(/auto|scroll/.test(s.overflow + s.overflowY + s.overflowX || '')){ sp = p; break; } }catch(_){ } p = p.parentElement; } }
+            const scrollParentSelector = sp ? (sp.id? `#${sp.id}` : (sp.className? `.${(sp.className||'').split(' ').join('.')}` : null)) : null;
+            const prevScrollParentTop = sp ? (sp.scrollTop || 0) : 0;
+            window.__scrollAnchor = { selector: `[data-task-done="${id}"]`, anchorClientTop: rect.top, prevWindowY: window.scrollY || window.pageYOffset || 0, scrollParentSelector, prevScrollParentTop };
+            try{ window.__suppressPrevWindowRestore = true; setTimeout(()=>{ try{ window.__suppressPrevWindowRestore = false; }catch(_){ } }, 600); }catch(_){ }
+          }catch(_){ window.__scrollAnchor = null; }
+          if (state._timers[id]) { task.elapsedMin = (task.elapsedMin || 0) + (Date.now() - state._timers[id]) / 60000; delete state._timers[id]; }
+          task.status = 'done'; save(); try{ updateOrderProgress(task.orderId); }catch(_){ }
+          const inWorkerViewDone = ((!!t.closest && !!t.closest('#tasks-by-worker')) || !!window.__workerPreviewCtx);
+          if(inWorkerViewDone){ try{ window.__inWorkerAction = true; window.__lastActionTaskId = id; window.__inWorkerActionExpire = Date.now() + 15000; window.__suppressAutoSave = true; setTimeout(()=>{ window.__suppressAutoSave = false; }, 10000); updateTaskRowUI(t, task); }catch(_){ window.__inWorkerAction = false; window.__suppressAutoSave = false; } try{ if(task.orderId){ cleanupTasksForOrder(task.orderId, true); } }catch(_){ } window.__scrollAnchor = null; }
+          else { renderTasks(); try{ if(task.orderId){ cleanupTasksForOrder(task.orderId); } }catch(_){ } }
+          break;
+        }
+        if(t.dataset.taskRepeat) {
+          const id = t.dataset.taskRepeat; const task = state.tasks.find(x => x.id === id); if (!task) return;
+          if (state._timers[id]) delete state._timers[id]; task.status = 'todo'; task.elapsedMin = 0; save(); try{ updateOrderProgress(task.orderId); }catch(_){ }
+          const inWorkerViewRepeat = ((!!t.closest && !!t.closest('#tasks-by-worker')) || !!window.__workerPreviewCtx);
+          if(inWorkerViewRepeat){ try{ window.__inWorkerAction = true; window.__lastActionTaskId = id; window.__inWorkerActionExpire = Date.now() + 15000; window.__suppressAutoSave = true; setTimeout(()=>{ window.__suppressAutoSave = false; }, 10000); updateTaskRowUI(t, task); }catch(_){ window.__inWorkerAction = false; window.__suppressAutoSave = false; } }
+          else { renderTasks(); }
+          if(state.storage && state.storage.mode === 'firebase'){ try{ await saveTaskToDB(task.id, { suppressRender: inWorkerViewRepeat }); }catch(e){ console.warn('taskRepeat saveToDB error', e && e.message); } }
+          break;
+        }
+        if(t.dataset.taskRetry) {
+          const id = t.dataset.taskRetry; const task = state.tasks.find(x => x.id === id); if (!task) return;
+          // optimistic UI: show pending and clear previous error
+          task._syncPending = true; task._syncError = false; save();
+          const inWorkerViewRetry = ((!!t.closest && !!t.closest('#tasks-by-worker')) || !!window.__workerPreviewCtx);
+          if(inWorkerViewRetry){ try{ window.__inWorkerAction = true; window.__lastActionTaskId = id; window.__inWorkerActionExpire = Date.now() + 15000; window.__suppressAutoSave = true; setTimeout(()=>{ window.__suppressAutoSave = false; }, 10000); updateTaskRowUI(t, task); }catch(_){ window.__inWorkerAction = false; window.__suppressAutoSave = false; } }
+          else { try{ renderTasks(); }catch(_){ } }
+          if(state.storage && state.storage.mode === 'firebase'){
+            try{ await saveTaskToDB(id, { suppressRender: inWorkerViewRetry }); }catch(e){ (window.logDev||console.warn)('taskRetry saveToDB error', e && e.message); }
+          }
+          break;
+        }
+        if(t.dataset.taskDel) { const id = t.dataset.taskDel; 
+          const ask = state.storage.askBeforeTaskDelete === undefined ? true : !!state.storage.askBeforeTaskDelete;
+          const doDelete = await (async ()=>{
+            if(!ask) return true;
+            try{
+              return await confirmModal('Usunąć zadanie?');
+            }catch(_){ return false; }
+          })();
+          if(!doDelete) return; 
+          // capture orderId before removing
+          const toDel = (state.tasks||[]).find(x=>x.id===id);
+          state.tasks = (state.tasks||[]).filter(x=>x.id!==id); save(); try{ if(toDel) updateOrderProgress(toDel.orderId); }catch(_){ }
+          const inWorkerViewDel = ((!!t.closest && !!t.closest('#tasks-by-worker')) || !!window.__workerPreviewCtx);
+          if(!inWorkerViewDel) { renderTasks(); }
+          break; }
+        if(t.dataset.empDel) { state.employees = state.employees.filter(x => x.id !== t.dataset.empDel); save(); renderEmployees(); break; }
+        if(t.dataset.empEd) {
+          const e = state.employees.find(x => x.id === t.dataset.empEd); if (!e) return;
+          const n = prompt('Nowe imię', e.name) || e.name; e.name = n; save(); renderEmployees(); break;
+        }
+        if(t.dataset.assign) {
+          // legacy hook for assign buttons (if any). mark save and maybeAutoSave
+          const id = t.dataset.assign; // task id
+          // a real assign flow should update state.tasks[].assignees
+          maybeAutoSave('assign');
+          break;
+        }
+        
+        if(t.dataset.asDel) { state.after = state.after.filter(x => x.id !== t.dataset.asDel); save(); renderASPage(); break; }
+        if(t.dataset.asEd) {
+          const a = state.after.find(x => x.id === t.dataset.asEd); if (!a) return; qs('#as-id').value = a.id;
+          qs('#as-type').value = a.type; qs('#as-order').value = a.order || ''; qs('#as-status').value = a.status;
+          qs('#as-desc').value = a.desc || ''; qs('#as-install').value = a.installDate || '';
+          qs('#as-go').value = a.departTime || ''; qs('#as-visit').value = a.visitTime || '';
+          // populate hidden/order-linked fields (phone/placecode)
+          if(qs('#as-order-phone')) qs('#as-order-phone').value = a.phone || '';
+          if(qs('#as-order-placecode')) qs('#as-order-placecode').value = a.postalCode || a.placeCode || '';
+          break;
+        }
+        if(t.dataset.refreshAs) { loadFromDB(); break; }
+        if (t.id === 'mrp-generate') { renderMRPPage(); break; }
+      } else if (e.type === 'input') {
+        if(e.target && (e.target.id === 'o-start' || e.target.id === 'o-weeks' || e.target.id === 'o-end')) {
+            if (e.target.id === 'o-start' || e.target.id === 'o-weeks') {
+                calcEndDate();
+            } else if (e.target.id === 'o-end') {
+                calcInstallDate();
+            }
+            break;
+        }
+        if (t.parentElement && t.parentElement.id === 'p-settings') {
+          state.storage.mode = qs('#set-mode').value;
+          state.storage.appId = qs('#set-appid').value.trim();
+          state.storage.userId = qs('#set-userid').value.trim();
+          try { state.storage.fbConfig = JSON.parse(qs('#set-fb').value || '{}'); } catch(e) {}
+          save();
+          break;
+        }
+      }
+      t = t.parentElement;
+    }
+  };
+  document.addEventListener('click', handleEvents);
+
+  // DEBUG: when Edit buttons are clicked (data-op-ed), log the event and #op-id after population
+  (function attachOpEditLog(){
+    document.body.addEventListener('click', function(ev){
+      const btn = ev.target.closest && ev.target.closest('[data-op-ed]');
+      if(!btn) return; const opId = btn.getAttribute('data-op-ed');
+      (window.logDev||console.log)('[ui] Edit click', { dataOpEd: opId });
+      // schedule a short tick to log #op-id after any population logic runs
+      setTimeout(()=>{ const cur = qs('#op-id')?qs('#op-id').value:''; (window.logDev||console.log)('[ui] #op-id after edit click', cur); }, 50);
+    }, true);
+  })();
+  document.addEventListener('input', handleEvents);
+
+  // sync autosave checkbox UI with state on load
+  try{ const cb = qs('#set-autosave-assign'); if(cb) cb.checked = !!state.storage.autoSaveAssign; }catch(e){}
+  // sync autoload DB checkbox UI with state on load
+  try{ const al = qs('#set-autoload-db'); if(al) al.checked = !!state.storage.autoLoadFromDB; }catch(e){}
+  // sync monitor threshold UI with state on load
+  try{ const th = qs('#set-monitor-threshold'); if(th) th.value = String(state.storage.monitorThreshold || 5); }catch(e){}
+  // sync monitor alerts UI with state on load
+  try{ const ma = qs('#set-monitor-alerts'); if(ma) ma.checked = (state.storage.monitorAlertsEnabled !== false); }catch(e){}
+  // sync auto-cleanup UI with state on load
+  try{ const ac = qs('#set-auto-cleanup'); if(ac) ac.checked = (state.settings && state.settings.autoCleanup !== false); }catch(e){}
+  // sync spellcheck enforce checkbox UI with state on load
+  try{ const sc = qs('#set-spellcheck-enforce'); if(sc) sc.checked = !!state.storage.spellcheckEnforce; }catch(e){}
+
+  // persist autosave checkbox changes
+  const autosaveEl = qs('#set-autosave-assign'); if(autosaveEl){ autosaveEl.addEventListener('change', (ev)=>{ state.storage.autoSaveAssign = !!ev.target.checked; save(); }); }
+  // persist autoload checkbox changes
+  const autoloadEl = qs('#set-autoload-db'); if(autoloadEl){ autoloadEl.addEventListener('change', (ev)=>{ state.storage.autoLoadFromDB = !!ev.target.checked; save(); }); }
+  // persist monitor threshold changes
+  const monitorThEl = qs('#set-monitor-threshold'); if(monitorThEl){ monitorThEl.addEventListener('change', (ev)=>{ const v = parseInt(ev.target.value||'5',10) || 5; state.storage.monitorThreshold = Math.max(1, v); save(); }); }
+  // persist monitor alerts changes
+  const monitorAlertEl = qs('#set-monitor-alerts'); if(monitorAlertEl){ monitorAlertEl.addEventListener('change', (ev)=>{ state.storage.monitorAlertsEnabled = !!ev.target.checked; save(); }); }
+
+
+
+
+
+
+  // persist auto-cleanup changes
+  const autoCleanupEl = qs('#set-auto-cleanup'); if(autoCleanupEl){ autoCleanupEl.addEventListener('change', (ev)=>{ state.settings.autoCleanup = !!ev.target.checked; save(); }); }
+
+  // persist spellcheck enforce changes
+  const spellEl = qs('#set-spellcheck-enforce'); if(spellEl){ spellEl.addEventListener('change', (ev)=>{ state.storage.spellcheckEnforce = !!ev.target.checked; save(); if(ev.target.checked) enableSpellAndLang(); else disableSpellAndLang(); }); }
+
+  // in-page confirmation modal (promise-based)
+  function confirmModal(message){
+    return new Promise((resolve)=>{
+      try{
+        const modal = qs('#app-confirm-modal'); const msg = qs('#app-confirm-msg'); const ok = qs('#app-confirm-ok'); const cancel = qs('#app-confirm-cancel'); const close = qs('#app-confirm-close'); const noask = qs('#app-confirm-noask');
+        if(!modal || !msg || !ok || !cancel) return resolve(false);
+        msg.textContent = String(message||'');
+        modal.classList.remove('hidden');
+        const cleanup = ()=>{ modal.classList.add('hidden'); ok.removeEventListener('click', onOk); cancel.removeEventListener('click', onCancel); close && close.removeEventListener('click', onCancel); };
+        const onOk = ()=>{ const na = !!noask.checked; if(na) state.storage.askBeforeTaskDelete = false; save(); cleanup(); resolve(true); };
+        const onCancel = ()=>{ const na = !!noask.checked; if(na) state.storage.askBeforeTaskDelete = false; save(); cleanup(); resolve(false); };
+        ok.addEventListener('click', onOk); cancel.addEventListener('click', onCancel); if(close) close.addEventListener('click', onCancel);
+      }catch(e){ resolve(false); }
+    });
+  }
+
+  // show preview modal for an order (or process)
+  function showOrderPreview(empId, orderId){
+    try{
+      const modal = qs('#app-preview-modal'); const body = qs('#app-preview-body'); const close = qs('#app-preview-close'); const ok = qs('#app-preview-ok'); const copyBtn = qs('#app-preview-copy');
+      if(!modal || !body) return;
+      // mark worker preview context so clicks inside modal are treated as in-worker actions
+      try{ window.__workerPreviewCtx = { empId, orderId, at: Date.now() }; }catch(_){ }
+      const orderObj = (state.orders||[]).find(o=>o.id===orderId) || {};
+      // reuse showOrderDetails to build content into a temp div
+      const tmp = document.createElement('div'); showOrderDetails(empId, orderId, tmp);
+      let header = `<div><b>${escapeHtml(orderObj.name || orderId || '(proces)')}</b> • <span class="muted">Klient: ${escapeHtml(orderObj.client||'')}</span></div>`;
+      if(orderObj.notes) header += `<div class="muted">Opis: ${escapeHtml(orderObj.notes)}</div>`;
+      body.innerHTML = header + tmp.innerHTML;
+      modal.classList.remove('hidden');
+      // wire buttons
+      const onClose = ()=>{ modal.classList.add('hidden'); close.removeEventListener('click', onClose); ok.removeEventListener('click', onClose); if(copyBtn) copyBtn.removeEventListener('click', onCopy); try{ window.__workerPreviewCtx = null; }catch(_){ } };
+      const onCopy = async ()=>{
+        try{ await copyToClipboard(body.innerText||body.textContent||''); alert('Skopiowano do schowka'); }catch(_){ alert('Kopiowanie nie powiodło się'); }
+      };
+      close.addEventListener('click', onClose); ok.addEventListener('click', onClose); if(copyBtn) copyBtn.addEventListener('click', onCopy);
+    }catch(e){ (window.logDev||console.log)('[showOrderPreview] err', e && e.message); }
+  }
+
+  // Validation functions
+  function validateOrderForm() {
+    const errors = [];
+    const name = qs('#o-name').value.trim();
+    const qty = parseInt(qs('#o-qty').value) || 0;
+    const startDate = qs('#o-start').value;
+    const endDate = qs('#o-end').value;
+
+    if (!name) errors.push('Nazwa zamówienia jest wymagana');
+    if (name.length < 3) errors.push('Nazwa zamówienia musi mieć co najmniej 3 znaki');
+    if (qty <= 0) errors.push('Ilość musi być większa od 0');
+    if (qty > 1000) errors.push('Ilość nie może przekraczać 1000');
+
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (start > end) errors.push('Data rozpoczęcia nie może być późniejsza niż data zakończenia');
+    }
+
+    // Check for duplicate names (optional)
+    const existingOrder = state.orders.find(o => o.name.toLowerCase() === name.toLowerCase() && o.id !== qs('#o-id').value);
+    if (existingOrder) errors.push('Zamówienie o tej nazwie już istnieje');
+
+    return errors;
+  }
+
+  function validateEmployeeForm() {
+    const errors = [];
+    const name = qs('#emp-name').value.trim();
+    const capacity = parseInt(qs('#emp-cap').value) || 0;
+    const hoursPerDay = parseInt(qs('#emp-hours').value) || 0;
+
+    if (!name) errors.push('Imię i nazwisko pracownika jest wymagane');
+    if (name.length < 2) errors.push('Imię i nazwisko musi mieć co najmniej 2 znaki');
+    if (capacity <= 0 || capacity > 100) errors.push('Wydajność musi być między 1 a 100');
+    if (hoursPerDay <= 0 || hoursPerDay > 24) errors.push('Godziny pracy dziennie muszą być między 1 a 24');
+
+    // Check for duplicate names
+    const existingEmp = state.employees.find(e => e.name.toLowerCase() === name.toLowerCase() && e.id !== qs('#emp-id').value);
+    if (existingEmp) errors.push('Pracownik o tym imieniu i nazwisku już istnieje');
+
+    return errors;
+  }
+
+  function showValidationErrors(errors) {
+    // Remove existing error messages
+    const existingErrors = document.querySelectorAll('.validation-error');
+    existingErrors.forEach(el => el.remove());
+
+    if (errors.length === 0) return;
+
+    // Create error message container
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'validation-error card error';
+    errorDiv.innerHTML = '<h4>Błędy walidacji:</h4><ul>' + errors.map(err => `<li>${err}</li>`).join('') + '</ul>';
+
+    // Insert at the top of the current panel
+    const currentPanel = document.querySelector('.card:not(.hidden)');
+    if (currentPanel) {
+      currentPanel.insertBefore(errorDiv, currentPanel.firstChild);
+    }
+
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+      if (errorDiv.parentNode) {
+        errorDiv.remove();
+      }
+    }, 5000);
+  }
+  // Initialize split section when navigating to it
+  const originalNav = window.nav;
+  window.nav = function(page){
+    console.log('nav called with:', page);
+    if(originalNav) originalNav(page);
+    if(page === 'split'){
+      setTimeout(()=>{ renderSplit(); }, 100);
+    }
+  };
+
+})();
+</script>
+</body>
+</html>
