@@ -10,29 +10,44 @@
 <meta name="last-modified" content="2025-10-05"/>
 <title>Planner Produkcji Drzwi — v5.0 (2025-10-05 14:00)</title>
 <style>
-:root{--bg:#0f172a;--panel:#1f2937;--muted:#94a3b8;--b:#374151;--acc:#2563eb;--ok:#16a34a;--warn:#d97706;--err:#dc2626}
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:#e5e7eb}
-header{position:sticky;top:0;z-index:60;background:rgba(15,23,42,.92);backdrop-filter:saturate(180%) blur(6px);border-bottom:1px solid #1e293b}
+:root{--bg:#0f172a;--panel:#1f2937;--muted:#94a3b8;--b:#374151;--acc:#2563eb;--ok:#16a34a;--warn:#d97706;--err:#dc2626;--text:#ffffff;--text-secondary:#ffffff}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:#ffffff;line-height:1.5}
+header{position:sticky;top:0;z-index:60;background:rgba(15,23,42,.95);backdrop-filter:saturate(180%) blur(6px);border-bottom:1px solid #1e293b}
+h3{color:#ffffff;font-size:18px;font-weight:700;margin:0 0 12px 0;text-shadow:0 1px 3px rgba(0,0,0,0.7)}
+h4{color:#ffffff;font-size:16px;font-weight:700;margin:8px 0;text-shadow:0 1px 2px rgba(0,0,0,0.6)}
 .wrap{max-width:1280px;margin:0 auto;padding:16px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.card{background:var(--panel);border-radius:14px;padding:14px;box-shadow:0 6px 18px rgba(0,0,0,.35);margin:0 0 12px}
-.btn{border:0;border-radius:10px;padding:8px 12px;background:#334155;color:#e5e7eb;cursor:pointer}
-.btn.gray{background:#475569;color:#e5e7eb}
-.btn.primary{background:var(--acc);color:#fff}.btn.red{background:var(--err)}.btn.green{background:var(--ok)}.btn.amber{background:var(--warn)}.btn.blue{background:#3b82f6}.btn.small{padding:4px 8px;font-size:12px}
+.card{background:var(--panel);border-radius:14px;padding:14px;box-shadow:0 6px 18px rgba(0,0,0,.35);margin:0 0 12px;border:1px solid rgba(255,255,255,0.1)}
+.btn{border:0;border-radius:10px;padding:8px 12px;background:#334155;color:#ffffff;cursor:pointer;border:1px solid rgba(255,255,255,0.1);font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,0.5)}
+.btn.gray{background:#475569;color:#ffffff;border:1px solid rgba(255,255,255,0.15)}
+.btn.primary{background:var(--acc);color:#fff;border:1px solid rgba(59,130,246,0.5)}.btn.red{background:var(--err);border:1px solid rgba(220,38,38,0.5)}.btn.green{background:var(--ok);border:1px solid rgba(22,163,74,0.5)}.btn.amber{background:var(--warn);border:1px solid rgba(217,119,6,0.5)}.btn.blue{background:#3b82f6;border:1px solid rgba(59,130,246,0.5)}.btn.small{padding:4px 8px;font-size:12px}
 .hidden{display:none!important}
-input,select,textarea{background:#111827;color:#e5e7eb;border:1px solid var(--b);border-radius:10px;padding:8px 10px;width:100%}
-label{font-size:12px;color:#94a3b8}.list{display:flex;flex-direction:column;gap:8px}.muted{color:#cbd5e1;font-size:12px}
+input,select,textarea{background:#111827;color:#e5e7eb;border:1px solid var(--b);border-radius:10px;padding:8px 10px;width:100%;transition:border-color 0.2s}
+input:focus,select:focus,textarea:focus{border-color:var(--acc);outline:none;box-shadow:0 0 0 2px rgba(37,99,235,0.2)}
+label{font-size:12px;color:#ffffff;font-weight:500}.list{display:flex;flex-direction:column;gap:8px}.muted{color:#ffffff;font-size:12px}
 #set-info{color:#ffffff !important;font-weight:600 !important;font-size:14px !important;background:#1a2332 !important;padding:4px 8px !important;border-radius:4px !important;border:1px solid #334155 !important;display:block !important;min-height:20px !important;}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.table{overflow:auto; max-height:55vh} table{width:100%;border-collapse:collapse}
-th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left} th{background:#111827;position:sticky;top:0}
-.pill{display:inline-block;background:#0b1222;border:1px solid #2b3a59;border-radius:999px;padding:2px 8px;font-size:11px;color:#9fb3d1}
-.oktxt{color:#86efac}.err{color:#fca5a5}
+.table{overflow:auto; max-height:55vh} table{width:100%;border-collapse:collapse;border:1px solid rgba(255,255,255,0.1);border-radius:8px;overflow:hidden}
+th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f2937} th{background:#111827;position:sticky;top:0;border-bottom:2px solid var(--acc);font-weight:700;color:#ffffff;text-shadow:0 1px 2px rgba(0,0,0,0.6)}
+.pill{display:inline-block;background:#0b1222;border:1px solid #2b3a59;border-radius:999px;padding:2px 8px;font-size:11px;color:#ffffff;font-weight:500}
+.oktxt{color:#ffffff}.err{color:#ffffff}
+
+/* Deadline Alerts Styles */
+.deadline-alert { padding: 12px; border-radius: 6px; border-left: 4px solid; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 10px; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.deadline-alert.warning { background: rgba(245, 158, 11, 0.15); border-left-color: #f59e0b; color: #92400e; border: 1px solid rgba(245, 158, 11, 0.3); }
+.deadline-alert.danger { background: rgba(239, 68, 68, 0.15); border-left-color: #ef4444; color: #991b1b; border: 1px solid rgba(239, 68, 68, 0.3); }
+.deadline-alert.overdue { background: rgba(220, 38, 38, 0.15); border-left-color: #dc2626; color: #7f1d1d; border: 1px solid rgba(220, 38, 38, 0.3); animation: pulse 2s infinite; }
+.deadline-alert .alert-icon { font-size: 18px; flex-shrink: 0; }
+.deadline-alert .alert-content { flex: 1; }
+.deadline-alert .alert-message { font-weight: 700; margin-bottom: 4px; color: inherit; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+.deadline-alert .alert-date { font-size: 12px; opacity: 0.9; font-weight: 500; }
+.no-alerts { color: #ffffff; font-style: italic; padding: 16px; text-align: center; background: rgba(255,255,255,0.05); border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); }
+@keyframes pulse { 0%, 100% { opacity: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.1); } 50% { opacity: 0.8; box-shadow: 0 2px 8px rgba(0,0,0,0.2); } }
 
 /* Validation error styles */
 .validation-error { background: var(--err); color: white; border: 1px solid #b91c1c; animation: fadeIn 0.3s ease-in; }
-.validation-error h4 { margin: 0 0 8px 0; color: #fecaca; }
+.validation-error h4 { margin: 0 0 8px 0; color: #ffffff; }
 .validation-error ul { margin: 0; padding-left: 20px; }
 .validation-error li { margin-bottom: 4px; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
@@ -43,22 +58,22 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left} th{background
 .search-result-item:hover { background: rgba(255,255,255,0.05); }
 .search-result-item:last-child { border-bottom: none; }
 .search-result-category { font-size: 11px; color: var(--acc); text-transform: uppercase; margin-bottom: 4px; }
-.search-result-title { font-weight: 600; color: #e5e7eb; margin-bottom: 2px; }
-.search-result-details { font-size: 12px; color: #94a3b8; }
-.search-no-results { padding: 20px; text-align: center; color: #94a3b8; }
+.search-result-title { font-weight: 600; color: #ffffff; margin-bottom: 2px; }
+.search-result-details { font-size: 12px; color: #ffffff; }
+.search-no-results { padding: 20px; text-align: center; color: #ffffff; }
 
 /* Gantt Chart styles */
 .gantt-container { border: 1px solid var(--b); border-radius: 8px; overflow: hidden; max-height: 70vh; background: var(--panel); }
 .gantt-header { display: flex; background: #1f2937; border-bottom: 1px solid var(--b); position: sticky; top: 0; z-index: 10; }
-.gantt-resource-column { width: 200px; padding: 12px; font-weight: 600; color: #e5e7eb; border-right: 1px solid var(--b); background: #111827; }
+.gantt-resource-column { width: 200px; padding: 12px; font-weight: 600; color: #ffffff; border-right: 1px solid var(--b); background: #111827; }
 .gantt-timeline { flex: 1; display: flex; position: relative; }
-.gantt-time-slot { flex: 1; padding: 8px 4px; text-align: center; font-size: 11px; color: #94a3b8; border-right: 1px solid rgba(148, 163, 184, 0.2); min-width: 60px; }
+.gantt-time-slot { flex: 1; padding: 8px 4px; text-align: center; font-size: 11px; color: #ffffff; border-right: 1px solid rgba(148, 163, 184, 0.2); min-width: 60px; }
 .gantt-body { max-height: calc(70vh - 50px); overflow-y: auto; }
 .gantt-row { display: flex; border-bottom: 1px solid rgba(148, 163, 184, 0.1); }
 .gantt-row:hover { background: rgba(255,255,255,0.02); }
-.gantt-resource-cell { width: 200px; padding: 12px; border-right: 1px solid var(--b); background: #111827; color: #e5e7eb; font-weight: 500; }
+.gantt-resource-cell { width: 200px; padding: 12px; border-right: 1px solid var(--b); background: #111827; color: #ffffff; font-weight: 500; }
 .gantt-task-cell { flex: 1; position: relative; min-height: 50px; }
-.gantt-task { position: absolute; height: 30px; background: var(--acc); border-radius: 4px; cursor: pointer; display: flex; align-items: center; padding: 0 8px; font-size: 11px; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); border: 2px solid transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 80px; max-width: 200px; }
+.gantt-task { position: absolute; height: 30px; background: var(--acc); border-radius: 4px; cursor: grab; display: flex; align-items: center; padding: 0 8px; font-size: 11px; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); border: 2px solid transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 80px; max-width: 200px; }
 .gantt-task:hover { border-color: #60a5fa; transform: translateY(-1px); }
 .gantt-task.todo { background: #f59e0b; }
 .gantt-task.run { background: #3b82f6; }
@@ -91,7 +106,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left} th{background
 .gantt-dependency-arrow.critical { fill: #ef4444; stroke: #ef4444; }
 
 /* Float indicators */
-.gantt-float-indicator { position: absolute; top: -20px; right: 2px; font-size: 10px; color: #94a3b8; background: rgba(15, 23, 42, 0.8); padding: 2px 4px; border-radius: 2px; white-space: nowrap; }
+.gantt-float-indicator { position: absolute; top: -20px; right: 2px; font-size: 10px; color: #ffffff; background: rgba(15, 23, 42, 0.8); padding: 2px 4px; border-radius: 2px; white-space: nowrap; }
 .gantt-float-indicator.positive { color: #10b981; }
 .gantt-float-indicator.zero { color: #ef4444; font-weight: bold; }
 .gantt-float-indicator.negative { color: #f59e0b; }
@@ -118,6 +133,24 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left} th{background
 .metric-value { font-weight: 600; color: var(--text); }
 
 .empty { text-align: center; color: var(--text-secondary); padding: 20px; font-style: italic; }
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .grid3 { grid-template-columns: 1fr; }
+  .grid2 { grid-template-columns: 1fr; }
+  .row { flex-direction: column; align-items: stretch; }
+  .wrap { padding: 8px; }
+  .card { padding: 10px; margin-bottom: 8px; }
+  .btn { padding: 10px 16px; font-size: 16px; }
+  input, select, textarea { font-size: 16px; padding: 12px 14px; }
+  label { font-size: 14px; }
+  .gantt-resource-column, .gantt-resource-cell { width: 120px; font-size: 12px; }
+  .gantt-time-slot { font-size: 10px; min-width: 40px; }
+  .table { max-height: 40vh; }
+  h3 { font-size: 16px; }
+  h4 { font-size: 14px; }
+  .pill { font-size: 10px; }
+}
 </style>
 </head>
 <body>
@@ -137,6 +170,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left} th{background
     <button class="btn" data-nav="monitor">Monitoring</button>
     <button class="btn" data-nav="mrp">MRP</button>
     <button class="btn" data-nav="wh">Magazyn</button>
+    <button class="btn" data-nav="sync">🔄 Sync</button>
     <button class="btn" data-nav="backup">Backup</button>
     <button class="btn" data-nav="settings">Ustawienia</button>
   </div>
@@ -156,6 +190,11 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left} th{background
       <div class="card"><div>Zlecenia</div><div id="dash-orders" class="pill">0</div></div>
       <div class="card"><div>Procesy</div><div id="dash-proc" class="pill">0</div></div>
       <div class="card"><div>Operacje</div><div id="dash-ops" class="pill">0</div></div>
+    </div>
+
+    <!-- Sekcja powiadomień o terminach -->
+    <div id="deadline-alerts" style="margin-top:16px;">
+      <h4 style="color:#d97706; margin-bottom:8px;">⏰ Powiadomienia o terminach</h4>
     </div>
   </div>
 
@@ -206,6 +245,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left} th{background
   <div><label>Adres montażu</label><input id="o-addr" placeholder="ulica nr, miejscowość"></div>
   <div><label>Kod montażu</label><input id="o-post" placeholder="kod miejsca / 00-000" ></div>
   <div><label>Telefon</label><input id="o-phone" placeholder="+48 600 000 000" pattern="\+?[0-9\s]{6,}" title="Minimum 6 cyfr, opcjonalny '+' na początku"></div>
+  <div><label>Pracownik prowadzący</label><select id="o-lead"><option value="">— wybierz pracownika —</option></select></div>
       <div style="grid-column:1/-1;text-align:right"><button class="btn primary" type="submit">Zapisz</button></div>
     </form>
     <div class="table" style="margin-top:8px">
@@ -296,10 +336,10 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left} th{background
       <input type="hidden" id="as-id">
       <div><label>Typ</label><select id="as-type"><option>montaż</option><option>reklamacja</option></select></div>
       <div><label>Zlecenie</label><select id="as-order"></select></div>
-      <div style="display:none">
-        <input id="as-order-phone" placeholder="phone">
-        <input id="as-order-placecode" placeholder="placecode">
-      </div>
+      <div><label>Pracownik prowadzący</label><input id="as-lead" readonly></div>
+      <div><label>Pracownik montażowy</label><select id="as-employee"><option value="">— wybierz pracownika —</option></select></div>
+      <div><label>Kod montażu</label><input id="as-placecode" placeholder="kod montażu"></div>
+      <div><label>Telefon</label><input id="as-phone" placeholder="telefon"></div>
       <div><label>Status</label><select id="as-status"><option>nowe</option><option>w toku</option><option>zamknięte</option></select></div>
       <div><label>Termin montażu</label><input id="as-install" type="date"></div>
       <div><label>Godzina wyjazdu</label><input id="as-go" type="time"></div>
@@ -319,78 +359,62 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left} th{background
     </div>
     <div class="list" id="mrp-list"></div>
   </div>
+  
   <div class="card hidden" id="p-wh">
     <div class="row" style="justify-content:space-between;margin-bottom:16px">
       <h3>📦 Magazyn</h3>
       <div class="row" style="gap:8px">
-        <button class="btn green" id="btn-add-warehouse">➕ Dodaj pozycję</button>
-        <button class="btn" id="btn-refresh-warehouse">🔄 Odśwież</button>
-        <button class="btn blue" id="btn-export-warehouse">📊 Eksport</button>
+        <button class="btn orange" onclick="toggleOrderFilter()">🔴 Do zamówienia</button>
+        <button class="btn blue" onclick="exportWarehouseToCSV()">📊 Eksportuj CSV</button>
+        <button class="btn green" id="wh-add">➕ Dodaj pozycję</button>
       </div>
     </div>
-
-    <!-- Filtry i wyszukiwanie -->
-    <div class="row" style="gap:16px;margin-bottom:16px;flex-wrap:wrap">
-      <input type="text" id="wh-search" placeholder="🔍 Szukaj pozycji..." style="flex:1;min-width:200px">
-      <select id="wh-category-filter" style="min-width:150px">
-        <option value="">Wszystkie kategorie</option>
-        <option value="materialy">Materiały</option>
-        <option value="okucia">Okucia</option>
-        <option value="farby">Farby i lakiery</option>
-        <option value="narzedzia">Narzędzia</option>
-        <option value="inne">Inne</option>
-      </select>
-      <select id="wh-status-filter" style="min-width:120px">
-        <option value="">Wszystkie stany</option>
-        <option value="dostepny">Dostępny</option>
-        <option value="niski">Niski stan</option>
-        <option value="brak">Brak</option>
-      </select>
-    </div>
-
-    <!-- Statystyki -->
     <div class="row" style="gap:16px;margin-bottom:16px">
-      <div class="card" style="flex:1;padding:12px;background:#f8f9fa">
-        <div style="font-size:24px;font-weight:bold;color:#28a745" id="wh-stat-total">0</div>
-        <div style="color:#666;font-size:12px">Łączna liczba pozycji</div>
-      </div>
-      <div class="card" style="flex:1;padding:12px;background:#f8f9fa">
-        <div style="font-size:24px;font-weight:bold;color:#ffc107" id="wh-stat-low">0</div>
-        <div style="color:#666;font-size:12px">Niski stan</div>
-      </div>
-      <div class="card" style="flex:1;padding:12px;background:#f8f9fa">
-        <div style="font-size:24px;font-weight:bold;color:#dc3545" id="wh-stat-empty">0</div>
-        <div style="color:#666;font-size:12px">Brak na stanie</div>
-      </div>
-      <div class="card" style="flex:1;padding:12px;background:#f8f9fa">
-        <div style="font-size:24px;font-weight:bold;color:#17a2b8" id="wh-stat-value">0 zł</div>
-        <div style="color:#666;font-size:12px">Wartość magazynu</div>
-      </div>
+      <input type="text" id="wh-search" placeholder="🔍 Szukaj pozycji..." style="flex:1">
     </div>
-
-    <!-- Lista pozycji magazynowych -->
     <div class="list" id="wh-list">
-      <div style="text-align:center;padding:40px;color:#999">
-        Brak pozycji w magazynie. Kliknij "Dodaj pozycję" aby rozpocząć.
-      </div>
+      <div style="text-align:center;padding:40px;color:#999">Brak pozycji w magazynie. Kliknij "Dodaj pozycję".</div>
     </div>
   </div>
-  
-  <script>
-  // Szybki test inicjalizacji magazynu
-  console.log('Quick warehouse test - checking if simpleWarehouse is available');
-  if (window.simpleWarehouse) {
-    console.log('Simple warehouse initialization successful');
-  } else {
-    console.log('Simple warehouse not yet available');
-  }
-  </script>
-  
+
+  <div class="card hidden" id="p-sync">
+    <div class="row" style="justify-content:space-between;margin-bottom:16px">
+      <h3>🔄 Synchronizacja z pracownikami</h3>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+      <div class="card" style="text-align: center;">
+        <h4>📤 Eksport zadań</h4>
+        <p style="color: #94a3b8; font-size: 14px; margin: 8px 0;">
+          Wyeksportuj zadania produkcyjne dla aplikacji pracowników
+        </p>
+        <button class="btn green" onclick="exportTasksForWorkers()">📤 Eksportuj zadania</button>
+      </div>
+      <div class="card" style="text-align: center;">
+        <h4>📥 Import potwierdzeń</h4>
+        <p style="color: #94a3b8; font-size: 14px; margin: 8px 0;">
+          Zaimportuj potwierdzenia wykonania zadań od pracowników
+        </p>
+        <button class="btn blue" onclick="importWorkerConfirmations()">📥 Importuj potwierdzenia</button>
+      </div>
+    </div>
+    <div style="margin-top: 16px; padding: 12px; background: rgba(37, 99, 235, 0.1); border-radius: 8px; border-left: 4px solid #2563eb;">
+      <h4 style="margin: 0 0 8px 0; color: #2563eb;">📱 Instrukcja użycia:</h4>
+      <ol style="margin: 0; padding-left: 20px; color: #94a3b8; font-size: 14px;">
+        <li>Otwórz aplikację <code>worker-app.html</code> na urządzeniu pracownika</li>
+        <li>Wyeksportuj zadania i prześlij plik na urządzenie</li>
+        <li>Pracownik potwierdza wykonanie zadań w aplikacji</li>
+        <li>Zaimportuj potwierdzenia z powrotem do systemu głównego</li>
+      </ol>
+    </div>
+  </div>
+
   <div class="card hidden" id="p-backup">
     <div class="row" style="justify-content:space-between;margin-bottom:16px">
       <h3>💾 Backup i Odzyskiwanie</h3>
       <div class="row" style="gap:8px">
         <button class="btn green" id="backup-create">📦 Utwórz backup</button>
+        <button class="btn blue" id="export-data">💾 Eksportuj dane do pliku</button>
+        <button class="btn amber" id="import-data">📁 Importuj dane z pliku</button>
         <button class="btn" id="backup-refresh">🔄 Odśwież listę</button>
         <button class="btn" id="backup-cleanup">🧹 Wyczyść stare</button>
       </div>
@@ -618,6 +642,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left} th{background
       </div>
       <div class="row" style="margin-top:8px;gap:8px">
         <button class="btn green" id="gen-test-data">Zaktualizuj dane testowe</button>
+        <button class="btn blue" id="gen-deadline-test">Dodaj zamówienia testowe</button>
         <button class="btn" id="export-data">Eksportuj dane</button>
         <button class="btn" id="import-data">Importuj dane</button>
         <button class="btn red" id="clear-data">Wyczyść dane</button>
@@ -708,7 +733,6 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left} th{background
 <!-- Wczytanie podstawowych utili oraz UI zanim główny skrypt inline uruchomi diagnostykę -->
 <script src="js/base-utils.js?v=20251005-1400"></script>
 <script src="js/store.js?v=20251005-1400"></script>
-<script src="js/main.js?v=20251005-1400"></script>
 <script src="js/ui.js?v=20251005-1415"></script>
 <script src="js/schedule.js?v=20251005-1500"></script>
 <script src="js/app-helpers.js?v=20251005-1400"></script>
@@ -717,13 +741,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left} th{background
 // System magazynowy zostanie zainicjalizowany później w kodzie
 console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
 
-// Automatyczne renderowanie magazynu - zostanie wykonane później
-setTimeout(() => {
-  if (window.simpleWarehouse) {
-    console.log('Magazyn: Automatyczne renderowanie listy pozycji');
-    window.simpleWarehouse.render();
-  }
-}, 1000);
+// Kod automatycznego renderowania magazynu usunięty
 
 (function(){
   // create on-page developer log panel with visible toggle so user can read logs without DevTools
@@ -1068,7 +1086,7 @@ setTimeout(() => {
     }
   }
 
-  const storeKey='door_v5627_state';
+  const storeKey='door_v50_state';
 
   let state={storage:{mode:'firebase',appId:'doors-demo',userId:'hala-1',fbConfig:{
     "apiKey": "AIzaSyD93UqqsHWoAUBV7g8OVKAnajIfGDX_ZdY",
@@ -1294,6 +1312,13 @@ setTimeout(() => {
   if(!(state.processes && state.processes.length)){
     try{ save(); }catch(e){ console.warn('seed save error', e && e.message); }
   }
+  // seed employees if empty
+  if(!(state.employees && state.employees.length)){
+    state.employees.push({id: 'emp-1', name: 'Jan Kowalski', hoursPerDay: 8, cap: 100, skills: ['montaż'], isProductionWorker: false});
+    state.employees.push({id: 'emp-2', name: 'Anna Nowak', hoursPerDay: 8, cap: 100, skills: ['produkcja'], isProductionWorker: true});
+    state.employees.push({id: 'emp-3', name: 'Piotr Wiśniewski', hoursPerDay: 8, cap: 100, skills: ['montaż'], isProductionWorker: false});
+    state.employees.push({id: 'emp-4', name: 'Maria Zielińska', hoursPerDay: 8, cap: 100, skills: ['produkcja'], isProductionWorker: true});
+  }
   // ensure stored autosave preference exists
   state.storage.autoSaveAssign = state.storage.autoSaveAssign === undefined ? true : !!state.storage.autoSaveAssign;
   // ensure stored spellcheck enforce preference exists (default: true)
@@ -1345,7 +1370,7 @@ setTimeout(() => {
       console.log('[nav] Emergency delegation restore for page:', p);
     }
     const map={dash:'p-dash',tasks:'p-tasks',order:'p-order',proc:'p-proc',opcat:'p-opcat',emp:'p-emp',as:'p-as',
-               map:'p-map',monitor:'p-monitor',mrp:'p-mrp',wh:'p-wh',backup:'p-backup',migr:'p-migr',settings:'p-settings',gantt:'p-gantt',capacity:'p-capacity',reports:'p-reports'};
+               map:'p-map',monitor:'p-monitor',mrp:'p-mrp',wh:'p-wh',sync:'p-sync',backup:'p-backup',migr:'p-migr',settings:'p-settings',gantt:'p-gantt',capacity:'p-capacity',reports:'p-reports'};
     qsa('[id^="p-"]').forEach(el=>el.classList.add('hidden'));
     qs('#'+(map[p]||'p-dash')).classList.remove('hidden');
     state.page=p; save();
@@ -1372,6 +1397,7 @@ setTimeout(() => {
   window.nav=nav;
 
   const handleEvents = async (e) => {
+    console.log('handleEvents called', e.target);
     let t = e.target;
     // AWARYJNE: Ignoruj flagę disableGlobalClickDelegation dla przycisków nawigacji i podstawowych kontrolek
     const isNavigationButton = t.closest && (t.closest('[data-nav]') || t.closest('button') && t.closest('header'));
@@ -1405,6 +1431,7 @@ setTimeout(() => {
           qs('#o-post').value = o.postalCode || '';
           qs('#o-phone').value = o.phone || '';
           qs('#o-proc').value = o.processId || '';
+          qs('#o-lead').value = o.leadEmployeeId || '';
           window.scrollTo({top: 0, behavior: 'smooth'});
           break;
         }
@@ -1602,11 +1629,12 @@ setTimeout(() => {
         if(t.dataset.asEd) {
           const a = state.after.find(x => x.id === t.dataset.asEd); if (!a) return; qs('#as-id').value = a.id;
           qs('#as-type').value = a.type; qs('#as-order').value = a.order || ''; qs('#as-status').value = a.status;
+          qs('#as-employee').value = a.employeeId || '';
           qs('#as-desc').value = a.desc || ''; qs('#as-install').value = a.installDate || '';
           qs('#as-go').value = a.departTime || ''; qs('#as-visit').value = a.visitTime || '';
-          // populate hidden/order-linked fields (phone/placecode)
-          if(qs('#as-order-phone')) qs('#as-order-phone').value = a.phone || '';
-          if(qs('#as-order-placecode')) qs('#as-order-placecode').value = a.postalCode || a.placeCode || '';
+          // populate phone and placecode fields
+          qs('#as-phone').value = a.phone || '';
+          qs('#as-placecode').value = a.postalCode || a.placeCode || '';
           break;
         }
         if(t.dataset.refreshAs) { loadFromDB(); break; }
@@ -1645,8 +1673,7 @@ setTimeout(() => {
         el.__directNavBound = true;
       });
       // Magazyn przyciski
-      const ids=['btn-add-warehouse','btn-refresh-warehouse','btn-export-warehouse'];
-      ids.forEach(id=>{ const b=document.getElementById(id); if(b && !b.__directBound){ b.addEventListener('click', ev=>{ if(window.disableGlobalClickDelegation){ ev.preventDefault(); ev.stopPropagation(); if(id==='btn-add-warehouse' && window.simpleWarehouse) window.simpleWarehouse.showAddItemModal(); if(id==='btn-refresh-warehouse' && window.simpleWarehouse) window.simpleWarehouse.render(); if(id==='btn-export-warehouse' && window.simpleWarehouse) window.simpleWarehouse.exportData(); }}); b.__directBound=true; }});
+      // Kod bezpośrednich listenerów dla magazynu usunięty
       console.log('[rescue] Direct handlers ready');
     }catch(e){ console.warn('[rescue] direct nav error', e); }
   };
@@ -1850,6 +1877,7 @@ setTimeout(() => {
 
   function renderOrderPage(){
     populateProcessSelect();
+    populateLeadSelect();
     const host=qs('#ord-tb'); if(!host) return; host.innerHTML='';
     // show progress column: percent + counts
     (state.orders||[]).slice().reverse().forEach(o=>{
@@ -1998,7 +2026,7 @@ setTimeout(() => {
       const orderObj={id:id||uid(),name:nr,client:qs('#o-client').value||'',model:qs('#o-model').value||'',quantity:parseInt(qs('#o-qty').value||'1',10),
         startDate:qs('#o-start').value||'',endDate:qs('#o-end').value||'',installDate:qs('#o-install').value||'',
         address:qs('#o-addr').value||'',postalCode:qs('#o-post').value||'',phone:qs('#o-phone').value||'',notes:qs('#o-notes').value||'',
-        processId:qs('#o-proc').value||''};
+        processId:qs('#o-proc').value||'',leadEmployeeId:qs('#o-lead').value||''};
       if(id){
         const existing = state.orders.find(x=>x.id===id);
         if(existing){ Object.assign(existing, orderObj); (window.logDev||console.log)('[order-form] updated', id); }
@@ -2097,6 +2125,13 @@ setTimeout(() => {
     const keep=new Set(Array.from(sel.selectedOptions||[]).map(o=>o.value));
     sel.innerHTML='';
     (state.employees||[]).forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=e.name||e.id;if(keep.has(e.id))o.selected=true;sel.appendChild(o);});
+  }
+  function populateLeadSelect(){
+    const sel=qs('#o-lead'); if(!sel) return;
+    const current = sel.value;
+    sel.innerHTML='<option value="">— wybierz pracownika —</option>';
+    (state.employees||[]).forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=e.name||e.id;sel.appendChild(o);});
+    if(current) sel.value = current;
   }
   // Normalize operation numbers (ensure sequential no = 1..N sorted by no)
   function normalizeOpNumbers() {
@@ -2439,7 +2474,7 @@ setTimeout(() => {
               (window.logDev||console.log)('[generateTasksByWorker] appended card innerText', (container && container.innerText)? container.innerText.slice(0,200) : '<empty>');
             });
             container.querySelectorAll('[data-export-emp]').forEach(btn=>btn.addEventListener('click', ()=>{ const id = btn.getAttribute('data-export-emp'); exportCSVForEmployee(id); }));
-            container.querySelectorAll('[data-send-emp]').forEach(btn=>btn.addEventListener('click', ()=>{ const id = btn.getAttribute('data-send-emp'); const txt = buildEmployeeText(id); copyToClipboard(txt); // also trigger download
+            container.querySelectorAll('[data-send-emp]').forEach(btn=>btn.addEventListener('click', ()=>{ const id = btn.getAttribute('data-send-emp'); console.log('Wyślij clicked for emp:', id); const txt = buildEmployeeText(id); copyToClipboard(txt); // also trigger download
               const a=document.createElement('a'); const blob=new Blob([txt],{type:'text/plain'}); const url=URL.createObjectURL(blob); a.href=url; a.download = `tasks_${id}.txt`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
             }));
             
@@ -3775,6 +3810,46 @@ setTimeout(() => {
     }
   });
 
+  qs('#export-data').addEventListener('click', () => {
+    const dataStr = JSON.stringify(state, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `doors-planner-data-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    alert('Dane zostały wyeksportowane do pliku!');
+  });
+
+  qs('#import-data').addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const importedData = JSON.parse(e.target.result);
+          if (confirm('Czy na pewno chcesz zaimportować dane? To nadpisze obecne dane.')) {
+            Object.assign(state, importedData);
+            save();
+            location.reload(); // Reload to apply changes
+          }
+        } catch (err) {
+          alert('Błąd podczas importu danych: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  });
+
   qs('#backup-refresh').addEventListener('click', () => {
     renderBackupList();
     updateBackupStats();
@@ -3846,6 +3921,23 @@ setTimeout(() => {
       progressEl.classList.add('hidden');
     }
   }
+
+  function buildEmployeeText(empId){
+    const emp = (state.employees||[]).find(e=>e.id===empId) || {id:empId,name:empId};
+    const lines = [];
+    lines.push(`${emp.name} — Zadania`);
+    lines.push(`Data: ${new Date().toLocaleDateString()}`);
+    lines.push('');
+    const tasks = [];
+    (state.processes||[]).forEach(proc=>{ (proc.operations||[]).forEach(op=>{ if(op.assignee && (op.assignee.id||op.assignee)===empId){ tasks.push({title:op.name,ctx:proc.name,time:op.time||0}); } }); });
+    (state.tasks||[]).forEach(t=>{ const as = t.assignees || (t.assignee ? [t.assignee] : []); if(Array.isArray(as) && as.some(a=> (a.id||a)===empId)){ tasks.push({title:t.opName,ctx:(state.orders||[]).find(o=>o.id===t.orderId)?.name||t.orderId,time:t.estMin||t.elapsedMin||0}); } });
+    if(tasks.length===0){ lines.push('Brak przypisanych zadań.'); }
+    else{ tasks.forEach((tk,i)=>{ lines.push(`${i+1}. ${tk.title} — ${tk.ctx} — ${tk.time}m`); }); }
+    lines.push(''); lines.push('Powodzenia!');
+    return lines.join('\n');
+  }
+
+  function copyToClipboard(text){ if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).catch(()=>{ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }); } else { const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); } }
 
   function renderReports(){
     showReportsProgress(true, 'Przygotowywanie danych...', 10);
@@ -4128,10 +4220,22 @@ setTimeout(() => {
   
   function renderASPage(){
   const sel=qs('#as-order'); if(sel){ sel.innerHTML=''; (state.orders||[]).forEach(o=>{ const opt=document.createElement('option'); opt.value=o.id; opt.textContent=(o.name?(''+o.name):o.id); sel.appendChild(opt); });
+      // populate employee select
+      const empSel=qs('#as-employee'); if(empSel){ empSel.innerHTML='<option value="">— wybierz pracownika —</option>'; (state.employees||[]).forEach(e=>{ const opt=document.createElement('option'); opt.value=e.id; opt.textContent=e.name||e.id; empSel.appendChild(opt); }); }
       // when order selection changes, copy phone/placecode automatically
       sel.addEventListener('change',()=>{
         const oid = sel.value; const ord = (state.orders||[]).find(x=>x.id===oid) || {};
-        if(ord){ if(qs('#as-order-phone')) qs('#as-order-phone').value = ord.phone || ord.orderPhone || ''; if(qs('#as-order-placecode')) qs('#as-order-placecode').value = ord.postalCode || ord.post || ''; }
+        if(ord){
+          // automatycznie wypełnij kod montażu i telefon z zlecenia
+          qs('#as-placecode').value = ord.postalCode || ord.post || '';
+          qs('#as-phone').value = ord.phone || ord.orderPhone || '';
+          // pozostałe pola jak wcześniej
+          const leadEmp = (state.employees||[]).find(e=>e.id===ord.leadEmployeeId);
+          qs('#as-lead').value = leadEmp ? leadEmp.name : '';
+          qs('#as-desc').value = ord.notes || '';
+          qs('#as-install').value = ord.installDate || '';
+          qs('#as-employee').value = '';
+        }
       });
     }
     const host=qs('#as-list'); if(!host) return; host.innerHTML='';
@@ -4139,24 +4243,39 @@ setTimeout(() => {
       const d=document.createElement('div'); d.className='card';
       const orderObj = (state.orders||[]).find(o=>o.id===a.order) || {};
       const placeCode = orderObj.placeCode || orderObj.placecode || a.postalCode || '';
+      const empName = a.employeeId ? ((state.employees||[]).find(e=>e.id===a.employeeId)?.name || a.employeeId) : '-';
       d.innerHTML=`<div class="row" style="justify-content:space-between"><div><b>${a.type}</b> • ${a.status} • ${orderObj.name||a.order||''}
       <div class="muted">Montaż: ${a.installDate||'-'} • wyjazd: ${a.departTime||'-'} • wizyta: ${a.visitTime||'-'}</div>
-      <div class="muted">Kod miejsca: ${placeCode || '-'}</div>
+      <div class="muted">Kod miejsca: ${placeCode || '-'} • Pracownik: ${empName}</div>
       <div class="muted">${a.desc||''}</div></div><div><button class="btn" data-as-ed="${a.id}">Edytuj</button> <button class="btn red" data-as-del="${a.id}">Usuń</button></div></div>`;
       host.appendChild(d);
     });
   }
   qs('#as-form').addEventListener('submit',(ev)=>{
-    ev.preventDefault(); const id=qs('#as-id').value||uid(); const type=qs('#as-type').value; const order=qs('#as-order').value||''; const status=qs('#as-status').value; const desc=qs('#as-desc').value||''; const install=qs('#as-install').value||''; const depart=qs('#as-go').value||''; const visit=qs('#as-visit').value||'';
-    // copy phone/placecode from selected order if present
-    const orderObj = (state.orders||[]).find(o=>o.id===order) || {};
-    const asPhone = qs('#as-order-phone')?qs('#as-order-phone').value:(orderObj.phone||orderObj.orderPhone||'');
-    const asPlace = qs('#as-order-placecode')?qs('#as-order-placecode').value:(orderObj.placeCode||orderObj.placecode||'');
-    const ex=state.after.find(x=>x.id===id); const payload={id,type,order,status,desc,installDate:install,departTime:depart,visitTime:visit,phone:asPhone,postalCode:asPlace};
+    ev.preventDefault(); const id=qs('#as-id').value||uid(); const type=qs('#as-type').value; const order=qs('#as-order').value||''; const status=qs('#as-status').value; const desc=qs('#as-desc').value||''; const install=qs('#as-install').value||''; const depart=qs('#as-go').value||''; const visit=qs('#as-visit').value||''; const employeeId=qs('#as-employee').value||'';
+    // get phone and placecode from form fields
+    const asPhone = qs('#as-phone').value || '';
+    const asPlace = qs('#as-placecode').value || '';
+    const ex=state.after.find(x=>x.id===id); const payload={id,type,order,status,desc,installDate:install,departTime:depart,visitTime:visit,phone:asPhone,postalCode:asPlace,employeeId};
     if(ex) Object.assign(ex,payload); else state.after.push(payload);
     // optional immediate save after AS save
     maybeAutoSave('as-save');
     save(); ev.target.reset(); renderASPage();
+    // if employee assigned and is production worker, block time
+    if(employeeId){
+      const emp = (state.employees||[]).find(e=>e.id===employeeId);
+      if(emp && emp.isProductionWorker && install && depart && visit){
+        const installDate = new Date(install);
+        const [departH, departM] = depart.split(':').map(Number);
+        const [visitH, visitM] = visit.split(':').map(Number);
+        const start = new Date(installDate); start.setHours(departH, departM, 0, 0);
+        const end = new Date(installDate); end.setHours(visitH, visitM, 0, 0);
+        const blockTask = { id: uid(), operationId: 'montaż-block', employeeId, startPlanned: start.getTime(), endPlanned: end.getTime(), status: 'run', orderId: order };
+        state.tasks.push(blockTask);
+        save();
+        renderGantt();
+      }
+    }
   });
 
   function renderMRPPage(){
@@ -4180,23 +4299,6 @@ setTimeout(() => {
           });
         }
       }
-
-      function buildEmployeeText(empId){
-        const emp = (state.employees||[]).find(e=>e.id===empId) || {id:empId,name:empId};
-        const lines = [];
-        lines.push(`${emp.name} — Zadania`);
-        lines.push(`Data: ${new Date().toLocaleDateString()}`);
-        lines.push('');
-        const tasks = [];
-        (state.processes||[]).forEach(proc=>{ (proc.operations||[]).forEach(op=>{ if(op.assignee && (op.assignee.id||op.assignee)===empId){ tasks.push({title:op.name,ctx:proc.name,time:op.time||0}); } }); });
-        (state.tasks||[]).forEach(t=>{ const as = t.assignees || (t.assignee ? [t.assignee] : []); if(Array.isArray(as) && as.some(a=> (a.id||a)===empId)){ tasks.push({title:t.opName,ctx:(state.orders||[]).find(o=>o.id===t.orderId)?.name||t.orderId,time:t.estMin||t.elapsedMin||0}); } });
-        if(tasks.length===0){ lines.push('Brak przypisanych zadań.'); }
-        else{ tasks.forEach((tk,i)=>{ lines.push(`${i+1}. ${tk.title} — ${tk.ctx} — ${tk.time}m`); }); }
-        lines.push(''); lines.push('Powodzenia!');
-        return lines.join('\n');
-      }
-
-      function copyToClipboard(text){ if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).catch(()=>{ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }); } else { const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); } }
     });
 
     if (mrp.size === 0) {
@@ -4625,7 +4727,9 @@ setTimeout(() => {
     });
 
     function handleDragStart(e) {
-      draggedTask = e.target;
+      draggedTask = e.target.closest('.gantt-task');
+      if (!draggedTask) return;
+
       draggedTask.classList.add('dragging');
 
       // Calculate offset for smooth dragging
@@ -4665,8 +4769,10 @@ setTimeout(() => {
 
       if (!draggedTask || !dropZone) return;
 
-      const taskId = draggedTask.dataset.taskId;
+      const taskId = draggedTask.getAttribute('data-task-id');
       const newDate = calculateDropDate(e.clientX);
+
+      console.log('Drop:', taskId, newDate, e.clientX);
 
       if (newDate && taskId) {
         updateTaskDate(taskId, newDate);
@@ -4690,10 +4796,17 @@ setTimeout(() => {
     }
 
     function createDropZone(x, y) {
+      const timeline = qs('#gantt-timeline');
+      const timelineWidth = timeline.getBoundingClientRect().width;
+      const viewMode = qs('#gantt-view').value || 'week';
+      const daysCount = viewMode === 'week' ? 7 : 30;
+      const slotWidth = timelineWidth / daysCount;
+
       dropZone = document.createElement('div');
       dropZone.className = 'gantt-drop-zone';
-      dropZone.style.width = draggedTask.offsetWidth + 'px';
+      dropZone.style.width = slotWidth + 'px';
       dropZone.style.height = draggedTask.offsetHeight + 'px';
+      dropZone.addEventListener('drop', handleDrop);
       document.body.appendChild(dropZone);
       updateDropZone(x, y);
     }
@@ -4735,7 +4848,9 @@ setTimeout(() => {
       const startDate = getGanttStartDate();
 
       const newDate = new Date(startDate);
-      newDate.setDate(startDate.getDate() + dayIndex);
+      newDate.setDate(startDate.getDate() - dayIndex);
+
+      console.log('CalculateDropDate:', clientX, timelineRect.left, relativeX, slotWidth, dayIndex, startDate.toISOString(), newDate.toISOString());
 
       return newDate.getTime();
     }
@@ -4758,8 +4873,9 @@ setTimeout(() => {
       const durationMs = (task.estMin || 60) * 60 * 1000; // Convert minutes to milliseconds
       task.endPlanned = newTimestamp + durationMs;
 
+      console.log('Updated task', taskId, 'to', new Date(newTimestamp).toLocaleDateString('pl-PL'), 'old was', task.startPlanned ? new Date(task.startPlanned).toLocaleDateString('pl-PL') : 'none');
+
       save();
-      console.log('Task date updated:', taskId, new Date(newTimestamp).toLocaleDateString('pl-PL'));
     }
 
     function getGanttStartDate() {
@@ -5487,389 +5603,9 @@ setTimeout(() => {
   }catch(e){console.warn('spellcheck/lang init error', e);} 
 })();
 
-// === MAGAZYN ===
-console.log('🔥 WAREHOUSE SECTION STARTED 🔥');
-alert('WAREHOUSE CODE EXECUTING!');
+// Kod magazynu usunięty
 
-// Prosty magazyn - funkcyjne podejście
-window.simpleWarehouse = {
-  items: [
-    {
-      id: 'wh_001',
-      name: 'Płyta MDF 18mm',
-      category: 'materialy',
-      quantity: 25,
-      unit: 'szt',
-      minQuantity: 10,
-      price: 89.50,
-      supplier: 'Producent A',
-      location: 'Regał A1',
-      description: 'Płyta MDF do produkcji drzwi'
-    },
-    {
-      id: 'wh_002', 
-      name: 'Zawiasy 3D',
-      category: 'okucia',
-      quantity: 150,
-      unit: 'szt',
-      minQuantity: 50,
-      price: 12.30,
-      supplier: 'Okucia Sp. z o.o.',
-      location: 'Regał B2',
-      description: 'Zawiasy regulowane 3D do drzwi'
-    },
-    {
-      id: 'wh_003',
-      name: 'Lakier bezbarwny',
-      category: 'farby',
-      quantity: 8,
-      unit: 'l',
-      minQuantity: 15,
-      price: 45.80,
-      supplier: 'Farby Premium',
-      location: 'Magazyn farb',
-      description: 'Lakier poliuretanowy bezbarwny'
-    }
-  ],
-
-  render: function() {
-    console.log('Simple warehouse render called');
-    const listEl = document.getElementById('wh-list');
-    if (!listEl) {
-      console.error('wh-list element not found');
-      return;
-    }
-
-    const filteredItems = this.getFilteredItems();
-    console.log('Filtered items:', filteredItems.length);
-
-    if (filteredItems.length === 0) {
-      listEl.innerHTML = '<div style="text-align:center;padding:40px;color:#999">Brak pozycji spełniających kryteria.</div>';
-      this.updateStats();
-      return;
-    }
-
-    listEl.innerHTML = filteredItems.map(item => this.renderItem(item)).join('');
-    this.updateStats();
-    console.log('Simple warehouse rendered successfully');
-  },
-
-  getFilteredItems: function() {
-    const search = document.getElementById('wh-search')?.value.toLowerCase() || '';
-    const category = document.getElementById('wh-category-filter')?.value || '';
-    const status = document.getElementById('wh-status-filter')?.value || '';
-
-    return this.items.filter(item => {
-      const matchesSearch = item.name.toLowerCase().includes(search) || 
-                           item.description.toLowerCase().includes(search);
-      const matchesCategory = !category || item.category === category;
-      
-      let matchesStatus = true;
-      if (status === 'dostepny') matchesStatus = item.quantity > item.minQuantity;
-      else if (status === 'niski') matchesStatus = item.quantity <= item.minQuantity && item.quantity > 0;
-      else if (status === 'brak') matchesStatus = item.quantity === 0;
-
-      return matchesSearch && matchesCategory && matchesStatus;
-    });
-  },
-
-  renderItem: function(item) {
-    const statusClass = item.quantity === 0 ? 'red' : 
-                       item.quantity <= item.minQuantity ? 'orange' : 'green';
-    
-    const statusText = item.quantity === 0 ? 'BRAK' :
-                      item.quantity <= item.minQuantity ? 'NISKI STAN' : 'DOSTĘPNY';
-
-    return `
-      <div class="card" style="margin-bottom:8px;border-left:4px solid ${statusClass === 'red' ? '#dc3545' : statusClass === 'orange' ? '#ffc107' : '#28a745'}">
-        <div class="row" style="justify-content:space-between;align-items:center">
-          <div style="flex:1">
-            <div style="font-weight:bold;font-size:16px">${item.name}</div>
-            <div style="color:#666;font-size:14px;margin:4px 0">${item.description}</div>
-            <div class="row" style="gap:16px;font-size:12px;color:#888">
-              <span>📦 ${item.location}</span>
-              <span>🏢 ${item.supplier}</span>
-              <span>🏷️ ${this.getCategoryName(item.category)}</span>
-            </div>
-          </div>
-          <div style="text-align:center;min-width:120px">
-            <div style="font-size:20px;font-weight:bold;color:${statusClass === 'red' ? '#dc3545' : statusClass === 'orange' ? '#ffc107' : '#28a745'}">
-              ${item.quantity} ${item.unit}
-            </div>
-            <div style="font-size:10px;color:#666">min: ${item.minQuantity} ${item.unit}</div>
-            <div style="font-size:12px;color:${statusClass === 'red' ? '#dc3545' : statusClass === 'orange' ? '#ffc107' : '#28a745'};font-weight:bold">
-              ${statusText}
-            </div>
-          </div>
-          <div style="text-align:right;min-width:100px">
-            <div style="font-size:16px;font-weight:bold">${item.price.toFixed(2)} zł</div>
-            <div style="font-size:12px;color:#666">za ${item.unit}</div>
-            <div style="font-size:14px;color:#888">${(item.quantity * item.price).toFixed(2)} zł</div>
-          </div>
-          <div class="row" style="gap:4px;margin-left:16px">
-            <button class="btn small" onclick="editWarehouseItem('${item.id}')">✏️</button>
-            <button class="btn small blue" onclick="adjustWarehouseQuantity('${item.id}')">📊</button>
-            <button class="btn small red" onclick="deleteWarehouseItem('${item.id}')">🗑️</button>
-          </div>
-        </div>
-      </div>
-    `;
-  },
-
-  getCategoryName: function(category) {
-    const categories = {
-      'materialy': 'Materiały',
-      'okucia': 'Okucia', 
-      'farby': 'Farby i lakiery',
-      'narzedzia': 'Narzędzia',
-      'inne': 'Inne'
-    };
-    return categories[category] || category;
-  },
-
-  updateStats: function() {
-    const total = this.items.length;
-    const low = this.items.filter(item => item.quantity <= item.minQuantity && item.quantity > 0).length;
-    const empty = this.items.filter(item => item.quantity === 0).length;
-    const value = this.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
-
-    document.getElementById('wh-stat-total').textContent = total;
-    document.getElementById('wh-stat-low').textContent = low;
-    document.getElementById('wh-stat-empty').textContent = empty;
-    document.getElementById('wh-stat-value').textContent = `${value.toFixed(2)} zł`;
-  },
-
-  showAddItemModal: function() {
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5); z-index: 10000; display: flex;
-      align-items: center; justify-content: center;
-    `;
-    
-    modal.innerHTML = `
-      <div style="background: white; padding: 20px; border-radius: 10px; max-width: 500px; width: 90%;">
-        <h3>Dodaj nową pozycję magazynową</h3>
-        <form id="add-item-form">
-          <div style="margin-bottom: 10px;">
-            <label>Nazwa: <input type="text" name="name" required style="width: 100%; padding: 5px;"></label>
-          </div>
-          <div style="margin-bottom: 10px;">
-            <label>Kategoria: 
-              <select name="category" style="width: 100%; padding: 5px;">
-                <option value="materialy">Materiały</option>
-                <option value="okucia">Okucia</option>
-                <option value="farby">Farby i lakiery</option>
-                <option value="narzedzia">Narzędzia</option>
-                <option value="inne">Inne</option>
-              </select>
-            </label>
-          </div>
-          <div style="margin-bottom: 10px;">
-            <label>Ilość: <input type="number" name="quantity" min="0" step="0.01" required style="width: 100%; padding: 5px;"></label>
-          </div>
-          <div style="margin-bottom: 10px;">
-            <label>Jednostka: <input type="text" name="unit" value="szt" required style="width: 100%; padding: 5px;"></label>
-          </div>
-          <div style="margin-bottom: 10px;">
-            <label>Stan minimalny: <input type="number" name="minQuantity" min="0" step="0.01" required style="width: 100%; padding: 5px;"></label>
-          </div>
-          <div style="margin-bottom: 10px;">
-            <label>Cena: <input type="number" name="price" min="0" step="0.01" required style="width: 100%; padding: 5px;"></label>
-          </div>
-          <div style="margin-bottom: 10px;">
-            <label>Dostawca: <input type="text" name="supplier" style="width: 100%; padding: 5px;"></label>
-          </div>
-          <div style="margin-bottom: 10px;">
-            <label>Lokalizacja: <input type="text" name="location" style="width: 100%; padding: 5px;"></label>
-          </div>
-          <div style="margin-bottom: 10px;">
-            <label>Opis: <textarea name="description" style="width: 100%; padding: 5px; height: 60px;"></textarea>
-          </div>
-          <div style="text-align: right;">
-            <button type="button" onclick="this.closest('div').parentElement.remove()">Anuluj</button>
-            <button type="submit">Dodaj</button>
-          </div>
-        </form>
-      </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    const form = modal.querySelector('#add-item-form');
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const formData = new FormData(form);
-      const newItem = {
-        id: 'wh_' + Date.now(),
-        name: formData.get('name'),
-        category: formData.get('category'),
-        quantity: parseFloat(formData.get('quantity')),
-        unit: formData.get('unit'),
-        minQuantity: parseFloat(formData.get('minQuantity')),
-        price: parseFloat(formData.get('price')),
-        supplier: formData.get('supplier') || '',
-        location: formData.get('location') || '',
-        description: formData.get('description') || ''
-      };
-      
-      this.items.push(newItem);
-      this.render();
-      modal.remove();
-    });
-  },
-
-  editItem: function(id) {
-    alert('Funkcja edycji pozycji: ' + id);
-  },
-
-  adjustQuantity: function(id) {
-    alert('Funkcja korekty stanu: ' + id);
-  },
-
-  deleteItem: function(id) {
-    if (confirm('Czy na pewno chcesz usunąć tę pozycję?')) {
-      this.items = this.items.filter(item => item.id !== id);
-      this.render();
-    }
-  },
-
-  exportData: function() {
-    alert('Funkcja eksportu - w wersji uproszczonej');
-  }
-};
-
-console.log('Simple warehouse created:', window.simpleWarehouse);
-
-// Funkcja do konfiguracji przycisków magazynu
-function setupWarehouseButtons() {
-  console.log('=== WAREHOUSE BUTTONS SETUP ===');
-  console.log('simpleWarehouse available:', !!window.simpleWarehouse);
-  
-  const addBtn = document.getElementById('btn-add-warehouse');
-  const refreshBtn = document.getElementById('btn-refresh-warehouse');
-  const exportBtn = document.getElementById('btn-export-warehouse');
-  
-  console.log('Found buttons:', {
-    addBtn: !!addBtn,
-    refreshBtn: !!refreshBtn,
-    exportBtn: !!exportBtn
-  });
-  
-  if (addBtn) {
-    console.log('Setting up add button');
-    // Usuń poprzednie listenery
-    addBtn.onclick = null;
-    addBtn.addEventListener('click', (e) => {
-      console.log('🔥 ADD BUTTON CLICKED!');
-      // Nie blokujemy propagacji jeśli delegacja jest włączona
-      if (window.disableGlobalClickDelegation) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      if (window.simpleWarehouse) {
-        console.log('Calling showAddItemModal');
-        window.simpleWarehouse.showAddItemModal();
-      } else {
-        console.error('simpleWarehouse not available');
-        alert('System magazynowy nie jest dostępny');
-      }
-    });
-    console.log('✅ Add button configured');
-  } else {
-    console.error('❌ Add button not found!');
-  }
-  
-  if (refreshBtn) {
-    console.log('Setting up refresh button');
-    refreshBtn.onclick = null;
-    refreshBtn.addEventListener('click', (e) => {
-      console.log('🔥 REFRESH BUTTON CLICKED!');
-      // Nie blokujemy propagacji jeśli delegacja jest włączona
-      if (window.disableGlobalClickDelegation) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      if (window.simpleWarehouse) {
-        console.log('Calling render');
-        window.simpleWarehouse.render();
-      } else {
-        console.error('simpleWarehouse not available');
-        alert('System magazynowy nie jest dostępny');
-      }
-    });
-    console.log('✅ Refresh button configured');
-  } else {
-    console.error('❌ Refresh button not found!');
-  }
-  
-  if (exportBtn) {
-    console.log('Setting up export button');
-    exportBtn.onclick = null;
-    exportBtn.addEventListener('click', (e) => {
-      console.log('🔥 EXPORT BUTTON CLICKED!');
-      // Nie blokujemy propagacji jeśli delegacja jest włączona
-      if (window.disableGlobalClickDelegation) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      if (window.simpleWarehouse) {
-        console.log('Calling exportData');
-        window.simpleWarehouse.exportData();
-      } else {
-        console.error('simpleWarehouse not available');
-        alert('System magazynowy nie jest dostępny');
-      }
-    });
-    console.log('✅ Export button configured');
-  } else {
-    console.error('❌ Export button not found!');
-  }
-
-  // Konfiguracja filtrów
-  const searchInput = document.getElementById('wh-search');
-  const categoryFilter = document.getElementById('wh-category-filter');
-  const statusFilter = document.getElementById('wh-status-filter');
-
-  console.log('Setting up filters:', {
-    searchInput: !!searchInput,
-    categoryFilter: !!categoryFilter,
-    statusFilter: !!statusFilter
-  });
-
-  if (searchInput) {
-    searchInput.addEventListener('input', () => {
-      console.log('Search input changed');
-      filterWarehouse();
-    });
-  }
-
-  if (categoryFilter) {
-    categoryFilter.addEventListener('change', () => {
-      console.log('Category filter changed');
-      filterWarehouse();
-    });
-  }
-
-  if (statusFilter) {
-    statusFilter.addEventListener('change', () => {
-      console.log('Status filter changed');
-      filterWarehouse();
-    });
-  }
-
-  console.log('✅ Filters configured');
-}
-
-// Próbuj skonfigurować przyciski natychmiast
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', setupWarehouseButtons);
-} else {
-  setupWarehouseButtons();
-}
-
-// Backup - skonfiguruj ponownie po 1 sekundzie
-setTimeout(setupWarehouseButtons, 1000);
+// Kod przycisków magazynu usunięty
 
 // Automatyczne renderowanie magazynu
 setTimeout(() => {
@@ -5966,35 +5702,7 @@ function exportWarehouseData() {
   }
 }
 
-function editWarehouseItem(id) {
-  console.log('editWarehouseItem called for:', id);
-  
-  if (window.simpleWarehouse) {
-    window.simpleWarehouse.editItem(id);
-  } else {
-    console.error('simpleWarehouse not found');
-  }
-}
-
-function adjustWarehouseQuantity(id) {
-  console.log('adjustWarehouseQuantity called for:', id);
-  
-  if (window.simpleWarehouse) {
-    window.simpleWarehouse.adjustQuantity(id);
-  } else {
-    console.error('simpleWarehouse not found');
-  }
-}
-
-function deleteWarehouseItem(id) {
-  console.log('deleteWarehouseItem called for:', id);
-  
-  if (window.simpleWarehouse) {
-    window.simpleWarehouse.deleteItem(id);
-  } else {
-    console.error('simpleWarehouse not found');
-  }
-}
+// Funkcje magazynu usunięte
 
 function filterWarehouse() {
   console.log('filterWarehouse called');
@@ -6005,50 +5713,488 @@ function filterWarehouse() {
     console.error('simpleWarehouse not found');
   }
 }
+// Kod DOMContentLoaded dla magazynu usunięty
 
-function filterWarehouse() {
-  console.log('filterWarehouse called');
-  
-  if (window.simpleWarehouse) {
-    window.simpleWarehouse.render();
+function saveWarehouseToStorage() {
+  localStorage.setItem('warehouseItems', JSON.stringify(window.warehouseItems));
+}
+
+function loadWarehouseFromStorage() {
+  const stored = localStorage.getItem('warehouseItems');
+  if (stored) {
+    window.warehouseItems = JSON.parse(stored);
   } else {
-    console.error('simpleWarehouse not found');
+    window.warehouseItems = [];
   }
 }
-// Renderowanie magazynu gdy sekcja jest aktywna
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('DOM Content Loaded - setting up warehouse observers');
-  
-  // Sprawdź, czy magazyn jest dostępny
-  console.log('Checking simpleWarehouse availability...');
-  console.log('typeof simpleWarehouse:', typeof window.simpleWarehouse);
-  
-  // Natychmiastowe renderowanie jeśli sekcja magazynu jest aktywna
-  setTimeout(() => {
-    const whSection = document.getElementById('p-wh');
-    console.log('Checking warehouse section:', whSection, 'hidden:', whSection?.classList.contains('hidden'));
-    if (whSection && !whSection.classList.contains('hidden')) {
-      console.log('Warehouse section is visible, rendering...');
-      if (window.simpleWarehouse) {
-        window.simpleWarehouse.render();
-      } else {
-        console.log('simpleWarehouse not available yet');
+
+function showEditWarehouseModal(index) {
+  const item = window.warehouseItems[index];
+  if (!item) return;
+
+  const content = `
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div>
+        <label style="display: block; margin-bottom: 4px; font-weight: bold;">Nazwa pozycji:</label>
+        <input type="text" id="wh-edit-modal-name" value="${item.name}" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+      </div>
+      <div style="display: flex; gap: 16px;">
+        <div style="flex: 1;">
+          <label style="display: block; margin-bottom: 4px; font-weight: bold;">Ilość:</label>
+          <input type="number" id="wh-edit-modal-quantity" value="${item.quantity}" min="0" step="0.01" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+        <div style="flex: 1;">
+          <label style="display: block; margin-bottom: 4px; font-weight: bold;">Jednostka:</label>
+          <select id="wh-edit-modal-unit" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            <option value="szt" ${item.unit === 'szt' ? 'selected' : ''}>szt</option>
+            <option value="kg" ${item.unit === 'kg' ? 'selected' : ''}>kg</option>
+            <option value="m" ${item.unit === 'm' ? 'selected' : ''}>m</option>
+            <option value="m²" ${item.unit === 'm²' ? 'selected' : ''}>m²</option>
+            <option value="m³" ${item.unit === 'm³' ? 'selected' : ''}>m³</option>
+            <option value="l" ${item.unit === 'l' ? 'selected' : ''}>l</option>
+            <option value="opak" ${item.unit === 'opak' ? 'selected' : ''}>opak</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 4px; font-weight: bold;">Cena (PLN):</label>
+        <input type="number" id="wh-edit-modal-price" value="${item.price}" min="0" step="0.01" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 4px; font-weight: bold;">Stan minimalny:</label>
+        <input type="number" id="wh-edit-modal-min-stock" value="${item.minStock || 0}" min="0" step="0.01" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        <small style="color: #666; font-size: 12px;">Poniżej tego poziomu pozycja będzie oznaczona do zamówienia</small>
+      </div>
+    </div>
+  `;
+
+  showModal('✏️ Edytuj pozycję', content, [
+    {
+      text: 'Anuluj',
+      action: () => {}
+    },
+    {
+      text: 'Zapisz',
+      action: () => {
+        const name = document.getElementById('wh-edit-modal-name').value.trim();
+        const quantity = parseFloat(document.getElementById('wh-edit-modal-quantity').value);
+        const unit = document.getElementById('wh-edit-modal-unit').value;
+        const price = parseFloat(document.getElementById('wh-edit-modal-price').value);
+        const minStock = parseFloat(document.getElementById('wh-edit-modal-min-stock').value) || 0;
+
+        if (!name) {
+          alert('Nazwa pozycji jest wymagana!');
+          return;
+        }
+
+        if (isNaN(quantity) || quantity < 0) {
+          alert('Podaj prawidłową ilość!');
+          return;
+        }
+
+        if (isNaN(price) || price < 0) {
+          alert('Podaj prawidłową cenę!');
+          return;
+        }
+
+        if (isNaN(minStock) || minStock < 0) {
+          alert('Podaj prawidłowy stan minimalny!');
+          return;
+        }
+
+        window.warehouseItems[index] = { name, quantity, unit, price, minStock };
+        saveWarehouseToStorage();
+        renderWarehouse();
       }
     }
-  }, 100);
+  ]);
+}
 
-  // Observer dla przyszłych zmian
-  const observer = new MutationObserver(() => {
-    const whSection = document.getElementById('p-wh');
-    if (whSection && !whSection.classList.contains('hidden')) {
-      console.log('Warehouse section became visible, rendering...');
-      if (window.simpleWarehouse) {
-        window.simpleWarehouse.render();
+// Rozszerzony magazyn z edycją
+function editWarehouseItem(index) {
+  showEditWarehouseModal(index);
+}
+
+function deleteWarehouseItem(index) {
+  if (confirm('Usunąć pozycję?')) {
+    window.warehouseItems.splice(index, 1);
+    saveWarehouseToStorage();
+    renderWarehouse();
+  }
+}
+
+function showAddWarehouseModal() {
+  const content = `
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div>
+        <label style="display: block; margin-bottom: 4px; font-weight: bold;">Nazwa pozycji:</label>
+        <input type="text" id="wh-modal-name" placeholder="np. Deska sosnowa 2x4" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+      </div>
+      <div style="display: flex; gap: 16px;">
+        <div style="flex: 1;">
+          <label style="display: block; margin-bottom: 4px; font-weight: bold;">Ilość:</label>
+          <input type="number" id="wh-modal-quantity" placeholder="0" min="0" step="0.01" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+        <div style="flex: 1;">
+          <label style="display: block; margin-bottom: 4px; font-weight: bold;">Jednostka:</label>
+          <select id="wh-modal-unit" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            <option value="szt">szt</option>
+            <option value="kg">kg</option>
+            <option value="m">m</option>
+            <option value="m²">m²</option>
+            <option value="m³">m³</option>
+            <option value="l">l</option>
+            <option value="opak">opak</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 4px; font-weight: bold;">Cena (PLN):</label>
+        <input type="number" id="wh-modal-price" placeholder="0.00" min="0" step="0.01" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+      </div>
+      <div>
+        <label style="display: block; margin-bottom: 4px; font-weight: bold;">Stan minimalny:</label>
+        <input type="number" id="wh-modal-min-stock" placeholder="0" min="0" step="0.01" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        <small style="color: #666; font-size: 12px;">Poniżej tego poziomu pozycja będzie oznaczona do zamówienia</small>
+      </div>
+    </div>
+  `;
+
+  showModal('➕ Dodaj pozycję do magazynu', content, [
+    {
+      text: 'Anuluj',
+      action: () => {}
+    },
+    {
+      text: 'Dodaj',
+      action: () => {
+        const name = document.getElementById('wh-modal-name').value.trim();
+        const quantity = parseFloat(document.getElementById('wh-modal-quantity').value);
+        const unit = document.getElementById('wh-modal-unit').value;
+        const price = parseFloat(document.getElementById('wh-modal-price').value);
+        const minStock = parseFloat(document.getElementById('wh-modal-min-stock').value) || 0;
+
+        if (!name) {
+          alert('Nazwa pozycji jest wymagana!');
+          return;
+        }
+
+        if (isNaN(quantity) || quantity < 0) {
+          alert('Podaj prawidłową ilość!');
+          return;
+        }
+
+        if (isNaN(price) || price < 0) {
+          alert('Podaj prawidłową cenę!');
+          return;
+        }
+
+        if (isNaN(minStock) || minStock < 0) {
+          alert('Podaj prawidłowy stan minimalny!');
+          return;
+        }
+
+        window.warehouseItems.push({ name, quantity, unit, price, minStock });
+        saveWarehouseToStorage();
+        renderWarehouse();
       }
+    }
+  ]);
+}
+
+function addWarehouseItem() {
+  showAddWarehouseModal();
+}
+
+// Funkcje synchronizacji z aplikacją pracowników
+function exportTasksForWorkers() {
+  // Przykładowe zadania - w rzeczywistości należy zebrać z systemu MRP
+  const sampleTasks = [
+    {
+      id: 1,
+      title: "Cięcie drzwi #1234",
+      model: "DREWNO-001",
+      quantity: 5,
+      unit: "szt",
+      deadline: "14:00",
+      status: "pending",
+      estimatedTime: 120,
+      priority: "high",
+      assignedTo: "Jan Kowalski"
+    },
+    {
+      id: 2,
+      title: "Montaż okuć #1235",
+      model: "DREWNO-002",
+      quantity: 3,
+      unit: "szt",
+      deadline: "16:00",
+      status: "pending",
+      estimatedTime: 90,
+      priority: "medium",
+      assignedTo: "Anna Nowak"
+    },
+    {
+      id: 3,
+      title: "Lakierowanie #1236",
+      model: "DREWNO-003",
+      quantity: 8,
+      unit: "szt",
+      deadline: "12:00",
+      status: "pending",
+      estimatedTime: 180,
+      priority: "high",
+      assignedTo: "Piotr Wiśniewski"
+    }
+  ];
+
+  const exportData = {
+    exportDate: new Date().toISOString(),
+    tasks: sampleTasks,
+    version: "1.0",
+    system: "Doors Planner Admin"
+  };
+
+  const jsonContent = JSON.stringify(exportData, null, 2);
+  const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'tasks-export.json');
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  alert('📤 Plik tasks-export.json został pobrany.\n\nPrzenieś go na urządzenie pracownika i zaimportuj w aplikacji Worker App.');
+}
+
+function importWorkerConfirmations() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+
+  input.onchange = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = JSON.parse(e.target.result);
+
+        if (data.confirmations && Array.isArray(data.confirmations)) {
+          let importedCount = 0;
+          let completedCount = 0;
+
+          data.confirmations.forEach(confirmation => {
+            console.log('Import potwierdzenia:', confirmation);
+            importedCount++;
+
+            if (confirmation.status === 'completed') {
+              completedCount++;
+            }
+
+            // Tutaj należy zaktualizować zadania w głównym systemie
+            // Na razie tylko logujemy
+          });
+
+          alert(`✅ Zaimportowano ${importedCount} potwierdzeń zadań\n` +
+                `📊 Ukończonych zadań: ${completedCount}\n\n` +
+                `Szczegóły w konsoli przeglądarki.`);
+
+        } else if (data.tasks && Array.isArray(data.tasks)) {
+          // To może być plik eksportu zadań zamiast potwierdzeń
+          alert('To wygląda na plik eksportu zadań, a nie potwierdzeń.\n\n' +
+                'Użyj funkcji "Importuj zadania" w aplikacji Worker App.');
+        } else {
+          alert('❌ Nieprawidłowy format pliku.\n\n' +
+                'Oczekiwany format: {"confirmations": [...]}');
+        }
+      } catch (error) {
+        alert('❌ Błąd podczas parsowania pliku:\n' + error.message);
+      }
+    };
+
+    reader.readAsText(file);
+  };
+
+  input.click();
+}
+
+function exportWarehouseToCSV() {
+  if (!window.warehouseItems || window.warehouseItems.length === 0) {
+    alert('Brak pozycji do eksportu');
+    return;
+  }
+
+  const csvContent = 'Nazwa,Ilość,Jednostka,Cena,Stan minimalny\n' +
+    window.warehouseItems.map(item =>
+      `"${item.name}",${item.quantity},"${item.unit}",${item.price},${item.minStock || 0}`
+    ).join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'magazyn.csv');
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function toggleOrderFilter() {
+  window.showOnlyLowStock = !window.showOnlyLowStock;
+  const button = document.querySelector('button[onclick="toggleOrderFilter()"]');
+  if (button) {
+    button.textContent = window.showOnlyLowStock ? '🔴 Do zamówienia (WŁĄCZONE)' : '🔴 Do zamówienia';
+    button.className = window.showOnlyLowStock ? 'btn red' : 'btn orange';
+  }
+  renderWarehouse();
+}
+
+function renderWarehouse() {
+  const list = document.getElementById('wh-list');
+  if (!list) return;
+  
+  const searchTerm = document.getElementById('wh-search')?.value.toLowerCase() || '';
+  let filteredItems = window.warehouseItems.filter(item => 
+    item.name.toLowerCase().includes(searchTerm)
+  );
+  
+  // Dodatkowe filtrowanie dla pozycji do zamówienia
+  if (window.showOnlyLowStock) {
+    filteredItems = filteredItems.filter(item => 
+      item.minStock && item.quantity <= item.minStock
+    );
+  }
+  
+  if (filteredItems.length === 0) {
+    const message = window.showOnlyLowStock 
+      ? 'Brak pozycji do zamówienia (wszystkie mają wystarczający stan).'
+      : 'Brak pozycji spełniających kryteria wyszukiwania.';
+    list.innerHTML = `<div style="text-align:center;padding:40px;color:#999">${message}</div>`;
+    return;
+  }
+  
+  list.innerHTML = filteredItems.map((item, index) => {
+    const isLowStock = item.minStock && item.quantity <= item.minStock;
+    const stockStatus = item.minStock ? ` (min: ${item.minStock})` : '';
+    const itemStyle = isLowStock ? 'color: #d32f2f; font-weight: bold;' : '';
+    
+    return `
+    <div class="card" style="margin-bottom:8px; ${itemStyle}">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <strong>${item.name}</strong> - ${item.quantity} ${item.unit}${stockStatus} - ${item.price} zł
+          ${isLowStock ? '<span style="color: #d32f2f; font-size: 12px;">⚠️ DO ZAMÓWIENIA</span>' : ''}
+        </div>
+        <div class="row" style="gap:4px">
+          <button class="btn small" onclick="editWarehouseItem(${window.warehouseItems.indexOf(item)})">Edytuj</button>
+          <button class="btn red small" onclick="deleteWarehouseItem(${window.warehouseItems.indexOf(item)})">Usuń</button>
+        </div>
+      </div>
+    </div>
+  `}).join('');
+}
+
+// Dodaj event listener po załadowaniu DOM
+document.addEventListener('DOMContentLoaded', () => {
+  loadWarehouseFromStorage();
+  window.showOnlyLowStock = false; // Inicjalizacja filtra pozycji do zamówienia
+  
+  const addBtn = document.getElementById('wh-add');
+  if (addBtn) {
+    addBtn.addEventListener('click', addWarehouseItem);
+  }
+  
+  const searchInput = document.getElementById('wh-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', renderWarehouse);
+  }
+});
+
+// Automatyczne renderowanie przy wejściu do zakładki
+document.addEventListener('click', (e) => {
+  if (e.target.matches('[data-nav="wh"]')) {
+    setTimeout(renderWarehouse, 100);
+  }
+});
+
+function initWarehouse() {
+  // Pusta funkcja dla kompatybilności
+  renderWarehouse();
+}
+
+// Funkcja do generowania testowych zamówień z terminami
+function generateDeadlineTestOrders() {
+  const today = new Date();
+  const testOrders = [
+    {
+      id: 'test-order-1',
+      name: 'Drzwi wejściowe dąb',
+      client: 'Firma ABC Sp. z o.o.',
+      model: 'Dąb Classic',
+      quantity: 5,
+      startDate: today.toISOString().slice(0, 10),
+      endDate: new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), // Za 2 dni
+      processId: 'proc1'
+    },
+    {
+      id: 'test-order-2',
+      name: 'Drzwi wewnętrzne sosna',
+      client: 'Dom prywatny Kowalski',
+      model: 'Sosna Light',
+      quantity: 3,
+      startDate: today.toISOString().slice(0, 10),
+      endDate: new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), // Za 5 dni
+      processId: 'proc2'
+    },
+    {
+      id: 'test-order-3',
+      name: 'Drzwi balkonowe',
+      client: 'Blok mieszkalny',
+      model: 'Balkon Plus',
+      quantity: 8,
+      startDate: today.toISOString().slice(0, 10),
+      endDate: new Date(today.getTime() + 8 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), // Za 8 dni
+      processId: 'proc1'
+    },
+    {
+      id: 'test-order-4',
+      name: 'Drzwi techniczne',
+      client: 'Przedsiębiorstwo XYZ',
+      model: 'Techniczne Pro',
+      quantity: 2,
+      startDate: today.toISOString().slice(0, 10),
+      endDate: new Date(today.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), // Wczoraj (przekroczony termin)
+      processId: 'proc2'
+    }
+  ];
+
+  // Dodaj zamówienia tylko jeśli nie istnieją
+  testOrders.forEach(order => {
+    if (!(state.orders || []).some(o => o.id === order.id)) {
+      state.orders = state.orders || [];
+      state.orders.push(order);
     }
   });
-  
-  observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+
+  save();
+  renderOrderPage();
+  renderDash(window.state || state);
+  renderGantt();
+
+  alert('✅ Dodano testowe zamówienia z różnymi terminami!\n\nSprawdź sekcję powiadomień w dashboardzie.');
+}
+
+// Dodaj event listener dla przycisku generowania testowych zamówień
+document.addEventListener('DOMContentLoaded', () => {
+  const genDeadlineBtn = document.getElementById('gen-deadline-test');
+  if (genDeadlineBtn) {
+    genDeadlineBtn.addEventListener('click', generateDeadlineTestOrders);
+  }
 });
 </script>
 </body>

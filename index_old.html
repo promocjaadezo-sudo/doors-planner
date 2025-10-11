@@ -332,7 +332,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left} th{background
     <!-- Filtry i wyszukiwanie -->
     <div class="row" style="gap:16px;margin-bottom:16px;flex-wrap:wrap">
       <input type="text" id="wh-search" placeholder="🔍 Szukaj pozycji..." style="flex:1;min-width:200px">
-      <select id="wh-category-filter" style="min-width:150px">>
+      <select id="wh-category-filter" style="min-width:150px">
         <option value="">Wszystkie kategorie</option>
         <option value="materialy">Materiały</option>
         <option value="okucia">Okucia</option>
@@ -340,7 +340,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left} th{background
         <option value="narzedzia">Narzędzia</option>
         <option value="inne">Inne</option>
       </select>
-      <select id="wh-status-filter" style="min-width:120px">>
+      <select id="wh-status-filter" style="min-width:120px">
         <option value="">Wszystkie stany</option>
         <option value="dostepny">Dostępny</option>
         <option value="niski">Niski stan</option>
@@ -1068,7 +1068,7 @@ setTimeout(() => {
     }
   }
 
-  const storeKey='door_v50_state';
+  const storeKey='door_v5627_state';
 
   let state={storage:{mode:'firebase',appId:'doors-demo',userId:'hala-1',fbConfig:{
     "apiKey": "AIzaSyD93UqqsHWoAUBV7g8OVKAnajIfGDX_ZdY",
@@ -5640,7 +5640,83 @@ window.simpleWarehouse = {
   },
 
   showAddItemModal: function() {
-    alert('Funkcja dodawania pozycji - w wersji uproszczonej');
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); z-index: 10000; display: flex;
+      align-items: center; justify-content: center;
+    `;
+    
+    modal.innerHTML = `
+      <div style="background: white; padding: 20px; border-radius: 10px; max-width: 500px; width: 90%;">
+        <h3>Dodaj nową pozycję magazynową</h3>
+        <form id="add-item-form">
+          <div style="margin-bottom: 10px;">
+            <label>Nazwa: <input type="text" name="name" required style="width: 100%; padding: 5px;"></label>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <label>Kategoria: 
+              <select name="category" style="width: 100%; padding: 5px;">
+                <option value="materialy">Materiały</option>
+                <option value="okucia">Okucia</option>
+                <option value="farby">Farby i lakiery</option>
+                <option value="narzedzia">Narzędzia</option>
+                <option value="inne">Inne</option>
+              </select>
+            </label>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <label>Ilość: <input type="number" name="quantity" min="0" step="0.01" required style="width: 100%; padding: 5px;"></label>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <label>Jednostka: <input type="text" name="unit" value="szt" required style="width: 100%; padding: 5px;"></label>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <label>Stan minimalny: <input type="number" name="minQuantity" min="0" step="0.01" required style="width: 100%; padding: 5px;"></label>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <label>Cena: <input type="number" name="price" min="0" step="0.01" required style="width: 100%; padding: 5px;"></label>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <label>Dostawca: <input type="text" name="supplier" style="width: 100%; padding: 5px;"></label>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <label>Lokalizacja: <input type="text" name="location" style="width: 100%; padding: 5px;"></label>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <label>Opis: <textarea name="description" style="width: 100%; padding: 5px; height: 60px;"></textarea>
+          </div>
+          <div style="text-align: right;">
+            <button type="button" onclick="this.closest('div').parentElement.remove()">Anuluj</button>
+            <button type="submit">Dodaj</button>
+          </div>
+        </form>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    const form = modal.querySelector('#add-item-form');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const newItem = {
+        id: 'wh_' + Date.now(),
+        name: formData.get('name'),
+        category: formData.get('category'),
+        quantity: parseFloat(formData.get('quantity')),
+        unit: formData.get('unit'),
+        minQuantity: parseFloat(formData.get('minQuantity')),
+        price: parseFloat(formData.get('price')),
+        supplier: formData.get('supplier') || '',
+        location: formData.get('location') || '',
+        description: formData.get('description') || ''
+      };
+      
+      this.items.push(newItem);
+      this.render();
+      modal.remove();
+    });
   },
 
   editItem: function(id) {
@@ -5749,6 +5825,40 @@ function setupWarehouseButtons() {
   } else {
     console.error('❌ Export button not found!');
   }
+
+  // Konfiguracja filtrów
+  const searchInput = document.getElementById('wh-search');
+  const categoryFilter = document.getElementById('wh-category-filter');
+  const statusFilter = document.getElementById('wh-status-filter');
+
+  console.log('Setting up filters:', {
+    searchInput: !!searchInput,
+    categoryFilter: !!categoryFilter,
+    statusFilter: !!statusFilter
+  });
+
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      console.log('Search input changed');
+      filterWarehouse();
+    });
+  }
+
+  if (categoryFilter) {
+    categoryFilter.addEventListener('change', () => {
+      console.log('Category filter changed');
+      filterWarehouse();
+    });
+  }
+
+  if (statusFilter) {
+    statusFilter.addEventListener('change', () => {
+      console.log('Status filter changed');
+      filterWarehouse();
+    });
+  }
+
+  console.log('✅ Filters configured');
 }
 
 // Próbuj skonfigurować przyciski natychmiast
@@ -5943,5 +6053,3 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
-
-

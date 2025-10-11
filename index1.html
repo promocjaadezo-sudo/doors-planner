@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <title>Planner Produkcji Drzwi — v5.4 (MRP-lite)</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <style>
+        :root{--bg:#0f172a;--panel:#1f2937;--muted:#94a3b8;--b:#374151;--acc:#2563eb;--ok:#16a34a;--warn:#d97706;--err:#dc2626}
+        *{box-sizing:border-box} body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:#e5e7eb}
+        .wrap{padding:16px} h1{margin:0 0 12px;font-size:22px}
+        .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+        .card{background:var(--panel);border-radius:14px;padding:14px;box-shadow:0 6px 18px rgba(0,0,0,.35);margin:0 0 12px}
+        .btn{border:0;border-radius:10px;padding:8px 12px;background:#334155;color:#e5e7eb;cursor:pointer}
+        .btn.primary{background:var(--acc);color:#fff} .btn.red{background:var(--err)} .btn.green{background:var(--ok)} .btn.amber{background:var(--warn)}
+        .hidden{display:none!important}
+        input,select,textarea{background:#111827;color:#e5e7eb;border:1px solid var(--b);border-radius:10px;padding:8px 10px;width:100%}
+        label{font-size:12px;color:var(--muted)} .list{display:flex;flex-direction:column;gap:8px} .muted{color:var(--muted);font-size:12px}
+        .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+        .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+        .pill{display:inline-block;background:#0b1222;border:1px solid #2b3a59;border-radius:999px;padding:2px 8px;font-size:11px;margin-left:6px;color:#9fb3d1}
+        .hline{height:1px;background:#2b3a59;margin:10px 0}
+        progress{width:100%;height:10px}
+        .ok{color:#86efac} .risk{color:#fbbf24} .late{color:#f87171}
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="row" style="justify-content:space-between">
+        <h1>Planner Produkcji Drzwi — v5.4 (MRP-lite)</h1>
+        <div class="row">
+            <button class="btn amber" onclick="nav('settings')">Ustawienia</button>
+            <button class="btn" onclick="nav('dash')">Strona główna</button>
+        </div>
+    </div>
+    <div class="card" id="p-dash">
+        <h3>Panel główny</h3>
+        <div class="row">
+            <button class="btn primary" data-nav="tasks">Listy produkcyjne</button>
+            <button class="btn primary" data-nav="emp">Pracownicy</button>
+            <button class="btn primary" data-nav="opcat">Katalog operacji</button>
+            <button class="btn primary" data-nav="proc">Procesy</button>
+            <button class="btn primary" data-nav="map">Mapy Model↔Proces</button>
+            <button class="btn primary" data-nav="order">Nowe zlecenie</button>
+            <button class="btn primary" data-nav="monitor">Kontrola postępów</button>
+            <button class="btn primary" data-nav="send">Wysyłka list</button>
+            <button class="btn primary" data-nav="backup">Punkty przywracania</button>
+            <button class="btn primary" data-nav="migr">📦 Migracja danych</button>
+            <button class="btn primary" data-nav="aftersales">Montaż / Reklamacje</button>
+            <button class="btn primary" data-nav="warehouse">Magazyn</button>
+        </div>
+    </div>
+    <div class="card hidden" id="p-settings">
+        <div class="row" style="justify-content:space-between"><h3>Ustawienia</h3><button class="btn" onclick="nav('dash')">← Powrót</button></div>
+        <div class="grid3">
+            <div><label>Tryb</label><select id="set-mode"><option value="local">localStorage</option><option selected="" value="firebase">Firebase</option></select></div>
+            <div><label>App ID</label><input id="set-appid" value="doors-demo"/></div>
+            <div><label>User ID</label><input id="set-userid" value="hala-1"/></div>
+        </div>
+        <div class="list">
+            <label>Firebase config (JSON)</label>
+            <textarea id="set-fb" rows="8">{
+  "apiKey": "AIzaSyD93UqqsHWoAUBV7g8OVKAnajIfGDX_ZdY",
+  "authDomain": "doors-planner.firebaseapp.com",
+  "projectId": "doors-planner",
+  "storageBucket": "doors-planner.appspot.com",
+  "messagingSenderId": "513098608067",
+  "appId": "1:513098608067:web:1fe3855b3470ca7ef22176"
+}</textarea>
+            <div class="row">
+                <button class="btn primary" id="set-test">Test & Connect</button>
+                <button class="btn green" id="set-save">Zapisz stan do DB</button>
+                <button class="btn" id="set-load">Wczytaj stan z DB</button>
+            </div>
+            <div class="muted" id="set-info"></div>
+            <div class="card" style="margin-top:10px">
+                <div class="row" style="justify-content:space-between">
+                    <h3>Migracja danych</h3>
+                    <button class="btn" onclick="nav('dash')">← Powrót</button>
+                </div>
+                <div class="grid3">
+                    <div><label>Źródłowy App ID</label><input id="mig-app" placeholder="np. doors-demo"/></div>
+                    <div><label>Źródłowy User ID</label><input id="mig-src" placeholder="np. hala-1"/></div>
+                    <div><label>Docelowy User ID</label><input id="mig-dst" placeholder="np. bieżący anon UID"/></div>
+                    <div class="row" style="margin-top:8px">
+                        <button class="btn" id="mig-dryrun">Dry‑run (policz i sprawdź dostęp)</button>
+                        <button class="btn amber" id="mig-copy" style="margin-left:8px">Kopiuj dane →</button>
+                    </div>
+                </div>
+                <div class="muted" id="mig-log" style="margin-top:6px"></div>
+                <div class="muted">Kopiuje: employees, operationsCatalog, processes, maps, orders, tasks</div>
+            </div>
+            <div class="card" style="margin-top:10px">
+                <div class="row" style="gap:8px;flex-wrap:wrap;justify-content:space-between">
+                    <h3>Diagnostyka</h3>
+                    <button class="btn" onclick="nav('dash')">← Powrót</button>
+                    <div style="flex-basis: 100%;"></div>
+                    <button class="btn" id="diag-fb">Sprawdź Firebase</button>
+                    <button class="btn" id="diag-auth">Sprawdź Auth</button>
+                    <button class="btn" id="diag-read">Test READ (źródło)</button>
+                    <button class="btn" id="diag-write">Test WRITE (cel)</button>
+                </div>
+                <div class="muted" id="diag-log" style="margin-top:6px"></div>
+            </div>
+        </div>
+    </div>
+    <div class="card hidden" id="p-tasks">
+        <div class="row" style="justify-content:space-between">
+            <h3>Listy produkcyjne</h3>
+            <div class="row">
+                <label>Pracownik: </label><select id="t-emp"></select>
+                <label>Status: </label><select id="t-status"><option value="ALL">Wszystkie</option><option>PLANNED</option><option>IN_PROGRESS</option><option>DONE</option></select>
+            </div>
+            <button class="btn" onclick="nav('dash')">← Powrót</button>
+        </div>
+        <div class="list" id="t-list"></div>
+    </div>
+    <div class="card hidden" id="p-emp">
+        <div class="row" style="justify-content:space-between"><h3>Pracownicy</h3><button class="btn" onclick="nav('dash')">← Powrót</button></div>
+        <form class="grid3" id="emp-form">
+            <div><label>Imię i nazwisko</label><input id="e-name" required=""/></div>
+            <div><label>Dostępność (%)</label><input id="e-cap" max="200" min="10" type="number" value="100"/></div>
+            <div><label>Godziny/dzień</label><input id="e-hours" max="12" min="1" type="number" value="8"/></div>
+            <div class="grid2" style="grid-column:1/-1">
+                <div><label>Kompetencje (;)</label><input id="e-skills" placeholder="Frezowanie;Montaż"/></div>
+                <div style="align-self:end"><button class="btn primary" type="submit">Dodaj/Edytuj</button></div>
+            </div>
+        </form>
+        <div class="list" id="emp-list" style="margin-top:8px"></div>
+    </div>
+    <div class="card hidden" id="p-opcat">
+        <div class="row" style="justify-content:space-between"><h3>Katalog operacji</h3><button class="btn" onclick="nav('dash')">← Powrót</button></div>
+        <form class="grid3" id="op-form">
+            <div><label>Nazwa</label><input id="op-name" required=""/></div>
+            <div><label>Czas [min]</label><input id="op-time" min="1" type="number" value="10"/></div>
+            <div><label>Domyślna liczba prac.</label><input id="op-workers" min="1" type="number" value="1"/></div>
+            <div class="grid2" style="grid-column:1/-1">
+                <div><label>Kompetencje (;)</label><input id="op-skills" placeholder="cięcie;frezowanie"/></div>
+                <div style="align-self:end"><button class="btn primary" type="submit">Dodaj/Edytuj</button></div>
+            </div>
+        </form>
+        <div class="list" id="op-list" style="margin-top:8px"></div>
+    </div>
+    <div class="card hidden" id="p-proc">
+        <div class="row" style="justify-content:space-between"><h3>Procesy</h3><button class="btn" onclick="nav('dash')">← Powrót</button></div>
+        <form class="grid3" id="proc-form">
+            <div><label>Nazwa procesu</label><input id="proc-name" required=""/></div>
+            <div><label>Element</label>
+                <select id="proc-element"><option>Skrzydło</option><option>Futryna</option><option>Pochwyty</option><option>Elektryka</option></select>
+            </div>
+            <div><label>Dodaj z katalogu</label>
+                <select id="proc-op-select"></select>
+            </div>
+            <div class="grid2" style="grid-column:1/-1">
+                <div><button class="btn" id="proc-add-op" type="button">➕ Dodaj operację</button></div>
+                <div style="text-align:right"><button class="btn primary" type="submit">Zapisz proces</button></div>
+            </div>
+        </form>
+        <div class="hline"></div>
+        <div><b>Operacje w procesie:</b></div>
+        <div class="list" id="proc-ops"></div>
+        <div class="hline"></div>
+        <div><b>Lista procesów</b></div>
+        <div class="list" id="proc-list"></div>
+    </div>
+    <div class="card hidden" id="p-map">
+        <div class="row" style="justify-content:space-between"><h3>Mapy Model ↔ Proces</h3><button class="btn" onclick="nav('dash')">← Powrót</button></div>
+        <form class="grid3" id="map-form">
+            <div><label>Model</label><input id="map-model" placeholder="Model X" required=""/></div>
+            <div class="grid2" style="grid-column:1/-1">
+                <div><label>Wybierz procesy</label><div class="list" id="map-procs"></div></div>
+                <div style="align-self:end"><button class="btn primary" type="submit">Zapisz mapę</button></div>
+            </div>
+        </form>
+        <div class="hline"></div>
+        <div><b>Mapy zapisane</b></div>
+        <div class="list" id="map-list"></div>
+    </div>
+    <div class="card hidden" id="p-order">
+        <div class="row" style="justify-content:space-between"><h3>Nowe zlecenie</h3><button class="btn" onclick="nav('dash')">← Powrót</button></div>
+        <form class="grid3" id="order-form">
+            <div><label>Nazwa zlecenia</label><input id="o-name" required=""/></div>
+            <div><label>Klient</label><input id="o-client"/></div>
+            <div><label>Model</label><select id="o-model"></select></div>
+            <div><label>Ilość sztuk</label><input id="o-qty" min="1" type="number" value="1"/></div>
+            <div><label>Data przyjęcia</label><input id="o-start" type="date"/></div>
+            <div><label>Ilość tygodni</label><input id="o-weeks" min="1" type="number" value="1"/></div>
+            <div><label>Termin końcowy (auto)</label><input id="o-end" readonly="" type="date"/></div>
+            <div><label>Uwagi</label><textarea id="o-notes" placeholder="np. pilne, kolor dębowy..." rows="3"></textarea></div>
+            <div><label>Osoba prowadząca</label><select id="o-lead"></select></div>
+            <div class="grid2" style="grid-column:1/-1">
+                <div></div><div style="text-align:right"><button class="btn primary" type="submit">Utwórz zlecenie + zadania</button></div>
+            </div>
+        </form>
+    </div>
+    <div class="card hidden" id="p-monitor">
+        <div class="row" style="justify-content:space-between"><h3>Kontrola postępów (z prognozą)</h3><button class="btn" onclick="nav('dash')">← Powrót</button></div>
+        <div class="list" id="mon-orders"></div>
+    </div>
+    <div class="card hidden" id="p-send">
+        <div class="row" style="justify-content:space-between"><h3>Wysyłka list pracowniczych</h3><button class="btn" onclick="nav('dash')">← Powrót</button></div>
+        <div class="list" id="send-box"></div>
+    </div>
+    <div class="card hidden" id="p-backup">
+        <div class="row" style="justify-content:space-between"><h3>Punkty przywracania</h3><button class="btn" onclick="nav('dash')">← Powrót</button></div>
+        <div class="row">
+            <button class="btn primary" id="bk-save">Zapisz backup → backups/latest</button>
+            <button class="btn" id="bk-restore">Przywróć z backups/latest</button>
+        </div>
+        <div class="muted" id="bk-info" style="margin-top:6px"></div>
+    </div>
+    <div class="card hidden" id="p-migr">
+        <div class="row" style="justify-content:space-between"><h3>📦 Migracja danych</h3><button class="btn" onclick="nav('dash')">← Powrót</button></div>
+        <div class="row">
+            <select id="src-mode"><option selected="" value="planner">planner/&lt;app&gt;/users/&lt;user&gt;</option><option value="artifacts">artifacts/&lt;app&gt;/users/&lt;user&gt;</option><option value="backup">backup (artifacts/.../backups/latest)</option></select>
+            <select id="dst-mode"><option selected="" value="planner">planner/&lt;app&gt;/users/&lt;user&gt;</option></select>
+        </div>
+        <div class="grid2" style="margin-top:8px">
+            <div><label>Źródło — App/User</label><div class="row"><input id="src-app" value="doors-demo"/><input id="src-user" value="hala-1"/></div></div>
+            <div><label>Cel — App/User</label><div class="row"><input id="dst-app" value="doors-demo"/><input id="dst-user" value="hala-1"/></div></div>
+        </div>
+        <div class="row" style="margin-top:8px">
+            <button class="btn" id="btn-detect">Wykryj kolekcje</button>
+            <label><input checked="" id="preserve-ids" type="checkbox"/> Zachowaj ID</label>
+            <label><input checked="" id="merge" type="checkbox"/> Merge</label>
+        </div>
+        <div class="list" id="col-box" style="margin-top:6px"></div>
+        <div class="row">
+            <button class="btn green" id="btn-migrate">Migruj</button>
+            <button class="btn amber" id="btn-sim">Symulacja</button>
+        </div>
+        <div class="muted" id="m-log" style="white-space:pre-wrap;margin-top:8px"></div>
+    </div>
+    <div class="card hidden" id="p-aftersales">
+        <div class="row" style="justify-content:space-between;align-items:center">
+            <h3>Montaż / Reklamacje</h3>
+            <button class="btn" data-nav="dash">← Powrót</button>
+        </div>
+        <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:8px">
+            <button class="btn" id="af-reload">Odśwież</button>
+            <button class="btn" id="af-add-install">Dodaj montaż</button>
+            <button class="btn" id="af-add-claim">Dodaj reklamację</button>
+        </div>
+        <div class="grid2" style="margin-top:10px">
+            <div><h4>Montaże</h4><div id="af-installs" class="muted">—</div></div>
+            <div><h4>Reklamacje</h4><div id="af-claims" class="muted">—</div></div>
+        </div>
+    </div>
+    <div class="card hidden" id="p-warehouse">
+        <div class="row" style="justify-content:space-between;align-items:center">
+            <h3>Magazyn</h3>
+            <button class="btn" data-nav="dash">← Powrót</button>
+        </div>
+        <form class="card" id="wh-add-form" style="margin-top:10px; padding: 10px;">
+            <div class="row" style="justify-content:space-between">
+                <h4>Dodaj / Edytuj pozycję</h4>
+                <button class="btn" type="button" id="wh-add-cancel" style="display:none;">Anuluj</button>
+            </div>
+            <div class="grid3" style="margin-top:8px;">
+                <div><label>Nazwa towaru</label><input id="wh-add-name" required=""/></div>
+                <div><label>SKU / Symbol</label><input id="wh-add-sku"/></div>
+                <div><label>Jednostka</label><input id="wh-add-unit" placeholder="np. szt, m, m2"/></div>
+                <div><label>Ilość początkowa</label><input id="wh-add-qty" type="number" value="0"/></div>
+                <div><label>Punkt zamawiania (min)</label><input id="wh-add-reorder" type="number" value="0"/></div>
+                <div><label>Ilość do zamówienia</label><input id="wh-add-buyqty" type="number" value="0"/></div>
+                <div style="grid-column:1/3"><label>Dostawca</label><input id="wh-add-supplier"/></div>
+                <div style="grid-column:1/-1; align-self:end; text-align:right;">
+                    <button class="btn primary" type="submit" id="wh-add-submit">Dodaj pozycję</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="row" style="gap:8px;flex-wrap:wrap;margin:8px 0">
+            <input id="wh-q" placeholder="Szukaj: nazwa / SKU" style="max-width:280px" />
+            <button class="btn" id="wh-reload">Odśwież</button>
+        </div>
+        <div class="hline"></div>
+        <div class="row" style="justify-content:space-between;align-items:center">
+            <h3>Lista zakupów</h3>
+            <button class="btn green" id="wh-buy-all">Zrealizuj wszystko</button>
+        </div>
+        <div id="wh-buy-list" class="list" style="margin-top:8px"></div>
+        <div class="hline"></div>
+        <div class="row" style="justify-content:space-between;align-items:center">
+            <h3>Lista towarów</h3>
+        </div>
+        <div class="muted" id="wh-sum"></div>
+        <div id="wh-list" class="list" style="margin-top:8px"></div>
+    </div>
+</div>
+<script>
+    (function(){
+        const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+        const qs=s=>document.querySelector(s);
+        const qsa=s=>[...document.querySelectorAll(s)];
+        const storeKey='door_v54_mrp';
+        let state={ storage:{mode:'firebase',appId:'doors-demo',userId:'hala-1',fbConfig:{"apiKey": "AIzaSyD93UqqsHWoAUBV7g8OVKAnajIfGDX_ZdY", "authDomain": "doors-planner.firebaseapp.com", "projectId": "doors-planner", "storageBucket": "doors-planner.appspot.com", "messagingSenderId": "513098608067", "appId": "1:513098608067:web:1fe3855b3470ca7ef22176"}}, employees:[], operationsCatalog:[], processes:[], maps:[], orders:[], tasks:[], inventory: [], page:'dash', _editEmp:null, _editOp:null, _editProc:null };
+
+        function save(){ localStorage.setItem(storeKey, JSON.stringify(state)); }
+        function load(){ const r=localStorage.getItem(storeKey); if(r){ try{ Object.assign(state, JSON.parse(r)); }catch(e){} } }
+        let _tasksTick=null;
+
+        function nav(p){
+            ['p-dash','p-settings','p-tasks','p-emp','p-opcat','p-proc','p-map','p-order','p-migr','p-backup','p-monitor','p-send','p-aftersales','p-warehouse'].forEach(id=>{ const el=qs('#'+id); if(el) el.classList.add('hidden'); });
+            const map={dash:'p-dash',settings:'p-settings',tasks:'p-tasks',emp:'p-emp',opcat:'p-opcat',proc:'p-proc',map:'p-map',order:'p-order',migr:'p-migr',backup:'p-backup',monitor:'p-monitor',send:'p-send',aftersales:'p-aftersales',warehouse:'p-warehouse'};
+            const targetId = map[p] || 'p-dash';
+            const el = qs('#' + targetId);
+            if(el) el.classList.remove('hidden');
+            state.page=p;
+            save();
+            try{ clearInterval(_tasksTick); }catch(_){}
+            if(p==='tasks'){ _tasksTick=setInterval(()=>{ if(state.page==='tasks') renderTasks(); }, 60000); }
+            if(p==='tasks'){ populateAssignees(); renderTasks(); }
+            if(p==='emp') renderEmployees();
+            if(p==='opcat') renderOps();
+            if(p==='proc') renderProcPage();
+            if(p==='map') renderMapsPage();
+            if(p==='order') prefillOrderForm();
+            if(p==='settings') prefillSettings();
+            if(p==='monitor') renderMonitor();
+            if(p==='send') renderSend();
+            if(p==='aftersales' && typeof renderAfterSales==='function') renderAfterSales();
+            if(p==='warehouse' && typeof renderWarehouse==='function') renderWarehouse();
+        }
+        window.nav=nav;
+
+        document.addEventListener('click', function(e) {
+            let target = e.target;
+            while (target && target !== document.body) {
+                if (target.matches('[data-nav]')) {
+                    nav(target.getAttribute('data-nav'));
+                    e.preventDefault();
+                    return;
+                }
+                target = target.parentNode;
+            }
+        });
+
+        function info(t){ const el=qs('#set-info'); if(el) el.textContent=t; }
+        function mlog(t){ const el=qs('#mig-log'); if(el) el.textContent = t + "\n" + el.textContent; }
+
+        function ensureFirebase(){
+            if(!window.firebase) return false;
+            try{
+                if(!firebase.apps || !firebase.apps.length){
+                    firebase.initializeApp(state.storage.fbConfig);
+                }
+                return true;
+            }catch(e){ console.warn(e.message); return false; }
+        }
+        function fbRoot(){ return firebase.firestore().collection('planner').doc(state.storage.appId).collection('users').doc(state.storage.userId); }
+
+        function loadFromDb(){
+            try{
+                if(state.storage.mode!=='firebase') return info('Tylko w trybie Firebase');
+                if(!ensureFirebase()) throw new Error('Firebase init failed');
+                const app=(qs('#set-appid')?.value || state.storage.appId || '').trim();
+                const usr=(qs('#set-userid')?.value || state.storage.userId || '').trim();
+                if(app) state.storage.appId=app; if(usr) state.storage.userId=usr; save();
+                info('Czytam DB dla appId="'+state.storage.appId+'", userId="'+state.storage.userId+'"...');
+                const root=fbRoot();
+                async function get(name){ const snap=await root.collection(name).get(); return snap.docs.map(doc=>({id:doc.id, ...doc.data()})); }
+                Promise.all([get('employees'),get('operationsCatalog'),get('processes'),get('maps'),get('orders'),get('tasks'),get('inventory')])
+                    .then(([employees,ops,procs,maps,orders,tasks,inventory])=>{
+                        Object.assign(state,{employees,operationsCatalog:ops,processes:procs,maps,orders,tasks,inventory}); save(); info('Wczytano dane z DB'); nav('dash');
+                    }).catch(e=> info('Błąd odczytu: '+e.message));
+            }catch(e){ info('Błąd odczytu: '+e.message); }
+        }
+        window.loadFromDb=loadFromDb;
+
+        // SETTINGS
+        function prefillSettings(){
+            try{ if(qs('#mig-app')) qs('#mig-app').value=state.storage.appId||'doors-planner';
+            if(qs('#mig-dst')) qs('#mig-dst').value=state.storage.userId||''; }catch(_){}
+            qs('#set-mode').value=state.storage.mode||'firebase'; qs('#set-appid').value=state.storage.appId||''; qs('#set-userid').value=state.storage.userId||''; qs('#set-fb').value=JSON.stringify(state.storage.fbConfig||{});
+        }
+        document.getElementById('set-test').onclick=()=>{
+            try{
+                state.storage.mode = qs('#set-mode').value;
+                let cfgRaw = qs('#set-fb').value, cfg=null;
+                try{ cfg=JSON.parse(cfgRaw); if(!cfg || !cfg.apiKey || !cfg.projectId) throw new Error('Brak apiKey/projectId'); }
+                catch(e){ info('Błędny Firebase config'); throw e; }
+                state.storage.fbConfig = cfg; save();
+                if(state.storage.mode==='firebase'){
+                    if(!ensureFirebase()) throw new Error('Firebase init failed');
+                    firebase.auth().signInAnonymously().then(({user})=>{
+                        state.storage.userId = user.uid; const el=qs('#set-userid'); if(el) el.value=user.uid; save();
+                        info('Połączono (anonimowo). Ustawiono User ID = '+user.uid); if(typeof loadFromDb==='function') loadFromDb();
+                    }).catch(e=> info('Auth błąd: '+e.message));
+                } else { info('Tryb local'); }
+            }catch(e){ info('Błąd: '+e.message); }
+        };
+        document.getElementById('set-save').onclick=async()=>{ if(state.storage.mode!=='firebase') return; try{ ensureFirebase(); const db=firebase.firestore(); const batch=db.batch(); const root=fbRoot(); function up(name,arr){ const coll=root.collection(name); arr.forEach(x=>{ if(!x.id) x.id=uid(); const ref=coll.doc(x.id); batch.set(ref, JSON.parse(JSON.stringify(x)), {merge:true}); }); }
+            up('employees',state.employees); up('operationsCatalog',state.operationsCatalog); up('processes',state.processes); up('maps',state.maps); up('orders',state.orders); up('tasks',state.tasks); up('inventory',state.inventory);
+            await batch.commit(); info('Zapisano wszystkie kolekcje.'); }catch(e){ info('Błąd zapisu: '+e.message); }
+        };
+        document.getElementById('set-load').onclick=async()=>{ return loadFromDb(); };
+
+        // EMPLOYEES
+        function renderEmployees(){
+            const box=qs('#emp-list'); box.innerHTML='';
+            const list=(state.employees||[]);
+            if(!list.length){ box.innerHTML='<div class="muted">Brak pracowników</div>'; return; }
+            list.forEach(e=>{
+                const card=document.createElement('div'); card.className='card';
+                const row1=document.createElement('div'); row1.className='row';
+                const left=document.createElement('div'); left.className='left';
+                const right=document.createElement('div'); right.className='right';
+                const b=document.createElement('b'); b.textContent=e.name||'(bez nazwy)';
+                const meta=document.createElement('div'); meta.className='muted';
+                const skills=(e.skills||[]).join(', ');
+                meta.textContent=`cap: ${e.cap||100}% • godz/d: ${e.hoursPerDay||8} • ${skills}`;
+                left.appendChild(b); left.appendChild(meta);
+                const del=document.createElement('button'); del.className='btn red'; del.textContent='Usuń';
+                del.onclick=()=>{ state.employees=state.employees.filter(x=>x.id!==e.id); save(); renderEmployees(); };
+                right.appendChild(del);
+                row1.appendChild(left); row1.appendChild(right);
+                card.appendChild(row1);
+                box.appendChild(card);
+            });
+        }
+        qs('#emp-form').onsubmit=(ev)=>{ ev.preventDefault(); const name=qs('#e-name').value.trim(); if(!name) return; const cap=parseInt(qs('#e-cap').value||'100',10); const hours=parseInt(qs('#e-hours').value||'8',10); const skills=(qs('#e-skills').value.trim()||'').split(';').map(s=>s.trim()).filter(Boolean); if(state._editEmp){ const e=state.employees.find(x=>x.id===state._editEmp); if(e) Object.assign(e,{name,cap,hoursPerDay:hours,skills}); state._editEmp=null; } else state.employees.push({id:uid(),name,cap,hoursPerDay:hours,skills}); qs('#e-name').value=''; qs('#e-cap').value='100'; qs('#e-hours').value='8'; qs('#e-skills').value=''; save(); renderEmployees(); populateAssignees(); };
+
+        // OPERATIONS CATALOG
+        function renderOps(){ const box=qs('#op-list'); box.innerHTML=''; const sel=qs('#proc-op-select'); if(sel){ sel.innerHTML=''; state.operationsCatalog.forEach(o=>{ const opt=document.createElement('option'); opt.value=o.id; opt.textContent=o.name+' ('+(o.time||0)+'m)'; sel.appendChild(opt); }); } if(!state.operationsCatalog.length){ box.innerHTML='<div class="muted">Brak operacji</div>'; return; } state.operationsCatalog.forEach(o=>{ const d=document.createElement('div'); d.className='card'; d.innerHTML='<div class="row" style="justify-content:space-between"><div><b>'+o.name+'</b><div class="muted">'+(o.time||0)+' min • prac: '+(o.workers||1)+' • '+(o.skills||[]).join(', ')+'</div></div><div class="row"><button class="btn" data-ed="'+o.id+'">Edytuj</button><button class="btn red" data-del="'+o.id+'">Usuń</button></div></div>'; d.querySelector('[data-ed]').onclick=()=>{ state._editOp=o.id; qs('#op-name').value=o.name; qs('#op-time').value=o.time||0; qs('#op-workers').value=o.workers||1; qs('#op-skills').value=(o.skills||[]).join(';'); }; d.querySelector('[data-del]').onclick=()=>{ if(confirm('Usunąć operację?')){ state.operationsCatalog=state.operationsCatalog.filter(x=>x.id!==o.id); save(); renderOps(); } }; box.appendChild(d); }); }
+        qs('#op-form').onsubmit=(ev)=>{ ev.preventDefault(); const name=qs('#op-name').value.trim(); if(!name) return; const time=parseInt(qs('#op-time').value||'0',10); const workers=parseInt(qs('#op-workers').value||'1',10); const skills=(qs('#op-skills').value.trim()||'').split(';').map(s=>s.trim()).filter(Boolean); if(state._editOp){ const o=state.operationsCatalog.find(x=>x.id===state._editOp); if(o) Object.assign(o,{name,time,workers,skills}); state._editOp=null; } else state.operationsCatalog.push({id:uid(),name,time,workers,skills}); qs('#op-name').value=''; qs('#op-time').value='10'; qs('#op-workers').value='1'; qs('#op-skills').value=''; save(); renderOps(); };
+
+        // PROCESSES
+        let PROC_TMP=[]; function renderProcOps(){ const box=qs('#proc-ops'); box.innerHTML=''; if(!PROC_TMP.length){ box.innerHTML='<div class="muted">Brak operacji w procesie</div>'; return; } PROC_TMP.forEach((op,i)=>{ const d=document.createElement('div'); d.className='card'; d.innerHTML='<div class="row" style="justify-content:space-between"><div>'+op.name+' <span class="muted">('+(op.time||0)+'m, prac:'+ (op.workers||1) +')</span></div><div class="row"><button class="btn" data-up="'+i+'">↑</button><button class="btn" data-down="'+i+'">↓</button><button class="btn red" data-del="'+i+'">Usuń</button></div></div>'; d.querySelector('[data-up]').onclick=()=>{ const idx=parseInt(d.querySelector('[data-up]').getAttribute('data-up')); if(idx>0){ const t=PROC_TMP[idx-1]; PROC_TMP[idx-1]=PROC_TMP[idx]; PROC_TMP[idx]=t; renderProcOps(); } }; d.querySelector('[data-down]').onclick=()=>{ const idx=parseInt(d.querySelector('[data-down]').getAttribute('data-down')); if(idx<PROC_TMP.length-1){ const t=PROC_TMP[idx+1]; PROC_TMP[idx+1]=PROC_TMP[idx]; PROC_TMP[idx]=t; renderProcOps(); } }; d.querySelector('[data-del]').onclick=()=>{ const idx=parseInt(d.querySelector('[data-del]').getAttribute('data-del')); PROC_TMP.splice(idx,1); renderProcOps(); }; box.appendChild(d); }); }
+        function renderProcList(){ const box=qs('#proc-list'); box.innerHTML=''; if(!state.processes.length){ box.innerHTML='<div class="muted">Brak procesów</div>'; return; } state.processes.forEach(p=>{ const d=document.createElement('div'); d.className='card'; d.innerHTML='<div class="row" style="justify-content:space-between"><div><b>'+p.name+'</b> • <span class="muted">'+p.elements.join(', ')+'</span></div><div class="row"><button class="btn" data-ed="'+p.id+'">Edytuj</button><button class="btn red" data-del="'+p.id+'">Usuń</button></div></div>'; d.querySelector('[data-ed]').onclick=()=>{ state._editProc=p.id; qs('#proc-name').value=p.name; qs('#proc-element').value=p.elements[0]||'Skrzydło'; PROC_TMP=(p.operations||[]).slice(); renderProcOps(); }; d.querySelector('[data-del]').onclick=()=>{ if(confirm('Usunąć proces?')){ state.processes=state.processes.filter(x=>x.id!==p.id); save(); renderProcList(); renderMapsPage(); } }; box.appendChild(d); }); }
+        function renderProcPage(){ const sel=qs('#proc-op-select'); sel.innerHTML=''; state.operationsCatalog.forEach(o=>{ const opt=document.createElement('option'); opt.value=o.id; opt.textContent=o.name+' ('+(o.time||0)+'m)'; sel.appendChild(opt); }); renderProcOps(); renderProcList(); }
+        document.getElementById('proc-add-op').onclick=()=>{ const sel=qs('#proc-op-select').value; const o=state.operationsCatalog.find(x=>x.id===sel); if(o) PROC_TMP.push({name:o.name,time:o.time||0,workers:o.workers||1,skills:o.skills||[]}); renderProcOps(); };
+        qs('#proc-form').onsubmit=(ev)=>{ ev.preventDefault(); const name=qs('#proc-name').value.trim(); if(!name||!PROC_TMP.length) return alert('Uzupełnij nazwę i operacje'); const element=qs('#proc-element').value; if(state._editProc){ const p=state.processes.find(x=>x.id===state._editProc); if(p) Object.assign(p,{name, elements:[element], operations:PROC_TMP.slice()}); state._editProc=null; } else state.processes.push({id:uid(), name, elements:[element], operations:PROC_TMP.slice()}); PROC_TMP=[]; qs('#proc-name').value=''; renderProcPage(); renderMapsPage(); save(); };
+
+        // MAPS
+        function renderMapsPage(){ const box=qs('#map-procs'); box.innerHTML=''; state.processes.forEach(p=>{ const id='m-'+p.id; const w=document.createElement('div'); w.innerHTML='<label><input type="checkbox" id="'+id+'" value="'+p.id+'"> '+p.name+' <span class="muted">('+p.elements.join(', ')+')</span></label>'; box.appendChild(w); }); const list=qs('#map-list'); list.innerHTML=''; if(!state.maps.length){ list.innerHTML='<div class="muted">Brak map</div>'; return; } state.maps.forEach(m=>{ const d=document.createElement('div'); d.className='card'; d.innerHTML='<div class="row" style="justify-content:space-between"><div><b>'+m.model+'</b> • '+(m.processIds||[]).map(id=> (state.processes.find(p=>p.id===id)||{name:id}).name ).join(', ')+'</div><div class="row"><button class="btn red" data-del="'+m.id+'">Usuń</button></div></div>'; d.querySelector('[data-del]').onclick=()=>{ if(confirm('Usunąć mapę?')){ state.maps=state.maps.filter(x=>x.id!==m.id); save(); renderMapsPage(); prefillOrderForm(); } }; list.appendChild(d); }); }
+        qs('#map-form').onsubmit=(ev)=>{ ev.preventDefault(); const model=qs('#map-model').value.trim(); if(!model) return; const ids=[...qsa('#map-procs input:checked')].map(i=>i.value); if(!ids.length) return alert('Zaznacz co najmniej 1 proces'); state.maps.push({id:uid(), model, processIds:ids}); qs('#map-model').value=''; qsa('#map-procs input:checked').forEach(i=>i.checked=false); save(); renderMapsPage(); prefillOrderForm(); };
+
+        // NEW ORDER
+        function calcEndDate(){
+            const s=qs('#o-start').value; const weeks=+qs('#o-weeks').value||1;
+            if(!s) return; const end=new Date(s+'T00:00:00');
+            end.setDate(end.getDate() + weeks*7);
+            while(end.getDay()===0 || end.getDay()===6) end.setDate(end.getDate()+1);
+            qs('#o-end').value=end.toISOString().split('T')[0];
+        }
+        function prefillOrderForm(){ const sel=qs('#o-model'); sel.innerHTML=''; state.maps.forEach(m=>{ const o=document.createElement('option'); o.value=m.id; o.textContent=m.model; sel.appendChild(o); }); const lead=qs('#o-lead'); lead.innerHTML=''; state.employees.forEach(e=>{ const o=document.createElement('option'); o.value=e.id; o.textContent=e.name; lead.appendChild(o); }); calcEndDate(); }
+        document.addEventListener('input', (ev)=>{ if(ev.target && (ev.target.id==='o-start' || ev.target.id==='o-weeks')) calcEndDate(); });
+        qs('#order-form').onsubmit=(ev)=>{ ev.preventDefault(); const name=qs('#o-name').value.trim(); if(!name) return; const client=qs('#o-client').value.trim(); const mapId=qs('#o-model').value; const qty=parseInt(qs('#o-qty').value||'1',10); const start=qs('#o-start').value; const end=qs('#o-end').value; const notes=qs('#o-notes').value.trim(); const leadId=qs('#o-lead').value||''; const lead=state.employees.find(e=>e.id===leadId)||null; const map=state.maps.find(m=>m.id===mapId); if(!map) return alert('Wybierz model'); const order={id:uid(), name, client, model: (map.model), modelMapId:map.id, quantity:qty, startDate:start, endDate:end, notes, leadId: lead?lead.id:'', leadName: lead?lead.name:'', status:'W toku'}; state.orders.push(order); let seqBase = state.tasks.reduce((m,x)=>Math.max(m, x.seq||0), 0); map.processIds.forEach(pid=>{ const p=state.processes.find(x=>x.id===pid); if(!p) return; (p.operations||[]).forEach(op=>{ state.tasks.push({id:uid(), orderId:order.id, orderName:order.name, element:(p.elements[0]||''), operation:op.name, quantity:qty, plannedTimeMin:(op.time||0)*qty, status:'PLANNED', seq: ++seqBase, assignees:[]}); }); });
+            // MRP-lite: Consume stock
+            if(window.consumeFromStock) window.consumeFromStock(order);
+            save(); alert('Zlecenie i zadania utworzone.'); nav('tasks');
+        };
+
+        // TASKS — handlers
+        async function startTask(id){
+            const t=state.tasks.find(x=>x.id===id); if(!t) return;
+            try{
+                const now=new Date();
+                t.status='IN_PROGRESS'; t.startAt=now; t.endAt=null; save();
+                if(state.storage.mode==='firebase' && ensureFirebase()){
+                    fbRoot().collection('tasks').doc(id).set({
+                        status:'IN_PROGRESS',
+                        startAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        endAt: null
+                    }, {merge:true});
+                }
+            }catch(e){ console.warn(e.message); }
+            renderTasks();
+        }
+        async function stopTask(id){
+            const t=state.tasks.find(x=>x.id===id); if(!t) return;
+            try{
+                const now=new Date();
+                t.status='DONE'; t.endAt=now; save();
+                if(state.storage.mode==='firebase' && ensureFirebase()){
+                    fbRoot().collection('tasks').doc(id).set({
+                        status:'DONE',
+                        endAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }, {merge:true});
+                }
+            }catch(e){ console.warn(e.message); }
+            renderTasks();
+        }
+        async function undoStart(id){ const t=state.tasks.find(x=>x.id===id); if(!t) return; if(!confirm('Anulować start?')) return; const payload={status:'PLANNED', startAt:null, endAt:null}; Object.assign(t,payload); save(); if(state.storage.mode==='firebase') try{ await fbRoot().collection('tasks').doc(id).set(payload,{merge:true}) }catch(e){ console.warn(e.message) } renderTasks(); }
+        async function repeatTask(id){ const t=state.tasks.find(x=>x.id===id); if(!t) return; const maxSeq=state.tasks.reduce((m,x)=>Math.max(m,x.seq||0),0); const copy=Object.assign({},t,{id:uid(), status:'PLANNED', startAt:null, endAt:null, seq:maxSeq+1, repeatedFrom:t.id}); state.tasks.push(copy); save(); if(state.storage.mode==='firebase') try{ await fbRoot().collection('tasks').doc(copy.id).set(JSON.parse(JSON.stringify(copy)),{merge:true}) }catch(e){ console.warn(e.message) } renderTasks(); }
+        async function setAssignees(id, ids){ const t=state.tasks.find(x=>x.id===id); if(!t) return; const arr=ids.map(v=>{ const e=state.employees.find(x=>x.id===v); return e?{id:e.id,name:e.name}:null; }).filter(Boolean); t.assignees=arr; t.assigneeId=arr[0]?arr[0].id:null; t.assigneeName=arr[0]?arr[0].name:null; save(); if(state.storage.mode==='firebase') try{ await fbRoot().collection('tasks').doc(id).set({assignees:arr,assigneeId:t.assigneeId||null,assigneeName:t.assigneeName||null},{merge:true}) }catch(e){ console.warn(e.message) } }
+        window._t={startTask, stopTask, undoStart, repeatTask, setAssignees};
+
+        function populateAssignees(){ const sel=qs('#t-emp'); const cur=sel.value; sel.innerHTML='<option value="ALL">— Wszyscy —</option>'; state.employees.forEach(e=>{ const o=document.createElement('option'); o.value=e.id; o.textContent=e.name; sel.appendChild(o); }); sel.value=cur||'ALL'; }
+        qs('#t-emp').onchange=renderTasks; qs('#t-status').onchange=renderTasks;
+        function fmt(ts){ if(!ts) return '-'; try{ const d=ts && ts.toDate? ts.toDate(): (ts? new Date(ts): null); return d? d.toLocaleString():'-'; }catch(e){ return String(ts); } }
+
+        function buildAssigneeSelect(t){ const sel=document.createElement('select'); sel.multiple=true; sel.size=2; (state.employees||[]).forEach(e=>{ const opt=document.createElement('option'); opt.value=e.id; opt.textContent=e.name; if((t.assignees||[]).some(a=>a.id===e.id)) opt.selected=true; sel.appendChild(opt); }); sel.addEventListener('change', ()=>{ const vals=[...sel.options].filter(o=>o.selected).map(o=>o.value); setAssignees(t.id, vals); }); return sel; }
+
+        function renderTasks(){ const box=qs('#t-list'); box.innerHTML=''; let list=state.tasks.slice().sort((a,b)=> (a.seq||0)-(b.seq||0)); const sel=qs('#t-emp').value||'ALL'; const st=qs('#t-status').value||'ALL'; if(sel!=='ALL') list=list.filter(t=> (t.assigneeId===sel || (t.assignees||[]).some(a=>a.id===sel) ) ); if(st!=='ALL') list=list.filter(t=>(t.status||'PLANNED')===st); if(!list.length){ box.innerHTML='<div class="muted">Brak zadań</div>'; return; }
+            list.forEach(t=>{ const status=t.status||'PLANNED'; const card=document.createElement('div'); card.className='card';
+                const top=document.createElement('div'); top.className='row'; top.style.justifyContent='space-between';
+                const left=document.createElement('div'); left.innerHTML='<b>'+t.orderName+'</b> • '+t.element+' / '+t.operation+'<div class="muted">Ilość: '+t.quantity+' • Plan: '+(t.plannedTimeMin||0)+'m • Status: '+status+(t.startAt? ' • start: '+fmt(t.startAt):'')+(t.endAt?' • koniec: '+fmt(t.endAt):'')+'</div>';
+                const right=document.createElement('div'); right.className='row';
+                const b1=document.createElement('button'); b1.className='btn'; b1.textContent= (status==='PLANNED'?'Start': (status==='IN_PROGRESS'?'Zakończ':'Powtórz'));
+                if(status==='PLANNED') b1.onclick=()=>_t.startTask(t.id);
+                if(status==='IN_PROGRESS') { b1.classList.add('red'); b1.onclick=()=>_t.stopTask(t.id); }
+                if(status==='DONE') { b1.classList.add('amber'); b1.onclick=()=>_t.repeatTask(t.id); }
+                right.appendChild(b1);
+                if(status==='IN_PROGRESS'){ const b2=document.createElement('button'); b2.className='btn amber'; b2.textContent='Anuluj start'; b2.onclick=()=>_t.undoStart(t.id); right.appendChild(b2); }
+                if(status==='PLANNED'){ const rep=document.createElement('button'); rep.className='btn amber'; rep.textContent='Powtórz'; rep.onclick=()=>_t.repeatTask(t.id); right.appendChild(rep); }
+                top.appendChild(left); top.appendChild(right);
+                const bottom=document.createElement('div'); bottom.className='row'; bottom.style.marginTop='8px';
+                const lbl=document.createElement('label'); lbl.className='muted'; lbl.textContent='Pracownicy (multi)'; bottom.appendChild(lbl);
+                bottom.appendChild(buildAssigneeSelect(t));
+                card.appendChild(top); card.appendChild(bottom); box.appendChild(card);
+            });
+        }
+
+        // MONITOR (forecast)
+        function workingDays(from,to){ if(!to) return 0; const a=new Date(from.getFullYear(),from.getMonth(),from.getDate()); const b=new Date(to.getFullYear(),to.getMonth(),to.getDate()); let days=0; for(let d=new Date(a); d<=b; d.setDate(d.getDate()+1)){ const w=d.getDay(); if(w!==0 && w!==6) days++; } return Math.max(0,days); }
+        function companyDailyCapacityMin(){ return (state.employees||[]).reduce((sum,e)=> sum + (e.hoursPerDay||8) * 60 * (e.cap||100)/100, 0); }
+        function renderMonitor(){ const box=qs('#mon-orders'); box.innerHTML=''; if(!state.orders.length){ box.innerHTML='<div class="muted">Brak zleceń</div>'; return; } const today=new Date(); const capMin=Math.max(0, companyDailyCapacityMin()||0);
+            state.orders.forEach(o=>{ const all=state.tasks.filter(t=>t.orderId===o.id); const done=all.filter(t=>t.status==='DONE'); const prog=Math.round((done.length/(all.length||1))*100); const remainingMin=all.filter(t=>t.status!=='DONE').reduce((s,t)=> s+(t.plannedTimeMin||0),0);
+                const end=o.endDate? new Date(o.endDate+'T00:00:00'):null; const remDays=end? workingDays(today,end):0; const capRemain= remDays*capMin; let label='na czas', cls='ok'; let delayDays=0;
+                if(end && remainingMin>capRemain && capMin>0){ delayDays=Math.ceil((remainingMin - capRemain)/capMin); label='opóźnienie ~'+delayDays+' d.'; cls='late'; }
+                else if(end && remainingMin>0 && remainingMin>0.7*capRemain){ label='ryzyko'; cls='risk'; }
+                const d=document.createElement('div'); d.className='card'; d.innerHTML='<div class="row" style="justify-content:space-between"><div><b>'+o.name+'</b> • '+(o.client||'')+' • Model: '+o.model+'</div><div><span class="'+cls+'">'+label+'</span> • '+done.length+'/'+all.length+' ('+prog+'%)</div></div><progress max="100" value="'+prog+'"></progress>'; box.appendChild(d); });
+        }
+
+        // SEND lists per employee
+        function buildListText(emp){ const tasks=(state.tasks||[]).filter(t=> t.assigneeId===emp.id || (t.assignees||[]).some(a=>a.id===emp.id)); if(!tasks.length) return 'Brak zadań'; const lines=['Lista zadań — '+emp.name]; tasks.sort((a,b)=>(a.seq||0)-(b.seq||0)).forEach((t,i)=>{ lines.push((i+1)+'. '+t.orderName+' • '+t.element+' / '+t.operation+' • Ilość: '+t.quantity+' • Plan: '+(t.plannedTimeMin||0)+'m • Status: '+(t.status||'PLANNED')); }); return lines.join('\n'); }
+        function downloadText(filename, text){ const blob=new Blob([text],{type:'text/plain'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0); }
+        function renderSend(){ const box=qs('#send-box'); box.innerHTML=''; if(!state.employees.length){ box.innerHTML='<div class="muted">Brak pracowników</div>'; return; } state.employees.forEach(e=>{ const txt=buildListText(e); const card=document.createElement('div'); card.className='card'; const area=document.createElement('textarea'); area.rows=6; area.value=txt; const row=document.createElement('div'); row.className='row'; const btnCopy=document.createElement('button'); btnCopy.className='btn'; btnCopy.textContent='Kopiuj'; btnCopy.onclick=()=>{ area.select(); document.execCommand('copy'); }; const btnDl=document.createElement('button'); btnDl.className='btn'; btnDl.textContent='Pobierz .txt'; btnDl.onclick=()=>downloadText('lista_'+(e.name||'pracownik')+'.txt', txt); const email=document.createElement('input'); email.placeholder='email@firma.pl (opcjonalnie)'; const btnMail=document.createElement('button'); btnMail.className='btn primary'; btnMail.textContent='Otwórz w e-mailu'; btnMail.onclick=()=>{ const subject=encodeURIComponent('Lista zadań — '+(e.name||'')); const body=encodeURIComponent(txt); window.location.href='mailto:'+encodeURIComponent(email.value||'')+'?subject='+subject+'&body='+body; }; row.appendChild(btnCopy); row.appendChild(btnDl); row.appendChild(email); row.appendChild(btnMail); card.innerHTML='<b>'+e.name+'</b>'; card.appendChild(area); card.appendChild(row); box.appendChild(card); }); }
+
+        // BACKUP
+        function binfo(t){ qs('#bk-info').textContent=t; }
+        document.getElementById('bk-save').onclick=async()=>{ if(state.storage.mode!=='firebase') return binfo('Tylko w trybie Firebase'); try{ ensureFirebase(); const ref=fbRoot().collection('backups').doc('latest'); await ref.set({ employees:state.employees, operationsCatalog:state.operationsCatalog, processes:state.processes, maps:state.maps, orders:state.orders, tasks:state.tasks, inventory:state.inventory, savedAt: firebase.firestore.FieldValue.serverTimestamp() },{merge:true}); binfo('Backup zapisany.'); }catch(e){ binfo('Błąd backup: '+e.message); } };
+        document.getElementById('bk-restore').onclick=async()=>{ if(state.storage.mode!=='firebase') return binfo('Tylko w trybie Firebase'); try{ ensureFirebase(); const ref=fbRoot().collection('backups').doc('latest'); const s=await ref.get(); if(!s.exists) return binfo('Brak backups/latest'); const d=s.data(); ['employees','operationsCatalog','processes','maps','orders','tasks','inventory'].forEach(k=>{ if(Array.isArray(d[k])) state[k]=d[k]; }); save(); binfo('Przywrócono z backupu (lokalnie). Użyj "Zapisz stan do DB" aby nadpisać DB.'); nav('dash'); }catch(e){ binfo('Błąd restore: '+e.message); } };
+
+        // MIGRATION (light)
+        const KNOWN=['employees','operationsCatalog','processes','orders','tasks','maps','inventory'];
+        function srcRoot(){ const mode=qs('#src-mode').value, a=qs('#src-app').value.trim(), u=qs('#src-user').value.trim(); const db=firebase.firestore(); if(mode==='planner') return db.collection('planner').doc(a).collection('users').doc(u); if(mode==='artifacts') return db.collection('artifacts').doc(a).collection('users').doc(u); return null; }
+        function dstRoot(){ const a=qs('#dst-app').value.trim(), u=qs('#dst-user').value.trim(); return firebase.firestore().collection('planner').doc(a).collection('users').doc(u); }
+        document.getElementById('btn-detect').onclick=async()=>{ try{ ensureFirebase(); await firebase.auth().signInAnonymously(); const mode=qs('#src-mode').value; const box=qs('#col-box'); box.innerHTML=''; if(mode==='backup'){ box.innerHTML='<label><input type="checkbox" class="xcol" value="employees" checked> employees</label><label><input type="checkbox" class="xcol" value="processes" checked> processes</label><label><input type="checkbox" class="xcol" value="orders" checked> orders</label>'; return; } let found=[]; for(const n of KNOWN){ const s=await srcRoot().collection(n).limit(1).get(); if(!s.empty) found.push(n); } box.innerHTML= found.length? found.map(n=>'<label><input type="checkbox" class="xcol" value="'+n+'" checked> '+n+'</label>').join('<br>') : '<div class="muted">Brak danych</div>'; mlog('Wykryto: '+found.join(', ')); }catch(e){ mlog('Detect błąd: '+e.message); } };
+        async function readBackup(){ const a=qs('#src-app').value.trim(), u=qs('#src-user').value.trim(); const ref=firebase.firestore().collection('artifacts').doc(a).collection('users').doc(u).collection('backups').doc('latest'); const d=await ref.get(); if(!d.exists) throw new Error('Brak backups/latest'); return d.data(); }
+        async function migrate(sim=false){ try{ ensureFirebase(); await firebase.auth().signInAnonymously(); const preserve=qs('#preserve-ids').checked, merge=qs('#merge').checked; const db=firebase.firestore(); const dst=dstRoot(); mlog('--- MIGRACJA START ---'); if(qs('#src-mode').value==='backup'){ const data=await readBackup(); const todo=['employees','operationsCatalog','processes','maps','orders','tasks','inventory']; for(const name of todo){ const arr=Array.isArray(data[name])?data[name]:[]; if(!arr.length){ mlog('['+name+'] brak'); continue; } const batch=db.batch(); const coll=dst.collection(name); arr.forEach(x=>{ const id=preserve&&x.id?x.id:db.collection('_tmp').doc().id; const ref=coll.doc(id); const copy=Object.assign({},x); delete copy.id; batch.set(ref,copy,{merge}); }); if(!sim) await batch.commit(); mlog('[backup→'+name+'] '+arr.length+' ok'); } mlog('--- MIGRACJA KONIEC ---'); return; } const selected=[...qsa('.xcol:checked')].map(i=>i.value); if(!selected.length) return mlog('Wybierz kolekcje'); for(const name of selected){ const snap=await srcRoot().collection(name).get(); const coll=dst.collection(name); const batch=db.batch(); snap.docs.forEach(d=>{ const data=d.data(); const id=preserve?d.id:db.collection('_tmp').doc().id; const ref=coll.doc(id); const copy=Object.assign({},data); if(name==='processes' && Array.isArray(copy.operations)) copy.operations=copy.operations.map(o=>({name:o.name,time:o.time||o.duration||0,workers:o.workers||1,skills:o.skills||[]})); batch.set(ref,copy,{merge}); }); if(!sim) await batch.commit(); mlog('['+name+'] '+snap.size+' ok'); } mlog('--- MIGRACJA KONIEC ---'); }catch(e){ mlog('Migracja błąd: '+e.message); } }
+        document.getElementById('btn-migrate').onclick=()=>migrate(false);
+        document.getElementById('btn-sim').onclick=()=>migrate(true);
+
+        document.getElementById('mig-copy').onclick=async()=>{
+            try{
+                if(state.storage.mode!=='firebase') return mlog('Migracja tylko w trybie Firebase');
+                if(!ensureFirebase()) throw new Error('Firebase init failed');
+                const srcApp=(qs('#mig-app')?.value||'').trim();
+                const dstApp=(qs('#set-appid')?.value||'').trim();
+                const src=(qs('#mig-src')?.value||'').trim();
+                const dst=((qs('#mig-dst')?.value||'').trim()) || ((qs('#set-userid')?.value||'').trim());
+                if(!srcApp||!dstApp||!src||!dst) return mlog('Podaj: Źródłowy App ID, Docelowy App ID, źródłowy i docelowy User ID');
+                state.storage.appId = dstApp; state.storage.userId = dst; save();
+                const db=firebase.firestore();
+                const srcRoot=db.collection('planner').doc(srcApp).collection('users').doc(src);
+                const dstRoot=db.collection('planner').doc(dstApp).collection('users').doc(dst);
+                const cols=['employees','operationsCatalog','processes','maps','orders','tasks','inventory'];
+                let total=0; const perCol=[];
+                for(const name of cols){
+                    mlog('Kopiuję '+name+' ...');
+                    const snap=await srcRoot.collection(name).get();
+                    let batch=db.batch(); let i=0; let n=0;
+                    for(const doc of snap.docs){
+                        batch.set(dstRoot.collection(name).doc(doc.id), doc.data(), {merge:true});
+                        i++; n++;
+                        if(i>=400){ await batch.commit(); mlog('...'+name+': '+n+' dok. (commit)'); batch=db.batch(); i=0; }
+                    }
+                    if(i>0) await batch.commit();
+                    perCol.push(name+': '+n);
+                    total+=n;
+                    mlog('Zakończono '+name+' — '+n+' dokumentów.');
+                }
+                mlog('Skopiowano łącznie: '+total+' dok. ('+perCol.join(', ')+') ➜ appId='+dstApp+', userId='+dst);
+                try{ if(typeof loadFromDb==='function') loadFromDb(); }catch(_){}
+            }catch(e){ mlog('Błąd migracji: '+e.message); }
+        };
+        document.getElementById('mig-dryrun').onclick=async()=>{
+            try{
+                if(state.storage.mode!=='firebase') return mlog('Dry‑run tylko w trybie Firebase');
+                if(!ensureFirebase()) throw new Error('Firebase init failed');
+                const srcApp=(qs('#mig-app')?.value||'').trim();
+                const src=(qs('#mig-src')?.value||'').trim();
+                if(!srcApp||!src) return mlog('Podaj Źródłowy App ID i Źródłowy User ID');
+                const db=firebase.firestore();
+                const root=db.collection('planner').doc(srcApp).collection('users').doc(src);
+                const cols=['employees','operationsCatalog','processes','maps','orders','tasks','inventory'];
+                let total=0, lines=[];
+                for(const name of cols){
+                    try{ const snap=await root.collection(name).get(); const n=snap.size; total+=n; lines.push(name+': '+n); }
+                    catch(e){ lines.push(name+': błąd odczytu ('+e.message+')'); }
+                }
+                mlog('Dry‑run — dokumenty do skopiowania: '+total+'  ['+lines.join(' | ')+']');
+            }catch(e){ mlog('Błąd dry‑run: '+e.message); }
+        };
+
+        // AfterSales module
+        function renderBox(id, rows, kind){
+            var box=qs('#'+id); if(!box) return;
+            if(!rows.length){ box.innerHTML='<div class="muted">Brak pozycji</div>'; return; }
+            var html=['<div class="list">'];
+            rows.forEach(function(r){
+                html.push('<div class="row" style="justify-content:space-between"><div><b>'+(r.title||kind)+' #'+(r.id||'')+'</b><div class="muted">'+(r.orderNo||'')+' '+(r.client||'')+' '+(r.address||'')+'</div></div><div class="muted">'+(r.status||'NEW')+' '+(r.scheduledDate||'')+'</div></div>');
+            });
+            html.push('</div>'); box.innerHTML=html.join('');
+        }
+        async function list(col){
+            try{
+                const r=fbRoot();
+                var s=await r.collection(col).orderBy('createdAt','desc').get();
+                return s.docs.map(function(d){ var o=d.data(); o.id=d.id; return o; });
+            }catch(e){
+                info('AfterSales error: '+e.message);
+                return [];
+            }
+        }
+        async function renderAfterSales(){
+            try{
+                if(!ensureFirebase()) return info('Brak Firebase/config');
+                var inst=await list('installs'); var cl=await list('claims');
+                renderBox('af-installs', inst, 'Montaż');
+                renderBox('af-claims', cl, 'Reklamacja');
+            }catch(e){ info('AfterSales: '+e.message); }
+        }
+        async function add(type){
+            try{
+                if(!ensureFirebase()) return info('Brak Firebase');
+                var title=prompt(type==='installs'?'Tytuł montażu':'Tytuł reklamacji',''); if(title===null) return;
+                var orderNo=prompt('Nr zamówienia','')||'';
+                var client=prompt('Klient','')||'';
+                var address=prompt('Adres','')||'';
+                var scheduledDate=prompt('Data (RRRR-MM-DD)','')||'';
+                await fbRoot().collection(type).doc().set({title,orderNo,client,address,scheduledDate,status:'NEW',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+                renderAfterSales();
+            }catch(e){ info('Błąd dodawania: '+e.message); }
+        }
+        document.addEventListener('click', function(e){
+            var t=e.target;
+            if(t && t.id==='af-reload') renderAfterSales();
+            if(t && t.id==='af-add-install') add('installs');
+            if(t && t.id==='af-add-claim') add('claims');
+        });
+        window.renderAfterSales = renderAfterSales;
+
+        // Warehouse module (MRP-lite)
+        function fmt(n){ return (n||0).toLocaleString('pl-PL'); }
+        async function loadInventory(){
+            try{
+                const r=fbRoot();
+                const snap=await r.collection('inventory').orderBy('name').get();
+                state.inventory = snap.docs.map(function(d){ var o=d.data(); o.id=d.id; return o; });
+            }catch(e){
+                info('Warehouse error: '+e.message);
+                state.inventory = [];
+            }
+        }
+        async function renderWarehouse(){
+            await loadInventory();
+            const q=(qs('#wh-q') && qs('#wh-q').value || '').toLowerCase();
+            const filtered=state.inventory.filter(function(r){ var h=(r.name||'')+' '+(r.sku||''); return !q || h.toLowerCase().indexOf(q)>=0; });
+
+            // Render buy list
+            const buyList = qs('#wh-buy-list');
+            buyList.innerHTML = '';
+            const toBuy = filtered.filter(item => (item.qty || 0) < (item.reorderPoint || 0));
+            if (toBuy.length > 0) {
+                const html = toBuy.map(item => `
+                    <div class="card">
+                        <div class="row" style="justify-content:space-between">
+                            <b>${item.name} (${item.sku})</b>
+                            <span class="late">Zamów: ${Math.max(0, (item.reorderPoint || 0) - (item.qty || 0))} ${item.unit}</span>
+                        </div>
+                    </div>
+                `).join('');
+                buyList.innerHTML = html;
+                qs('#wh-buy-all').style.display = '';
+            } else {
+                buyList.innerHTML = '<div class="muted">Brak produktów do zamówienia.</div>';
+                qs('#wh-buy-all').style.display = 'none';
+            }
+
+            // Render main list
+            const mainList = qs('#wh-list');
+            mainList.innerHTML = '';
+            const sum = filtered.reduce(function(a,b){ return a + (Number(b.qty)||0); },0);
+            if(!filtered.length){ mainList.innerHTML='<div class="muted">Brak pozycji</div>'; }
+            else{
+                const out=[];
+                for(var i=0;i<filtered.length;i++){
+                    const r=filtered[i];
+                    out.push('<div class="card">');
+                    out.push('<div class="row" data-id="'+(r.id||'')+'" style="gap:8px;align-items:center">');
+                    out.push('<div style="min-width:160px"><b>'+(r.name||'-')+'</b><div class="muted">'+(r.sku||'')+'</div></div>');
+                    out.push('<div class="muted" style="min-width:60px">jedn: '+(r.unit||'-')+'</div>');
+                    out.push('<div style="min-width:80px">ilość: <b>'+fmt(r.qty||0)+'</b></div>');
+                    out.push('<div style="min-width:120px">rezerwa: <b>'+fmt(r.reservedQty||0)+'</b></div>');
+                    out.push('<div class="row" style="gap:6px"><button class="btn" data-act="minus">-1</button><button class="btn" data-act="plus">+1</button><button class="btn" data-act="set">Ustaw</button><button class="btn" data-act="edit">Edytuj</button></div>');
+                    out.push('</div>');
+                    out.push('<div class="hline"></div>');
+                    out.push('<div class="grid3">');
+                    out.push('<div><label>Punkt zamawiania</label><input type="number" id="reorder-'+r.id+'" value="'+(r.reorderPoint||0)+'"></div>');
+                    out.push('<div><label>Ilość do zamówienia</label><input type="number" id="buyqty-'+r.id+'" value="'+(r.minOrderQty||0)+'"></div>');
+                    out.push('<div style="align-self:end"><button class="btn primary" data-act="save-mrp" data-id="'+r.id+'">Zapisz</button></div>');
+                    out.push('</div>');
+                    out.push('</div>');
+                }
+                mainList.innerHTML=out.join('');
+            }
+            const sumEl=qs('#wh-sum'); if(sumEl) sumEl.textContent='Pozycji: '+filtered.length+' • Łączna ilość: '+fmt(sum);
+        }
+        async function addItem(){
+            const form = qs('#wh-add-form');
+            const name = qs('#wh-add-name').value;
+            const sku = qs('#wh-add-sku').value;
+            const unit = qs('#wh-add-unit').value || 'szt';
+            const qty = parseInt(qs('#wh-add-qty').value, 10);
+            const reorderPoint = parseInt(qs('#wh-add-reorder').value, 10);
+            const buyQty = parseInt(qs('#wh-add-buyqty').value, 10);
+            const supplier = qs('#wh-add-supplier').value;
+
+            if (!name) return alert('Nazwa jest wymagana!');
+
+            try{
+                if(!ensureFirebase()) return info('Brak Firebase');
+                await fbRoot().collection('inventory').doc().set({
+                    sku: sku,
+                    name: name,
+                    unit: unit,
+                    qty: qty,
+                    reservedQty: 0,
+                    reorderPoint: reorderPoint,
+                    minOrderQty: buyQty,
+                    supplier: supplier,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                form.reset();
+                renderWarehouse();
+            }catch(e){ info('Błąd dodawania: '+e.message); }
+        }
+        async function adjust(id, delta){
+            try{
+                if(!ensureFirebase()) return info('Brak Firebase');
+                var ref=fbRoot().collection('inventory').doc(id);
+                await firebase.firestore().runTransaction(async function(tx){
+                    var snap=await tx.get(ref);
+                    var cur=(snap.exists && (snap.data().qty||0)) || 0;
+                    tx.set(ref, {qty: cur + delta, updatedAt:firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+                });
+                renderWarehouse();
+            }catch(e){ info('Błąd zmiany ilości: '+e.message); }
+        }
+        async function setQty(id){
+            try{
+                var val=prompt('Ustaw ilość na...','0'); if(val===null) return;
+                var q=parseFloat(String(val).replace(',','.'))||0;
+                var ref=fbRoot().collection('inventory').doc(id);
+                await ref.set({qty:q, updatedAt:firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+                renderWarehouse();
+            }catch(e){ info('Błąd ustawiania: '+e.message); }
+        }
+        async function editItem(id){
+            try{
+                var ref=fbRoot().collection('inventory').doc(id);
+                var snap=await ref.get(); if(!snap.exists) return;
+                var d=snap.data();
+                var name=prompt('Nazwa', d.name||''); if(name===null) return;
+                var sku=prompt('SKU', d.sku||''); if(sku===null) return;
+                var unit=prompt('Jednostka', d.unit||'szt') || 'szt';
+                await ref.set({name:name,sku:sku,unit:unit,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+                renderWarehouse();
+            }catch(e){ info('Błąd edycji: '+e.message); }
+        }
+        async function saveMrp(id){
+            const reorderPoint = parseInt(qs('#reorder-'+id).value, 10);
+            const minOrderQty = parseInt(qs('#buyqty-'+id).value, 10);
+            if(isNaN(reorderPoint) || isNaN(minOrderQty)) return alert('Podaj poprawne liczby.');
+            const ref=fbRoot().collection('inventory').doc(id);
+            await ref.set({reorderPoint, minOrderQty, updatedAt:firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+            renderWarehouse();
+        }
+        async function consumeFromStock(order){
+            const map = state.maps.find(m => m.id === order.modelMapId);
+            if (!map) return;
+            const updates = {};
+            map.processIds.forEach(pid => {
+                const process = state.processes.find(p => p.id === pid);
+                if (!process) return;
+                process.operations.forEach(op => {
+                    const material = state.inventory.find(inv => inv.name === op.name);
+                    if (material) {
+                        const needed = (op.workers || 1) * order.quantity; // Assuming workers = needed parts
+                        if (updates[material.id]) {
+                            updates[material.id] += needed;
+                        } else {
+                            updates[material.id] = needed;
+                        }
+                    }
+                });
+            });
+
+            if(Object.keys(updates).length > 0) {
+                const batch = firebase.firestore().batch();
+                for (const itemId in updates) {
+                    const needed = updates[itemId];
+                    const item = state.inventory.find(inv => inv.id === itemId);
+                    if (item) {
+                        const newReserved = (item.reservedQty || 0) + needed;
+                        const newQty = (item.qty || 0) - needed;
+                        const ref = fbRoot().collection('inventory').doc(itemId);
+                        batch.set(ref, {
+                            qty: newQty,
+                            reservedQty: newReserved,
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                    }
+                }
+                await batch.commit();
+                alert('Materiały zostały zarezerwowane w magazynie.');
+            }
+        }
+        window.consumeFromStock = consumeFromStock;
+
+        qs('#wh-add-form').onsubmit = (ev) => {
+            ev.preventDefault();
+            addItem();
+        };
+
+        document.addEventListener('click', function(e){
+            var t=e.target;
+            if(t && t.id==='wh-reload') renderWarehouse();
+            if(t && t.closest && t.closest('#wh-list') && t.dataset && t.dataset.act){
+                var row=t.closest('.card');
+                var id=t.dataset.id || (row && row.querySelector('[data-act="save-mrp"]')?.dataset.id);
+                if(!id) return;
+                if(t.dataset.act==='plus') adjust(id, +1);
+                if(t.dataset.act==='minus') adjust(id, -1);
+                if(t.dataset.act==='set') setQty(id);
+                if(t.dataset.act==='edit') editItem(id);
+                if(t.dataset.act==='save-mrp') saveMrp(id);
+            }
+        });
+        document.addEventListener('input', function(e){
+            if(e.target && e.target.id==='wh-q') renderWarehouse();
+        });
+        window.renderWarehouse = renderWarehouse;
+
+        // INICJALIZACJA
+        load();
+        try{ firebase.app(); }catch(e){ firebase.initializeApp({apiKey:'',projectId:''}); }
+        if(state.storage && state.storage.fbConfig && state.storage.fbConfig.apiKey){ try{ firebase.app().delete().then(()=>{ firebase.initializeApp(state.storage.fbConfig); firebase.auth().signInAnonymously().catch(()=>{}); }); }catch(_ ){} }
+        nav(state.page||'dash');
+    })();
+</script>
+</body>
+</html>
