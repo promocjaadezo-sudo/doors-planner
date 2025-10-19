@@ -96,8 +96,8 @@
       state.taskOrderMap[taskId] = orderId;
     }
     
-    // Note: Don't call saveState here to avoid performance issues with batch operations
-    // The caller should save after batch updates
+    // Note: Don't call saveState here to avoid performance issues with batch operations.
+    // Caller must call saveState() after batch updates.
   }
 
   function autoSyncTasks() {
