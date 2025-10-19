@@ -185,10 +185,12 @@
     window.store.get = getState; 
     window.store.set = setState;
     window.store.createTestData = createTestData; // Dodaj do store
+    window.store.updateTaskMappings = updateTaskMappings; // Export updateTaskMappings
   }catch(e){ /* ignore */ }
   // also provide global aliases
   window.loadState = loadState;
   window.saveState = saveState;
+  window.updateTaskMappings = updateTaskMappings;
 
   // initialize
   loadState();

@@ -797,6 +797,29 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
       </div>
       <div id="set-info" style="color:#ffffff !important;font-weight:600;font-size:14px;background:#1a2332;padding:4px 8px;border-radius:4px;border:1px solid #334155;"></div>
     </div>
+    
+    <!-- Task Mappings Display Section -->
+    <div class="card" style="margin-top:16px">
+      <div class="row" style="justify-content:space-between">
+        <h4>Powiązania zadań (Task Mappings)</h4>
+        <button class="btn" id="refresh-task-mappings">Odśwież</button>
+      </div>
+      <div class="table" style="margin-top:8px">
+        <table>
+          <thead>
+            <tr>
+              <th>ID Zadania</th>
+              <th>ID Procesu</th>
+              <th>ID Zlecenia</th>
+            </tr>
+          </thead>
+          <tbody id="task-mappings"></tbody>
+        </table>
+      </div>
+      <div class="muted" style="margin-top:8px;font-size:12px">
+        Ta sekcja wyświetla powiązania między zadaniami, procesami i zleceniami przechowywane w taskProcessMap i taskOrderMap.
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1831,6 +1854,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     if(p==='capacity') renderCapacityAnalysis();
     if(p==='reports') renderReports();
     if(p==='monitor') try{ renderMonitor(); }catch(_){ /* no-op if monitor renderer missing */ }
+    if(p==='settings') try{ if(typeof renderTaskMappings === 'function') renderTaskMappings(window.state||state); }catch(e){ console.warn('[settings] renderTaskMappings error', e); }
     if(p==='wh') {
       try { 
         // Przywracamy normalną delegację kliknięć przy wejściu do magazynu
@@ -2530,6 +2554,12 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
             const gen = window.scheduleCore.generateTasksForOrder(orderObj, state);
             if(gen && gen.length){
               state.tasks = (state.tasks||[]).concat(gen);
+              // Update task mappings for each generated task
+              gen.forEach(task => {
+                if(typeof window.updateTaskMappings === 'function'){
+                  window.updateTaskMappings(task.id, task.processId, task.orderId);
+                }
+              });
               if(typeof updateScheduleConfigFromUI === 'function'){ updateScheduleConfigFromUI(); }
               window.scheduleCore.generateSchedule(state);
               orderObj.tasksGenerated = true;
@@ -2586,6 +2616,12 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           const gen = window.scheduleCore.generateTasksForOrder(order, state);
           if(gen && gen.length){
             state.tasks = state.tasks.concat(gen);
+            // Update task mappings for each generated task
+            gen.forEach(task => {
+              if(typeof window.updateTaskMappings === 'function'){
+                window.updateTaskMappings(task.id, task.processId, task.orderId);
+              }
+            });
             window.scheduleCore.generateSchedule(state);
             order.tasksGenerated = true;
             save();
@@ -4341,6 +4377,20 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     URL.revokeObjectURL(url);
     alert('Dane zostały wyeksportowane do pliku!');
   });
+
+  // Handler for refreshing task mappings display
+  const refreshTaskMappingsBtn = qs('#refresh-task-mappings');
+  if(refreshTaskMappingsBtn) {
+    refreshTaskMappingsBtn.addEventListener('click', () => {
+      try {
+        if(typeof renderTaskMappings === 'function') {
+          renderTaskMappings(window.state || state);
+        }
+      } catch(e) {
+        console.error('[refresh-task-mappings] error', e);
+      }
+    });
+  }
 
   qs('#import-data').addEventListener('click', () => {
     const input = document.createElement('input');
