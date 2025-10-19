@@ -20,16 +20,16 @@
     try{ 
       const raw = localStorage.getItem(storeKey); 
       state = raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(defaultState));
-      // Upewnij się że kluczowe tablice istnieją
+      // Upewnij się, że kluczowe tablice istnieją
       if (!Array.isArray(state.tasks)) state.tasks = [];
       if (!Array.isArray(state.orders)) state.orders = [];
       if (!Array.isArray(state.processes)) state.processes = [];
       
-      // Migracja: upewnij się że taskProcessMap i taskOrderMap istnieją
+      // Migracja: upewnij się, że taskProcessMap i taskOrderMap istnieją
       if (!state.taskProcessMap) state.taskProcessMap = {};
       if (!state.taskOrderMap) state.taskOrderMap = {};
       
-      // Migracja: wypełnij taskProcessMap i taskOrderMap z istniejących tasków
+      // Migracja: wypełnij taskProcessMap i taskOrderMap z istniejących zadań
       state.tasks.forEach(task => {
         if (task.processId && !state.taskProcessMap[task.id]) {
           state.taskProcessMap[task.id] = task.processId;
@@ -43,7 +43,7 @@
         tasksLength: state.tasks.length,
         ordersLength: state.orders.length,
         processesLength: state.processes.length,
-        taskMappingsCount: Object.keys(state.taskProcessMap || {}).length
+        taskMappingsCount: Object.keys(state.taskProcessMap).length
       });
     } catch(e){ 
       console.error('Błąd ładowania stanu:', e);
@@ -79,12 +79,25 @@
   function getState(){ return state; }
   function setState(s){ state = s || {}; saveState(); }
   function updateTaskMappings(taskId, processId, orderId) {
+    // Validate inputs
+    if (!taskId) {
+      console.warn('[updateTaskMappings] taskId is required');
+      return;
+    }
+    
     if (!state.taskProcessMap) state.taskProcessMap = {};
     if (!state.taskOrderMap) state.taskOrderMap = {};
 
-    state.taskProcessMap[taskId] = processId;
-    state.taskOrderMap[taskId] = orderId;
-    saveState(true); // Zapisz zmiany w Firebase
+    // Only update if values are provided
+    if (processId) {
+      state.taskProcessMap[taskId] = processId;
+    }
+    if (orderId) {
+      state.taskOrderMap[taskId] = orderId;
+    }
+    
+    // Note: Don't call saveState here to avoid performance issues with batch operations
+    // The caller should save after batch updates
   }
 
   function autoSyncTasks() {
