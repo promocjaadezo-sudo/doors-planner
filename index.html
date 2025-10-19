@@ -181,7 +181,8 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
     <button class="btn" data-nav="map">Mapy</button>
     <button class="btn" data-nav="monitor">Monitoring</button>
     <button class="btn" data-nav="mrp">MRP</button>
-    <button class="btn" data-nav="wh">Magazyn</button>
+  <button class="btn" data-nav="wh">Magazyn</button>
+  <button class="btn" data-nav="whworker" aria-label="Panel pracownika">Pracownik magazynu</button>
     <button class="btn" data-nav="sync">🔄 Sync</button>
     <button class="btn" data-nav="backup">Backup</button>
     <button class="btn" data-nav="settings">Ustawienia</button>
@@ -470,6 +471,50 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
         <button class="btn" onclick="diagnoseShablon()">🔍 Diagnoza szablonów</button>
       </div>
       <div class="list" id="wh-templates-list"></div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="p-whworker">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div>
+        <h3 style="margin-bottom:4px">👷 Panel pracownika magazynu</h3>
+        <div style="color:#64748b;font-size:14px">Szybki podgląd najważniejszych zadań i rezerwacji do obsługi</div>
+      </div>
+      <div class="row" style="gap:8px">
+        <button class="btn" onclick="window.syncWarehouseTasks?.()">🔄 Odśwież dane</button>
+        <button class="btn" onclick="window.showWarehouseWorkerDispatch?.()">📤 Wyślij zadania</button>
+        <button class="btn" onclick="nav('wh')">📦 Przejdź do pełnego magazynu</button>
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+      <div style="font-weight:600;color:#1f2937">Domyślny magazynier:</div>
+      <select id="warehouse-default-worker" onchange="window.updateDefaultWarehouseWorker?.(this.value)" style="flex:1;min-width:220px;max-width:280px;padding:8px 12px;border-radius:6px;border:1px solid #cbd5f5;background:var(--panel);color:var(--text)"></select>
+      <div id="warehouse-default-worker-summary" style="font-size:12px;color:#64748b"></div>
+    </div>
+
+    <div class="grid3" id="wh-worker-stats" style="gap:12px;margin-bottom:16px"></div>
+
+    <div class="grid2" style="gap:16px">
+      <div class="card soft" style="display:flex;flex-direction:column;gap:12px">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <h4 style="margin:0">✅ Zadania magazyniera</h4>
+          <button class="btn" style="padding:4px 8px;font-size:13px" onclick="nav('wh');setTimeout(()=>switchWarehouseTab('tasks'),50)">📋 Wszystkie zadania</button>
+        </div>
+        <div id="wh-worker-task-list" class="list" style="gap:8px">
+          <div class="muted">Brak otwartych zadań do wykonania 🎉</div>
+        </div>
+      </div>
+
+      <div class="card soft" style="display:flex;flex-direction:column;gap:12px">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <h4 style="margin:0">🔒 Rezerwacje do obsługi</h4>
+          <button class="btn" style="padding:4px 8px;font-size:13px" onclick="nav('wh');setTimeout(()=>switchWarehouseTab('reservations'),50)">🔍 Podgląd rezerwacji</button>
+        </div>
+        <div id="wh-worker-reservation-list" class="list" style="gap:8px">
+          <div class="muted">Brak zadań związanych z rezerwacjami.</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1569,6 +1614,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   // ensure settings object exists and default autoCleanup = true
   state.settings = state.settings || {};
   if (typeof state.settings.autoCleanup === 'undefined') state.settings.autoCleanup = true;
+  if (typeof state.settings.defaultWarehouseWorkerId === 'undefined') state.settings.defaultWarehouseWorkerId = null;
   // expose state for debugging and console access
   try{ window.state = state; }catch(e){console.warn('unable to expose state', e);}
 
@@ -1611,8 +1657,8 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       window.restoreNormalClickDelegation();
       console.log('[nav] Emergency delegation restore for page:', p);
     }
-    const map={dash:'p-dash',tasks:'p-tasks',order:'p-order',proc:'p-proc',opcat:'p-opcat',emp:'p-emp',as:'p-as',
-               map:'p-map',monitor:'p-monitor',mrp:'p-mrp',wh:'p-wh',sync:'p-sync',backup:'p-backup',migr:'p-migr',settings:'p-settings',gantt:'p-gantt',capacity:'p-capacity',reports:'p-reports'};
+  const map={dash:'p-dash',tasks:'p-tasks',order:'p-order',proc:'p-proc',opcat:'p-opcat',emp:'p-emp',as:'p-as',
+         map:'p-map',monitor:'p-monitor',mrp:'p-mrp',wh:'p-wh',whworker:'p-whworker',sync:'p-sync',backup:'p-backup',migr:'p-migr',settings:'p-settings',gantt:'p-gantt',capacity:'p-capacity',reports:'p-reports'};
     qsa('[id^="p-"]').forEach(el=>el.classList.add('hidden'));
     qs('#'+(map[p]||'p-dash')).classList.remove('hidden');
     state.page=p; save();
@@ -1633,6 +1679,14 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         window.restoreNormalClickDelegation();
         initWarehouse(); 
       } catch(e){ console.warn('[warehouse] init error', e); }
+    }
+    if(p==='whworker') {
+      try {
+        window.syncWarehouseTasks?.();
+        if (typeof window.renderWarehouseWorkerDashboard === 'function') {
+          window.renderWarehouseWorkerDashboard();
+        }
+      } catch(e){ console.warn('[warehouse-worker] init error', e); }
     }
   renderDash(window.state||state); renderGantt();
   }
@@ -7117,9 +7171,28 @@ function switchWarehouseTab(tab) {
   } else if (tab === 'transactions') {
     renderTransactions();
   } else if (tab === 'reservations') {
-    renderReservations();
+    if (typeof window.refreshWarehouseUI === 'function') {
+      window.refreshWarehouseUI({ reservations: true, tasks: false, dashboard: true, badge: true });
+    } else if (typeof renderReservations === 'function') {
+      renderReservations();
+    }
   } else if (tab === 'tasks') {
-    renderWarehouseTasks();
+    if (typeof window.refreshWarehouseUI === 'function') {
+      window.refreshWarehouseUI({ tasks: true, dashboard: true, reservations: true, badge: true });
+    } else {
+      if (typeof renderWarehouseTasks === 'function') {
+        renderWarehouseTasks();
+      }
+      if (typeof window.renderWarehouseWorkerDashboard === 'function') {
+        window.renderWarehouseWorkerDashboard();
+      }
+      if (typeof window.renderReservations === 'function') {
+        window.renderReservations();
+      }
+      if (typeof window.updateTasksBadge === 'function') {
+        window.updateTasksBadge();
+      }
+    }
   } else if (tab === 'templates') {
     renderTemplates();
   }
@@ -7708,6 +7781,8 @@ function showReservationModal() {
         }
 
         // Utwórz rezerwację
+        const nowTimestamp = Date.now();
+        const nowIso = new Date(nowTimestamp).toISOString();
         const reservation = {
           id: generateId(),
           orderId: order.id,
@@ -7717,8 +7792,9 @@ function showReservationModal() {
           quantity: quantity,
           unit: item.unit,
           notes: notes,
-          date: new Date().toISOString(),
-          timestamp: Date.now(),
+          date: nowIso, // zachowaj zgodność wstecz
+          reservedAt: nowIso,
+          timestamp: nowTimestamp,
           status: 'active' // active, used, cancelled
         };
 
@@ -7729,7 +7805,22 @@ function showReservationModal() {
 
         saveWarehouseToStorage();
         alert(`✅ Zarezerwowano ${quantity} ${item.unit} - ${item.name} dla zlecenia ${order.name}`);
-        renderReservations();
+
+        const refreshed = typeof window.syncWarehouseTasks === 'function' && window.syncWarehouseTasks();
+
+        if (!refreshed) {
+          if (typeof window.refreshWarehouseUI === 'function') {
+            window.refreshWarehouseUI({ reservations: true, tasks: true, dashboard: true, badge: true });
+          } else {
+            renderReservations();
+            if (typeof window.renderWarehouseWorkerDashboard === 'function') {
+              window.renderWarehouseWorkerDashboard();
+            }
+            if (typeof window.updateTasksBadge === 'function') {
+              window.updateTasksBadge();
+            }
+          }
+        }
       }
     }
   ]);
@@ -7745,6 +7836,37 @@ function getReservedQuantity(itemIdx) {
 function renderReservations() {
   const list = document.getElementById('wh-reservations-list');
   if (!list) return;
+
+  const parseDateSafe = (value) => {
+    if (value === undefined || value === null) return null;
+    if (value instanceof Date) {
+      return Number.isNaN(value.getTime()) ? null : value;
+    }
+    let normalizedValue = value;
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+      if (/^\d+$/.test(trimmed)) {
+        normalizedValue = Number(trimmed);
+      } else {
+        normalizedValue = trimmed;
+      }
+    }
+    const dateObj = typeof normalizedValue === 'number' ? new Date(normalizedValue) : new Date(normalizedValue);
+    return Number.isNaN(dateObj.getTime()) ? null : dateObj;
+  };
+
+  const formatDateTime = (value) => {
+    const dateObj = parseDateSafe(value);
+    if (!dateObj) return null;
+    return dateObj.toLocaleDateString('pl-PL', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   // Zapamiętaj otwarte szczegóły PRZED renderowaniem
   const openDetails = [];
@@ -7784,13 +7906,16 @@ function renderReservations() {
     let allIssued = true;
     
     group.materials.forEach(mat => {
-      if (mat.receivedDate) {
+      const receivedDateObj = parseDateSafe(mat.receivedDate || mat.receivedAt);
+      const issuedDateObj = parseDateSafe(mat.issuedDate || mat.issuedAt);
+
+      if (receivedDateObj) {
         someReceived = true;
       } else {
         allReceived = false;
       }
       
-      if (!mat.issuedDate) {
+      if (!issuedDateObj) {
         allIssued = false;
       }
     });
@@ -7822,14 +7947,14 @@ function renderReservations() {
     let latestIssued = null;
     
     group.materials.forEach(mat => {
-      if (mat.receivedDate) {
-        const rd = new Date(mat.receivedDate);
+      const rd = parseDateSafe(mat.receivedDate || mat.receivedAt);
+      if (rd) {
         if (!earliestReceived || rd < earliestReceived) {
           earliestReceived = rd;
         }
       }
-      if (mat.issuedDate) {
-        const id = new Date(mat.issuedDate);
+      const id = parseDateSafe(mat.issuedDate || mat.issuedAt);
+      if (id) {
         if (!latestIssued || id > latestIssued) {
           latestIssued = id;
         }
@@ -7891,18 +8016,21 @@ function renderReservations() {
         <div id="${detailsId}" style="display:none;border-top:1px solid #e2e8f0;padding-top:12px;margin-top:8px">
           ${group.materials.map(mat => {
             // Formatuj daty
-            const reservedDate = mat.date ? new Date(mat.date).toLocaleDateString('pl-PL', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'Brak daty';
-            const receivedDateStr = mat.receivedDate ? new Date(mat.receivedDate).toLocaleDateString('pl-PL', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : null;
-            const issuedDateStr = mat.issuedDate ? new Date(mat.issuedDate).toLocaleDateString('pl-PL', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : null;
+            const reservedSource = mat.reservedAt ?? mat.date ?? mat.createdAt ?? mat.timestamp;
+            const reservedDate = formatDateTime(reservedSource) || 'Brak daty';
+            const receivedDateStr = formatDateTime(mat.receivedDate || mat.receivedAt);
+            const issuedDateStr = formatDateTime(mat.issuedDate || mat.issuedAt);
             
             // Sprawdź status materiału na podstawie dat
             let statusBadge = '';
             let bgColor = '#f8fafc';
+            const hasIssued = Boolean(issuedDateStr);
+            const hasReceived = Boolean(receivedDateStr);
             
-            if (mat.issuedDate) {
+            if (hasIssued) {
               statusBadge = `<span style="display:inline-block;padding:3px 6px;background:#3b82f6;color:white;border-radius:3px;font-size:11px;font-weight:600;margin-left:8px">📦 Wydano</span>`;
               bgColor = '#eff6ff';
-            } else if (mat.receivedDate) {
+            } else if (hasReceived) {
               statusBadge = `<span style="display:inline-block;padding:3px 6px;background:#10b981;color:white;border-radius:3px;font-size:11px;font-weight:600;margin-left:8px">✅ Przyjęto</span>`;
               bgColor = '#f0fdf4';
             } else {
@@ -8013,13 +8141,28 @@ window.markAsReceived = function(resId) {
     
     // Zapisz do localStorage
     saveWarehouseToStorage();
-    
+
     // Odśwież widok - NIE zamykaj otwartych szczegółów
     alert(`✅ Przyjęto: ${reservation.itemName}`);
-    
+
     // Zapamiętaj, które szczegóły są otwarte
     window._keepDetailsOpen = true;
-    renderReservations();
+
+    const refreshed = typeof window.syncWarehouseTasks === 'function' && window.syncWarehouseTasks();
+
+    if (!refreshed) {
+      if (typeof window.refreshWarehouseUI === 'function') {
+        window.refreshWarehouseUI({ reservations: true, tasks: true, dashboard: true, badge: true });
+      } else {
+        renderReservations();
+        if (typeof window.updateTasksBadge === 'function') {
+          window.updateTasksBadge();
+        }
+        if (typeof window.renderWarehouseWorkerDashboard === 'function') {
+          window.renderWarehouseWorkerDashboard();
+        }
+      }
+    }
   }
 };
 
@@ -8081,14 +8224,32 @@ window.markAsIssued = function(resId) {
     
     // Zapisz do localStorage
     saveWarehouseToStorage();
-    
+
     // Odśwież widok - NIE zamykaj otwartych szczegółów
     alert(`📦 Wydano: ${reservation.itemName}\n\nStan magazynu: ${warehouseItem ? warehouseItem.quantity : '?'} ${reservation.unit}`);
-    
+
     // Zapamiętaj, które szczegóły są otwarte
     window._keepDetailsOpen = true;
-    renderReservations();
-    if (typeof renderWarehouse === 'function') renderWarehouse();
+
+    const refreshed = typeof window.syncWarehouseTasks === 'function' && window.syncWarehouseTasks();
+
+    if (!refreshed) {
+      if (typeof window.refreshWarehouseUI === 'function') {
+        window.refreshWarehouseUI({ reservations: true, tasks: true, dashboard: true, badge: true });
+      } else {
+        renderReservations();
+        if (typeof window.updateTasksBadge === 'function') {
+          window.updateTasksBadge();
+        }
+        if (typeof window.renderWarehouseWorkerDashboard === 'function') {
+          window.renderWarehouseWorkerDashboard();
+        }
+      }
+    }
+
+    if (typeof renderWarehouse === 'function') {
+      renderWarehouse();
+    }
   }
 };
 
@@ -8114,13 +8275,28 @@ window.cancelReservation = function(resId) {
     
     // Zapisz do localStorage
     saveWarehouseToStorage();
-    
+
     // Odśwież widok - NIE zamykaj otwartych szczegółów
     alert(`✕ Anulowano rezerwację: ${reservation.itemName}`);
-    
+
     // Zapamiętaj, które szczegóły są otwarte
     window._keepDetailsOpen = true;
-    renderReservations();
+
+    const refreshed = typeof window.syncWarehouseTasks === 'function' && window.syncWarehouseTasks();
+
+    if (!refreshed) {
+      if (typeof window.refreshWarehouseUI === 'function') {
+        window.refreshWarehouseUI({ reservations: true, tasks: true, dashboard: true, badge: true });
+      } else {
+        renderReservations();
+        if (typeof window.updateTasksBadge === 'function') {
+          window.updateTasksBadge();
+        }
+        if (typeof window.renderWarehouseWorkerDashboard === 'function') {
+          window.renderWarehouseWorkerDashboard();
+        }
+      }
+    }
   }
 };
 
@@ -8144,7 +8320,22 @@ window.completeOrder = function(orderId) {
     
     saveWarehouseToStorage();
     alert(`🏁 Zlecenie "${orderName}" zakończone!\n\n${reservations.length} rezerwacji przeniesiono do archiwum.`);
-    renderReservations();
+
+    const refreshed = typeof window.syncWarehouseTasks === 'function' && window.syncWarehouseTasks();
+
+    if (!refreshed) {
+      if (typeof window.refreshWarehouseUI === 'function') {
+        window.refreshWarehouseUI({ reservations: true, tasks: true, dashboard: true, badge: true });
+      } else {
+        renderReservations();
+        if (typeof window.renderWarehouseWorkerDashboard === 'function') {
+          window.renderWarehouseWorkerDashboard();
+        }
+        if (typeof window.updateTasksBadge === 'function') {
+          window.updateTasksBadge();
+        }
+      }
+    }
   }
 };
 
@@ -8235,79 +8426,288 @@ if (!window.warehouseTasks) {
 
   // Synchronizuj zadania magazynowe ze zleceniami (wywoływane po każdym zapisie stanu)
 window.syncWarehouseTasks = function() {
-  if (!window.state || !window.state.orders) return;
-  
-  // Dla każdego aktywnego zlecenia sprawdź materiały
-  window.state.orders.forEach(order => {
-    if (order.materialChecklist && order.materialChecklist.length > 0) {
-      generateWarehouseTasksForOrder(order);
+  if (!window.state || !window.state.orders) return false;
+
+  if (!Array.isArray(window.warehouseTasks)) {
+    window.warehouseTasks = JSON.parse(localStorage.getItem('warehouseTasks') || '[]');
+  }
+
+  const nowIso = new Date().toISOString();
+  const existingByKey = new Map();
+  (window.warehouseTasks || []).forEach(task => {
+    if (task && task.sourceKey) {
+      existingByKey.set(task.sourceKey, task);
     }
   });
-  
-  // Aktualizuj badge
-  if (typeof window.updateTasksBadge === 'function') {
-    window.updateTasksBadge();
-  }
-};// Generuj automatyczne zadania dla zlecenia
-window.generateWarehouseTasksForOrder = function(order) {
-  if (!order || !order.id) return;
-  
-  const orderStartDate = order.startDate ? new Date(order.startDate) : null;
-  const materialsNeeded = order.materialChecklist || [];
-  
-  if (materialsNeeded.length === 0) return;
-  
-  // Oblicz daty ostrzeżeń (3 dni przed start produkcji)
-  const warningDate = orderStartDate ? new Date(orderStartDate) : new Date();
-  warningDate.setDate(warningDate.getDate() - 3);
-  
-  // Sprawdź, czy materiały są w magazynie
-  materialsNeeded.forEach(material => {
-    const warehouseItem = (window.warehouseItems || []).find(w => w.id === material.itemId);
-    const inStock = warehouseItem ? warehouseItem.quantity : 0;
-    const needed = material.quantity || 0;
-    
-    if (inStock < needed) {
-      // Brakuje materiału - utwórz zadanie zamówienia
-      const task = {
-        id: 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-        type: 'order_material', // typ: order_material, receive_material, prepare_material, issue_material
-        orderId: order.id,
-        orderName: order.name,
-        itemId: material.itemId,
-        itemName: material.itemName,
-        unit: material.unit || 'szt.',
-        quantityNeeded: needed,
-        quantityInStock: inStock,
-        quantityToOrder: needed - inStock,
-        status: 'pending', // pending, in_progress, completed, cancelled
-        priority: 'normal', // normal, urgent
-        dueDate: warningDate.toISOString(),
-        createdAt: new Date().toISOString(),
-        createdBy: 'System',
-        assignedTo: 'Magazynier'
-      };
-      
-      // Sprawdź czy nie ma już takiego zadania
-      const existingTask = window.warehouseTasks.find(t => 
-        t.orderId === order.id && 
-        t.itemId === material.itemId && 
-        t.type === 'order_material' && 
-        t.status !== 'cancelled'
-      );
-      
-      if (!existingTask) {
-        window.warehouseTasks.push(task);
+
+  const employeesList = Array.isArray(window.state?.employees) ? window.state.employees : [];
+  const employeesById = new Map(employeesList.filter(Boolean).map(emp => [emp.id, emp]));
+  const defaultWorkerId = window.state?.settings?.defaultWarehouseWorkerId || null;
+  const defaultWorker = defaultWorkerId ? employeesById.get(defaultWorkerId) : null;
+
+  const touchedKeys = new Set();
+  const activeReservationIds = new Set();
+
+  const parseDateValue = (value) => {
+    if (value === undefined || value === null) return null;
+    if (value instanceof Date) {
+      return Number.isNaN(value.getTime()) ? null : value;
+    }
+    let normalized = value;
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+      if (/^\d+$/.test(trimmed)) {
+        normalized = Number(trimmed);
+      } else {
+        normalized = trimmed;
+      }
+    }
+    const result = typeof normalized === 'number' ? new Date(normalized) : new Date(normalized);
+    return Number.isNaN(result.getTime()) ? null : result;
+  };
+
+  const toIso = (value, fallbackIso) => {
+    const parsed = parseDateValue(value);
+    if (parsed) return parsed.toISOString();
+    return fallbackIso || null;
+  };
+
+  const ensureTask = (taskData) => {
+    if (!taskData || !taskData.sourceKey) return;
+    const key = taskData.sourceKey;
+    const desiredStatus = taskData.desiredStatus || 'pending';
+    const existing = existingByKey.get(key);
+
+    if (!existing && desiredStatus === 'completed') {
+      // Nie twórz nowych zakończonych zadań – wystarczy oznaczenie do czyszczenia starych wpisów
+      touchedKeys.add(key);
+      return;
+    }
+
+    if (existing) {
+      touchedKeys.add(key);
+      existing.orderId = taskData.orderId ?? existing.orderId;
+      existing.orderName = taskData.orderName ?? existing.orderName;
+      existing.itemId = taskData.itemId ?? existing.itemId;
+      existing.itemName = taskData.itemName ?? existing.itemName;
+      existing.unit = taskData.unit ?? existing.unit;
+      existing.quantityNeeded = taskData.quantityNeeded ?? existing.quantityNeeded;
+      existing.quantityInStock = taskData.quantityInStock ?? existing.quantityInStock;
+      existing.quantityToOrder = taskData.quantityToOrder ?? existing.quantityToOrder;
+      existing.quantity = taskData.quantity ?? existing.quantity;
+      existing.priority = taskData.priority ?? existing.priority ?? 'normal';
+      existing.dueDate = taskData.dueDate ?? existing.dueDate;
+      existing.type = taskData.type ?? existing.type;
+      existing.notes = taskData.notes ?? existing.notes;
+      existing.linkedReservationId = taskData.linkedReservationId ?? existing.linkedReservationId;
+      existing.assignedTo = taskData.assignedTo ?? existing.assignedTo ?? 'Magazynier';
+      existing.assignedToId = taskData.assignedToId ?? existing.assignedToId ?? null;
+      if ((!existing.assignedToId || existing.assignedTo === 'Magazynier') && defaultWorker) {
+        existing.assignedToId = defaultWorker.id;
+        existing.assignedTo = defaultWorker.name || defaultWorker.id;
+        existing.assignedAt = existing.assignedAt || nowIso;
+      }
+      if (taskData.assignedAt) {
+        existing.assignedAt = taskData.assignedAt;
+      }
+      existing.updatedAt = nowIso;
+
+      if (desiredStatus === 'completed') {
+        existing.status = 'completed';
+        existing.completedAt = existing.completedAt || nowIso;
+      } else {
+        if (existing.status === 'completed' && desiredStatus !== 'completed') {
+          existing.completedAt = undefined;
+        }
+        existing.status = desiredStatus;
+        if (desiredStatus === 'in_progress') {
+          existing.startedAt = existing.startedAt || nowIso;
+        }
+      }
+      return;
+    }
+
+    touchedKeys.add(key);
+    const newTask = {
+      id: taskData.id || ('task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6)),
+      createdAt: nowIso,
+      assignedTo: taskData.assignedTo || 'Magazynier',
+      assignedToId: taskData.assignedToId || null,
+      assignedAt: taskData.assignedAt || null,
+      priority: taskData.priority || 'normal',
+      status: desiredStatus === 'completed' ? 'completed' : desiredStatus,
+      sourceKey: key,
+      type: taskData.type,
+      orderId: taskData.orderId,
+      orderName: taskData.orderName,
+      itemId: taskData.itemId,
+      itemName: taskData.itemName,
+      unit: taskData.unit,
+      quantityNeeded: taskData.quantityNeeded,
+      quantityInStock: taskData.quantityInStock,
+      quantityToOrder: taskData.quantityToOrder,
+      quantity: taskData.quantity,
+      dueDate: taskData.dueDate,
+      notes: taskData.notes,
+      linkedReservationId: taskData.linkedReservationId
+    };
+
+    if (desiredStatus === 'completed') {
+      newTask.completedAt = nowIso;
+    }
+
+    if ((!newTask.assignedToId || newTask.assignedTo === 'Magazynier') && defaultWorker) {
+      newTask.assignedToId = defaultWorker.id;
+      newTask.assignedTo = defaultWorker.name || defaultWorker.id;
+      newTask.assignedAt = newTask.assignedAt || nowIso;
+    }
+
+    window.warehouseTasks.push(newTask);
+    existingByKey.set(key, newTask);
+  };
+
+  // Zadania wynikające z braków magazynowych w checklistach
+  window.state.orders.forEach(order => {
+    if (!order || !Array.isArray(order.materialChecklist)) return;
+    const generated = generateWarehouseTasksForOrder(order) || [];
+    generated.forEach(taskData => ensureTask(taskData));
+  });
+
+  // Zadania powiązane z rezerwacjami
+  const reservations = (window.warehouseReservations || []).filter(res => res && res.status === 'active');
+  reservations.forEach(res => {
+    activeReservationIds.add(res.id);
+    const order = (window.state.orders || []).find(o => o.id === res.orderId);
+    const orderName = res.orderName || order?.name || 'Zlecenie';
+    const unit = res.unit || 'szt';
+    const reservedIso = toIso(res.reservedAt || res.date || res.timestamp, nowIso) || nowIso;
+    const receiveDue = toIso(res.expectedAt || res.expectedDate || res.plannedDelivery || reservedIso, reservedIso) || reservedIso;
+    const issueReference = order?.startDate || order?.installDate || res.issueAt || res.requiredAt || reservedIso;
+    const issueDue = toIso(issueReference, reservedIso) || reservedIso;
+    const hasReceived = Boolean(parseDateValue(res.receivedDate || res.receivedAt));
+    const hasIssued = Boolean(parseDateValue(res.issuedDate || res.issuedAt));
+
+    ensureTask({
+      sourceKey: `reservation:${res.id}:receive`,
+      type: 'receive_material',
+      orderId: res.orderId,
+      orderName,
+      itemId: res.itemId,
+      itemName: res.itemName,
+      unit,
+      quantity: res.quantity,
+      notes: res.notes,
+      linkedReservationId: res.id,
+      dueDate: receiveDue,
+      priority: res.priority || (hasReceived ? 'normal' : 'urgent'),
+      desiredStatus: hasReceived ? 'completed' : 'pending'
+    });
+
+    const issueStatus = hasIssued ? 'completed' : (hasReceived ? 'pending' : 'completed');
+    ensureTask({
+      sourceKey: `reservation:${res.id}:issue`,
+      type: 'issue_material',
+      orderId: res.orderId,
+      orderName,
+      itemId: res.itemId,
+      itemName: res.itemName,
+      unit,
+      quantity: res.quantity,
+      notes: res.notes,
+      linkedReservationId: res.id,
+      dueDate: issueDue,
+      priority: hasReceived ? 'normal' : 'low',
+      desiredStatus: issueStatus
+    });
+  });
+
+  // Automatycznie zamykaj zadania nieaktualne
+  (window.warehouseTasks || []).forEach(task => {
+    if (!task || !task.sourceKey) return;
+
+    if (!touchedKeys.has(task.sourceKey)) {
+      if (task.status !== 'completed' && task.status !== 'cancelled') {
+        task.status = 'completed';
+        task.completedAt = task.completedAt || nowIso;
+      }
+      touchedKeys.add(task.sourceKey);
+    }
+
+    if (task.linkedReservationId && !activeReservationIds.has(task.linkedReservationId)) {
+      if (task.status !== 'completed' && task.status !== 'cancelled') {
+        task.status = 'completed';
+        task.completedAt = task.completedAt || nowIso;
       }
     }
   });
-  
-  // Zapisz zadania
+
   localStorage.setItem('warehouseTasks', JSON.stringify(window.warehouseTasks));
+
+  if (typeof window.refreshWarehouseUI === 'function') {
+    window.refreshWarehouseUI({ tasks: true, dashboard: true, reservations: true, badge: true });
+  } else {
+    if (typeof renderWarehouseTasks === 'function') {
+      renderWarehouseTasks();
+    }
+    if (typeof window.updateTasksBadge === 'function') {
+      window.updateTasksBadge();
+    }
+    if (typeof window.renderWarehouseWorkerDashboard === 'function') {
+      window.renderWarehouseWorkerDashboard();
+    }
+    if (typeof window.renderReservations === 'function') {
+      window.renderReservations();
+    }
+  }
+
+  return true;
+};// Generuj automatyczne zadania dla zlecenia
+window.generateWarehouseTasksForOrder = function(order) {
+  if (!order || !order.id) return [];
+  const tasks = [];
+
+  const orderStartDate = order.startDate ? new Date(order.startDate) : null;
+  const materialsNeeded = Array.isArray(order.materialChecklist) ? order.materialChecklist : [];
+  if (materialsNeeded.length === 0) return tasks;
+
+  const warningDate = orderStartDate ? new Date(orderStartDate) : new Date();
+  warningDate.setDate(warningDate.getDate() - 3);
+  const warningIso = warningDate.toISOString();
+  const now = Date.now();
+
+  materialsNeeded.forEach((material, idx) => {
+    const warehouseItem = (window.warehouseItems || []).find(w => w.id === material.itemId);
+    const inStock = warehouseItem ? Number(warehouseItem.quantity) || 0 : 0;
+    const needed = Number(material.quantity) || 0;
+    const shortage = Math.max(needed - inStock, 0);
+    const needsOrder = shortage > 0;
+    const materialKey = material.itemId || material.itemName || `idx-${idx}`;
+
+    tasks.push({
+      sourceKey: `order:${order.id}:material:${materialKey}:order_material`,
+      type: 'order_material',
+      orderId: order.id,
+      orderName: order.name,
+      itemId: material.itemId || null,
+      itemName: material.itemName || warehouseItem?.name || 'Materiał',
+      unit: material.unit || warehouseItem?.unit || 'szt.',
+      quantityNeeded: needed,
+      quantityInStock: inStock,
+      quantityToOrder: shortage,
+      desiredStatus: needsOrder ? 'pending' : 'completed',
+      priority: needsOrder && warningDate.getTime() <= now ? 'urgent' : 'normal',
+      dueDate: warningIso,
+      notes: material.notes || null
+    });
+  });
+
+  return tasks;
 };
 
 // Renderuj zadania magazyniera - NOWA WERSJA z grupowaniem po zleceniach
 window.renderWarehouseTasks = function() {
+  const inGlobalRefresh = Boolean(window.__WAREHOUSE_REFRESH_ACTIVE);
   const list = document.getElementById('wh-tasks-list');
   if (!list) return;
   
@@ -8415,6 +8815,8 @@ window.renderWarehouseTasks = function() {
       const dueDate = new Date(task.dueDate).toLocaleDateString('pl-PL', {
         year: 'numeric', month: '2-digit', day: '2-digit'
       });
+      const assignedName = task.assignedTo || 'Magazynier';
+      const assignedInfo = `<div style="font-size:12px;color:#475569;margin-top:4px">👤 Przydzielono: <strong>${assignedName}</strong>${task.assignedAt ? ` • ${new Date(task.assignedAt).toLocaleDateString('pl-PL', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}` : ''}</div>`;
       
       let taskIcon = '📦';
       let taskTitle = '';
@@ -8451,6 +8853,7 @@ window.renderWarehouseTasks = function() {
               <div style="font-size:12px;color:#9ca3af;margin-top:6px">
                 📅 Termin: ${dueDate}
               </div>
+              ${assignedInfo}
             </div>
             <div style="display:flex;flex-direction:column;gap:6px;min-width:120px">
               ${!isCompleted ? `
@@ -8507,8 +8910,14 @@ window.renderWarehouseTasks = function() {
     });
   });
   
-  // Aktualizuj badge z liczbą pilnych zadań
-  updateTasksBadge();
+  if (!inGlobalRefresh) {
+    if (typeof window.updateTasksBadge === 'function') {
+      window.updateTasksBadge();
+    }
+    if (typeof window.renderWarehouseWorkerDashboard === 'function') {
+      window.renderWarehouseWorkerDashboard();
+    }
+  }
 };
 
 // Toggle szczegółów zadań dla zlecenia
@@ -8543,6 +8952,558 @@ window.updateTasksBadge = function() {
   }
 };
 
+window.__WAREHOUSE_REFRESH_ACTIVE = false;
+
+window.refreshWarehouseUI = function(options = {}) {
+  const defaults = { tasks: true, dashboard: true, reservations: true, badge: true };
+  const opts = { ...defaults, ...options };
+
+  const previousFlag = Boolean(window.__WAREHOUSE_REFRESH_ACTIVE);
+  window.__WAREHOUSE_REFRESH_ACTIVE = true;
+
+  try {
+    if (opts.tasks && typeof window.renderWarehouseTasks === 'function') {
+      window.renderWarehouseTasks();
+    }
+    if (opts.dashboard && typeof window.renderWarehouseWorkerDashboard === 'function') {
+      try {
+        window.renderWarehouseWorkerDashboard();
+      } catch (error) {
+        console.warn('[warehouse] render dashboard failed', error);
+      }
+    }
+    if (opts.reservations && typeof window.renderReservations === 'function') {
+      try {
+        window.renderReservations();
+      } catch (error) {
+        console.warn('[warehouse] render reservations failed', error);
+      }
+    }
+    if (opts.badge && typeof window.updateTasksBadge === 'function') {
+      window.updateTasksBadge();
+    }
+  } finally {
+    window.__WAREHOUSE_REFRESH_ACTIVE = previousFlag;
+  }
+};
+
+window.renderWarehouseWorkerDashboard = function() {
+  const statsEl = document.getElementById('wh-worker-stats');
+  const taskListEl = document.getElementById('wh-worker-task-list');
+  const reservationListEl = document.getElementById('wh-worker-reservation-list');
+  const defaultSelectEl = document.getElementById('warehouse-default-worker');
+  const defaultSummaryEl = document.getElementById('warehouse-default-worker-summary');
+
+  if (!statsEl && !taskListEl && !reservationListEl) {
+    return;
+  }
+
+  const employees = Array.isArray(window.state?.employees)
+    ? window.state.employees.filter(emp => emp && !emp.archived)
+    : [];
+  const defaultWorkerId = window.state?.settings?.defaultWarehouseWorkerId || '';
+  const defaultWorker = defaultWorkerId ? employees.find(emp => emp.id === defaultWorkerId) : null;
+
+  if (defaultSelectEl) {
+    const previousValue = defaultSelectEl.value;
+    const options = [`<option value="">— Brak (przydzielaj ręcznie) —</option>`]
+      .concat(employees.map(emp => `
+        <option value="${emp.id}" ${emp.id === defaultWorkerId ? 'selected' : ''}>
+          ${emp.name || emp.id}
+        </option>
+      `));
+    defaultSelectEl.innerHTML = options.join('');
+    const targetValue = defaultWorkerId || (previousValue && employees.some(emp => emp.id === previousValue) ? previousValue : '');
+    defaultSelectEl.value = targetValue;
+  }
+
+  if (defaultSummaryEl) {
+    if (defaultWorker) {
+      defaultSummaryEl.textContent = `Zadania będą domyślnie przypisywane do: ${defaultWorker.name || defaultWorker.id}`;
+    } else {
+      defaultSummaryEl.textContent = 'Brak domyślnego pracownika – zadania pozostaną nieprzypisane.';
+    }
+  }
+
+  const parseDateSafe = (value) => {
+    if (value === undefined || value === null) return null;
+    if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+    let normalized = value;
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+      normalized = /^\d+$/.test(trimmed) ? Number(trimmed) : trimmed;
+    }
+    const dateObj = new Date(normalized);
+    return Number.isNaN(dateObj.getTime()) ? null : dateObj;
+  };
+
+  const formatDateTime = (value, withTime = true) => {
+    const dateObj = parseDateSafe(value);
+    if (!dateObj) return null;
+    const options = withTime ? {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit'
+    } : {
+      year: 'numeric', month: '2-digit', day: '2-digit'
+    };
+    return dateObj.toLocaleDateString('pl-PL', options);
+  };
+
+  const tasks = Array.isArray(window.warehouseTasks) ? window.warehouseTasks.slice() : [];
+  const activeTasks = tasks.filter(task => task && !['completed', 'cancelled'].includes(task.status));
+  const now = new Date();
+  const overdueTasks = activeTasks.filter(task => {
+    const due = parseDateSafe(task.dueDate);
+    return due && due < now;
+  });
+  const todayTasks = activeTasks.filter(task => {
+    const due = parseDateSafe(task.dueDate);
+    if (!due) return false;
+    return due.getFullYear() === now.getFullYear() &&
+           due.getMonth() === now.getMonth() &&
+           due.getDate() === now.getDate();
+  });
+
+  const reservationsRaw = Array.isArray(window.warehouseReservations) ? window.warehouseReservations.filter(res => res && res.status !== 'cancelled') : [];
+  const activeReservations = reservationsRaw.filter(res => res.status !== 'completed');
+  const needsReceive = activeReservations.filter(res => !parseDateSafe(res.receivedDate || res.receivedAt));
+  const readyToIssue = activeReservations.filter(res => parseDateSafe(res.receivedDate || res.receivedAt) && !parseDateSafe(res.issuedDate || res.issuedAt));
+
+  if (statsEl) {
+    const totalReservations = needsReceive.length + readyToIssue.length;
+    statsEl.innerHTML = `
+      <div class="card" style="padding:12px;text-align:center">
+        <div style="font-size:28px;font-weight:700;color:${activeTasks.length ? '#1d4ed8' : '#16a34a'}">${activeTasks.length}</div>
+        <div style="color:#64748b;font-size:13px;margin-top:4px">Aktywne zadania</div>
+      </div>
+      <div class="card" style="padding:12px;text-align:center">
+        <div style="font-size:28px;font-weight:700;color:${overdueTasks.length ? '#dc2626' : '#16a34a'}">${overdueTasks.length}</div>
+        <div style="color:#64748b;font-size:13px;margin-top:4px">Po terminie</div>
+        ${todayTasks.length ? `<div style="font-size:12px;color:#1d4ed8;margin-top:4px">Dziś: ${todayTasks.length}</div>` : ''}
+      </div>
+      <div class="card" style="padding:12px;text-align:center">
+        <div style="font-size:28px;font-weight:700;color:${totalReservations ? '#f59e0b' : '#16a34a'}">${totalReservations}</div>
+        <div style="color:#64748b;font-size:13px;margin-top:4px">Rezerwacje do obsługi</div>
+        ${totalReservations ? `<div style="font-size:12px;color:#b45309;margin-top:4px">Przyjęcia: ${needsReceive.length} • Wydania: ${readyToIssue.length}</div>` : ''}
+      </div>
+    `;
+  }
+
+  if (taskListEl) {
+    if (activeTasks.length === 0) {
+      taskListEl.innerHTML = '<div class="muted">Brak otwartych zadań do wykonania 🎉</div>';
+    } else {
+      const sortedTasks = activeTasks.sort((a, b) => {
+        const dueA = parseDateSafe(a.dueDate);
+        const dueB = parseDateSafe(b.dueDate);
+        if (dueA && dueB) return dueA - dueB;
+        if (dueA) return -1;
+        if (dueB) return 1;
+        return (a.createdAt || 0) - (b.createdAt || 0);
+      }).slice(0, 6);
+
+      taskListEl.innerHTML = sortedTasks.map(task => {
+        const due = parseDateSafe(task.dueDate);
+        const overdue = due && due < now;
+        const dueDisplay = due ? formatDateTime(due) : 'Brak terminu';
+        let badgeColor = '#6b7280';
+        let badgeLabel = 'Oczekujące';
+        const assignedName = task.assignedTo || 'Magazynier';
+        const assignedAt = task.assignedAt ? formatDateTime(task.assignedAt) : null;
+
+        if (task.status === 'in_progress') {
+          badgeColor = '#2563eb';
+          badgeLabel = 'W trakcie';
+        }
+        if (overdue) {
+          badgeColor = '#dc2626';
+          badgeLabel = 'Po terminie';
+        }
+        if (task.priority === 'urgent') {
+          badgeColor = '#b91c1c';
+          badgeLabel = 'Pilne';
+        }
+
+        let icon = '📦';
+        let title = task.itemName || task.title || 'Zadanie magazynowe';
+        let description = '';
+
+        if (task.type === 'order_material') {
+          icon = '🛒';
+          title = `Zamów: ${task.itemName || 'materiał'}`;
+          if (typeof task.quantityToOrder === 'number') {
+            description = `Brakuje ${task.quantityToOrder} ${task.unit || 'szt.'}`;
+          }
+        } else if (task.type === 'receive_material') {
+          icon = '📥';
+          title = `Przyjmij: ${task.itemName || 'materiał'}`;
+          description = `Ilość: ${task.quantity} ${task.unit || 'szt.'}`;
+        } else if (task.type === 'issue_material') {
+          icon = '📤';
+          title = `Wydaj: ${task.itemName || 'materiał'}`;
+          description = `Ilość: ${task.quantity} ${task.unit || 'szt.'}`;
+        }
+
+    const orderInfo = task.orderName ? `<div style="font-size:12px;color:#475569;margin-top:4px">📋 ${task.orderName}</div>` : '';
+    const assignedInfo = assignedName ? `<div style="font-size:12px;color:#1f2937;margin-top:6px">👤 Przydzielono: <strong>${assignedName}</strong>${assignedAt ? ` • ${assignedAt}` : ''}</div>` : '';
+        const notes = task.notes ? `<div style="font-size:12px;color:#94a3b8;margin-top:6px;font-style:italic">💬 ${task.notes}</div>` : '';
+
+        const actionButtons = [];
+        if (!['completed', 'cancelled'].includes(task.status)) {
+          actionButtons.push(`<button class="btn small green" onclick="completeWarehouseTask('${task.id}')" style="width:100%">✅ Zakończ</button>`);
+          if (task.status !== 'in_progress') {
+            actionButtons.push(`<button class="btn small blue" onclick="startWarehouseTask('${task.id}')" style="width:100%">▶️ Start</button>`);
+          }
+        }
+        actionButtons.push(`<button class="btn small" onclick="nav('wh');setTimeout(()=>{try{switchWarehouseTab('tasks');}catch(_){}} ,60)" style="width:100%;background:#e2e8f0;color:#1e293b">🔍 Szczegóły</button>`);
+
+        return `
+          <div class="card" style="padding:12px;background:#f8fafc;border-radius:8px">
+            <div style="display:flex;gap:12px;justify-content:space-between;align-items:flex-start">
+              <div style="flex:1">
+                <div style="font-weight:600;font-size:14px;color:#1f2937">
+                  ${icon} ${title}
+                  <span style="display:inline-block;margin-left:8px;padding:2px 10px;border-radius:999px;background:${badgeColor};color:white;font-size:11px;font-weight:600">${badgeLabel}</span>
+                </div>
+                ${description ? `<div style="font-size:13px;color:#475569;margin-top:6px">${description}</div>` : ''}
+                <div style="font-size:12px;color:#64748b;margin-top:6px">📅 Termin: ${dueDisplay}</div>
+                ${orderInfo}
+                ${assignedInfo}
+                ${notes}
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;min-width:140px">
+                ${actionButtons.join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('') + (activeTasks.length > 6 ? `<div class="muted" style="font-size:12px;padding-top:8px">+${activeTasks.length - 6} kolejnych zadań w pełnym widoku</div>` : '');
+    }
+  }
+
+  if (reservationListEl) {
+    if (!needsReceive.length && !readyToIssue.length) {
+      reservationListEl.innerHTML = '<div class="muted">Brak zadań związanych z rezerwacjami.</div>';
+    } else {
+      const buildReservationCard = (res, mode) => {
+        const reservedDate = formatDateTime(res.reservedAt || res.date || res.createdAt);
+        const receivedDate = formatDateTime(res.receivedDate || res.receivedAt);
+        const priorityBadge = res.priority === 'urgent'
+          ? '<span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#dc2626;color:white;font-size:11px;font-weight:600">Pilne</span>'
+          : '';
+        const quantity = typeof res.quantity === 'number' ? `${res.quantity} ${res.unit || ''}` : (res.quantity || res.unit ? `${res.quantity || ''} ${res.unit || ''}`.trim() : '—');
+        const statusColor = mode === 'receive' ? '#dc2626' : '#2563eb';
+        const statusLabel = mode === 'receive' ? 'Oczekuje na przyjęcie' : 'Gotowe do wydania';
+        const actionButton = mode === 'receive'
+          ? `<button class="btn small green" onclick="markAsReceived('${res.id}')" style="width:100%">✅ Przyjmij</button>`
+          : `<button class="btn small blue" onclick="markAsIssued('${res.id}')" style="width:100%">📦 Wydaj</button>`;
+
+        return `
+          <div class="card" style="padding:12px;background:#f8fafc;border-left:3px solid ${statusColor}">
+            <div style="display:flex;gap:12px;justify-content:space-between;align-items:flex-start">
+              <div style="flex:1">
+                <div style="font-weight:600;font-size:14px;color:#1f2937">
+                  ${mode === 'receive' ? '📥' : '📤'} ${res.itemName || 'Materiał'}
+                  <span style="display:inline-block;margin-left:8px;padding:2px 10px;border-radius:999px;background:${statusColor};color:white;font-size:11px;font-weight:600">${statusLabel}</span>
+                  ${priorityBadge}
+                </div>
+                <div style="font-size:13px;color:#475569;margin-top:6px">
+                  Ilość: <strong>${quantity}</strong>
+                  ${res.orderName ? `<br>📋 Zlecenie: <strong>${res.orderName}</strong>` : ''}
+                </div>
+                <div style="font-size:12px;color:#64748b;margin-top:6px;line-height:1.6">
+                  ${reservedDate ? `🔒 Zarezerwowano: ${reservedDate}<br>` : ''}
+                  ${receivedDate ? `✅ Przyjęto: ${receivedDate}<br>` : (mode === 'issue' ? '⚠️ Oczekuje na potwierdzenie przyjęcia<br>' : '')}
+                </div>
+                ${res.notes ? `<div style="font-size:12px;color:#94a3b8;margin-top:6px;font-style:italic">💬 ${res.notes}</div>` : ''}
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;min-width:140px">
+                ${actionButton}
+                <button class="btn small" onclick="cancelReservation('${res.id}')" style="width:100%;background:#fee2e2;color:#b91c1c">✕ Anuluj</button>
+              </div>
+            </div>
+          </div>
+        `;
+      };
+
+      const receiveSection = needsReceive.length
+        ? `
+          <div>
+            <div style="font-weight:600;font-size:13px;color:#b91c1c;margin-bottom:8px">📥 Do przyjęcia (${needsReceive.length})</div>
+            ${needsReceive
+              .slice(0, 4)
+              .map(res => buildReservationCard(res, 'receive'))
+              .join('')}
+            ${needsReceive.length > 4 ? `<div class="muted" style="font-size:12px;padding-top:8px">+${needsReceive.length - 4} kolejnych pozycji do przyjęcia</div>` : ''}
+          </div>
+        `
+        : '';
+
+      const issueSection = readyToIssue.length
+        ? `
+          <div style="margin-top:${needsReceive.length ? '16px' : '0'}">
+            <div style="font-weight:600;font-size:13px;color:#1d4ed8;margin-bottom:8px">📤 Do wydania (${readyToIssue.length})</div>
+            ${readyToIssue
+              .slice(0, 4)
+              .map(res => buildReservationCard(res, 'issue'))
+              .join('')}
+            ${readyToIssue.length > 4 ? `<div class="muted" style="font-size:12px;padding-top:8px">+${readyToIssue.length - 4} kolejnych pozycji do wydania</div>` : ''}
+          </div>
+        `
+        : '';
+
+      reservationListEl.innerHTML = `${receiveSection}${issueSection}`;
+    }
+  }
+};
+
+window.showWarehouseWorkerDispatch = function(preselectedEmployeeId) {
+  const employees = Array.isArray(window.state?.employees) ? window.state.employees.filter(emp => !emp.hidden && !emp.archived) : [];
+  const tasks = Array.isArray(window.warehouseTasks) ? window.warehouseTasks.filter(task => task && !['completed', 'cancelled'].includes(task.status)) : [];
+
+  if (!employees.length) {
+    alert('Brak zdefiniowanych pracowników w systemie. Dodaj pracownika w zakładce Pracownicy.');
+    return;
+  }
+
+  if (!tasks.length) {
+    alert('Brak otwartych zadań magazynowych do wysłania.');
+    return;
+  }
+
+  const defaultWorkerId = window.state?.settings?.defaultWarehouseWorkerId;
+  const selectedId = preselectedEmployeeId && employees.some(emp => emp.id === preselectedEmployeeId)
+    ? preselectedEmployeeId
+    : (defaultWorkerId && employees.some(emp => emp.id === defaultWorkerId) ? defaultWorkerId : employees[0].id);
+
+  const optionHtml = employees.map(emp => `
+    <option value="${emp.id}" ${emp.id === selectedId ? 'selected' : ''}>
+      ${emp.name || emp.id}${emp.role ? ` — ${emp.role}` : ''}
+    </option>
+  `).join('');
+
+  const describeTask = (task) => {
+    if (!task) return 'Zadanie magazynowe';
+    if (task.type === 'order_material') {
+      return `🛒 Zamów materiał: ${task.itemName || 'materiał'} (${task.quantityToOrder || 0} ${task.unit || 'szt.'})`;
+    }
+    if (task.type === 'receive_material') {
+      return `📥 Przyjmij: ${task.itemName || 'materiał'} (${task.quantity || task.quantityNeeded || task.quantityToOrder || ''} ${task.unit || 'szt.'})`;
+    }
+    if (task.type === 'issue_material') {
+      return `📤 Wydaj: ${task.itemName || 'materiał'} (${task.quantity || ''} ${task.unit || 'szt.'})`;
+    }
+    if (task.type === 'prepare_material') {
+      return `📦 Przygotuj materiały dla zlecenia ${task.orderName || ''}`;
+    }
+    return `${task.itemName || task.title || 'Zadanie magazynowe'}`;
+  };
+
+  const tasksHtml = tasks.map(task => {
+    const due = task.dueDate ? new Date(task.dueDate) : null;
+    const dueLabel = due ? due.toLocaleDateString('pl-PL', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'brak terminu';
+    const priorityColor = task.priority === 'urgent'
+      ? '#dc2626'
+      : (task.priority === 'high' ? '#b91c1c' : (task.priority === 'low' ? '#2563eb' : '#6b7280'));
+    return `
+      <label style="display:flex;gap:12px;align-items:flex-start;padding:10px;background:#0f172a1a;border-radius:8px">
+        <input type="checkbox" class="warehouse-dispatch-task" value="${task.id}" checked style="margin-top:4px">
+        <div style="flex:1">
+          <div style="font-weight:600;color:#1f2937">${describeTask(task)}</div>
+          <div style="font-size:12px;color:#475569;margin-top:4px">
+            📋 ${task.orderName || 'Zlecenie'}
+            ${task.itemName ? ` • 📦 ${task.itemName}` : ''}
+          </div>
+          <div style="font-size:12px;color:#64748b;margin-top:4px">
+            📅 Termin: ${dueLabel}
+            <span style="display:inline-block;margin-left:8px;padding:2px 8px;border-radius:999px;background:${priorityColor};color:white;font-size:11px">${task.priority || 'normal'}</span>
+          </div>
+          ${task.notes ? `<div style="font-size:12px;color:#94a3b8;margin-top:6px;font-style:italic">💬 ${task.notes}</div>` : ''}
+        </div>
+      </label>
+    `;
+  }).join('');
+
+  const modalContent = `
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div>
+        <label style="display:block;font-weight:600;margin-bottom:6px">Wybierz pracownika</label>
+        <select id="warehouse-dispatch-employee" style="width:100%;padding:10px;border-radius:6px;border:1px solid #cbd5f5">
+          ${optionHtml}
+        </select>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-weight:600;color:#1f2937">Zadania do wysłania (${tasks.length})</div>
+          <button class="btn" onclick="document.querySelectorAll('.warehouse-dispatch-task').forEach(cb=>cb.checked=true)">Zaznacz wszystkie</button>
+        </div>
+        <div class="list" style="max-height:320px;overflow-y:auto;gap:10px">
+          ${tasksHtml}
+        </div>
+      </div>
+    </div>
+  `;
+
+  showModal('Wyślij zadania magazynu do pracownika', modalContent, [
+    { text: 'Anuluj' },
+    {
+      text: '📤 Wyślij zadania',
+      action: () => {
+        const employeeSelect = document.getElementById('warehouse-dispatch-employee');
+        if (!employeeSelect || !employeeSelect.value) {
+          alert('Wybierz pracownika, aby kontynuować.');
+          return false;
+        }
+
+        const selectedTaskIds = Array.from(document.querySelectorAll('.warehouse-dispatch-task:checked')).map(el => el.value);
+        if (!selectedTaskIds.length) {
+          alert('Zaznacz przynajmniej jedno zadanie do wysłania.');
+          return false;
+        }
+
+        const employee = employees.find(emp => emp.id === employeeSelect.value);
+        if (!employee) {
+          alert('Wybrany pracownik nie jest dostępny. Odśwież listę i spróbuj ponownie.');
+          return false;
+        }
+
+        const tasksById = new Map(tasks.map(task => [task.id, task]));
+        const selectedTasks = selectedTaskIds.map(id => tasksById.get(id)).filter(Boolean);
+        if (!selectedTasks.length) {
+          alert('Nie udało się odczytać zaznaczonych zadań.');
+          return false;
+        }
+
+        const assignTime = new Date().toISOString();
+        selectedTasks.forEach(task => {
+          task.assignedTo = employee.name || employee.id;
+          task.assignedToId = employee.id;
+          task.assignedAt = assignTime;
+          if (!Array.isArray(task.history)) {
+            task.history = [];
+          }
+          task.history.push({
+            type: 'assigned',
+            employeeId: employee.id,
+            employeeName: employee.name || employee.id,
+            assignedAt: assignTime
+          });
+        });
+
+        try {
+          localStorage.setItem('warehouseTasks', JSON.stringify(window.warehouseTasks));
+        } catch (error) {
+          console.warn('[warehouse] Nie udało się zapisać przydziału w localStorage', error);
+        }
+
+        const exportPayload = {
+          generatedAt: assignTime,
+          system: 'Doors Planner',
+          module: 'warehouse',
+          employee: {
+            id: employee.id,
+            name: employee.name || employee.id,
+            role: employee.role || null
+          },
+          tasks: selectedTasks.map(task => ({
+            id: task.id,
+            type: task.type,
+            orderId: task.orderId,
+            orderName: task.orderName,
+            itemId: task.itemId,
+            itemName: task.itemName,
+            unit: task.unit,
+            quantity: task.quantity ?? task.quantityToOrder ?? task.quantityNeeded ?? null,
+            priority: task.priority || 'normal',
+            dueDate: task.dueDate || null,
+            status: task.status,
+            notes: task.notes || null,
+            assignedAt: task.assignedAt,
+            assignedTo: task.assignedTo,
+            assignedToId: task.assignedToId || null,
+            sourceKey: task.sourceKey
+          }))
+        };
+
+        const exportName = `warehouse-tasks-${(employee.name || employee.id).toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${assignTime.split('T')[0]}.json`;
+        try {
+          const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json;charset=utf-8;' });
+          const link = document.createElement('a');
+          const url = URL.createObjectURL(blob);
+          link.href = url;
+          link.download = exportName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          setTimeout(() => URL.revokeObjectURL(url), 0);
+        } catch (error) {
+          alert('Nie udało się wygenerować pliku z zadaniami: ' + error.message);
+          return false;
+        }
+
+        if (typeof window.refreshWarehouseUI === 'function') {
+          window.refreshWarehouseUI({ tasks: true, dashboard: true, reservations: true, badge: true });
+        } else {
+          renderWarehouseTasks();
+          if (typeof window.renderWarehouseWorkerDashboard === 'function') {
+            window.renderWarehouseWorkerDashboard();
+          }
+          if (typeof window.updateTasksBadge === 'function') {
+            window.updateTasksBadge();
+          }
+        }
+
+        alert(`📤 Przydzielono ${selectedTasks.length} zadań dla ${employee.name || employee.id}.\nPlik z zadaniami został pobrany.`);
+
+        return true;
+      }
+    }
+  ]);
+};
+
+window.updateDefaultWarehouseWorker = function(employeeId) {
+  if (!window.state) return;
+  window.state.settings = window.state.settings || {};
+
+  const normalized = employeeId && employeeId.trim ? employeeId.trim() : employeeId;
+  window.state.settings.defaultWarehouseWorkerId = normalized ? normalized : null;
+
+  try {
+    save();
+  } catch (error) {
+    console.warn('[warehouse] Nie udało się zapisać domyślnego magazyniera', error);
+  }
+
+  let refreshed = false;
+  if (typeof window.syncWarehouseTasks === 'function') {
+    try {
+      refreshed = window.syncWarehouseTasks();
+    } catch (error) {
+      console.warn('[warehouse] sync after default change failed', error);
+    }
+  }
+
+  if (!refreshed) {
+    if (typeof window.refreshWarehouseUI === 'function') {
+      window.refreshWarehouseUI({ tasks: true, dashboard: true, reservations: true, badge: true });
+    } else {
+      if (typeof window.renderWarehouseTasks === 'function') {
+        window.renderWarehouseTasks();
+      }
+      if (typeof window.renderWarehouseWorkerDashboard === 'function') {
+        window.renderWarehouseWorkerDashboard();
+      }
+      if (typeof window.renderReservations === 'function') {
+        window.renderReservations();
+      }
+      if (typeof window.updateTasksBadge === 'function') {
+        window.updateTasksBadge();
+      }
+    }
+  }
+};
+
 // Zakończ zadanie
 window.completeWarehouseTask = function(taskId) {
   const task = window.warehouseTasks.find(t => t.id === taskId);
@@ -8556,8 +9517,20 @@ window.completeWarehouseTask = function(taskId) {
     alert(`✅ Zadanie zakończone`);
     
     window._keepDetailsOpen = true;
-    renderWarehouseTasks();
-    updateTasksBadge();
+    if (typeof window.refreshWarehouseUI === 'function') {
+      window.refreshWarehouseUI({ tasks: true, dashboard: true, reservations: true, badge: true });
+    } else {
+      renderWarehouseTasks();
+      if (typeof window.updateTasksBadge === 'function') {
+        window.updateTasksBadge();
+      }
+      if (typeof window.renderWarehouseWorkerDashboard === 'function') {
+        window.renderWarehouseWorkerDashboard();
+      }
+      if (typeof window.renderReservations === 'function') {
+        window.renderReservations();
+      }
+    }
   }
 };
 
@@ -8573,8 +9546,20 @@ window.startWarehouseTask = function(taskId) {
   alert(`▶️ Zadanie rozpoczęte`);
   
   window._keepDetailsOpen = true;
-  renderWarehouseTasks();
-  updateTasksBadge();
+  if (typeof window.refreshWarehouseUI === 'function') {
+    window.refreshWarehouseUI({ tasks: true, dashboard: true, reservations: true, badge: true });
+  } else {
+    renderWarehouseTasks();
+    if (typeof window.updateTasksBadge === 'function') {
+      window.updateTasksBadge();
+    }
+    if (typeof window.renderWarehouseWorkerDashboard === 'function') {
+      window.renderWarehouseWorkerDashboard();
+    }
+    if (typeof window.renderReservations === 'function') {
+      window.renderReservations();
+    }
+  }
 };
 
 // Anuluj zadanie
@@ -8590,15 +9575,37 @@ window.cancelWarehouseTask = function(taskId) {
     alert(`✕ Zadanie anulowane`);
     
     window._keepDetailsOpen = true;
-    renderWarehouseTasks();
-    updateTasksBadge();
+    if (typeof window.refreshWarehouseUI === 'function') {
+      window.refreshWarehouseUI({ tasks: true, dashboard: true, reservations: true, badge: true });
+    } else {
+      renderWarehouseTasks();
+      if (typeof window.updateTasksBadge === 'function') {
+        window.updateTasksBadge();
+      }
+      if (typeof window.renderWarehouseWorkerDashboard === 'function') {
+        window.renderWarehouseWorkerDashboard();
+      }
+      if (typeof window.renderReservations === 'function') {
+        window.renderReservations();
+      }
+    }
   }
 };
 
 // Filtruj zadania
 window.filterWarehouseTasks = function(filter) {
   // TODO: implementacja filtrowania
-  renderWarehouseTasks();
+  if (typeof window.refreshWarehouseUI === 'function') {
+    window.refreshWarehouseUI({ tasks: true, dashboard: true, reservations: true, badge: true });
+  } else {
+    renderWarehouseTasks();
+    if (typeof window.renderWarehouseWorkerDashboard === 'function') {
+      window.renderWarehouseWorkerDashboard();
+    }
+    if (typeof window.updateTasksBadge === 'function') {
+      window.updateTasksBadge();
+    }
+  }
 };
 
 function useReservation(resId) {
@@ -8633,8 +9640,26 @@ function useReservation(resId) {
     }
     
     saveWarehouseToStorage();
-    renderReservations();
-    renderWarehouse();
+
+    const refreshed = typeof window.syncWarehouseTasks === 'function' && window.syncWarehouseTasks();
+
+    if (!refreshed) {
+      if (typeof window.refreshWarehouseUI === 'function') {
+        window.refreshWarehouseUI({ reservations: true, tasks: true, dashboard: true, badge: true });
+      } else {
+        renderReservations();
+        if (typeof window.renderWarehouseWorkerDashboard === 'function') {
+          window.renderWarehouseWorkerDashboard();
+        }
+        if (typeof window.updateTasksBadge === 'function') {
+          window.updateTasksBadge();
+        }
+      }
+    }
+
+    if (typeof renderWarehouse === 'function') {
+      renderWarehouse();
+    }
   }
 }
 
@@ -8644,7 +9669,17 @@ function cancelReservation(resId) {
     if (res) {
       res.status = 'cancelled';
       saveWarehouseToStorage();
-      renderReservations();
+      if (typeof window.refreshWarehouseUI === 'function') {
+        window.refreshWarehouseUI({ reservations: true, tasks: true, dashboard: true, badge: true });
+      } else {
+        renderReservations();
+        if (typeof window.updateTasksBadge === 'function') {
+          window.updateTasksBadge();
+        }
+        if (typeof window.renderWarehouseWorkerDashboard === 'function') {
+          window.renderWarehouseWorkerDashboard();
+        }
+      }
     }
   }
 }
@@ -8653,7 +9688,21 @@ function deleteReservation(resId) {
   if (confirm('Usunąć rezerwację?')) {
     window.warehouseReservations = window.warehouseReservations.filter(r => r.id !== resId);
     saveWarehouseToStorage();
-    renderReservations();
+    const refreshed = typeof window.syncWarehouseTasks === 'function' && window.syncWarehouseTasks();
+
+    if (!refreshed) {
+      if (typeof window.refreshWarehouseUI === 'function') {
+        window.refreshWarehouseUI({ reservations: true, tasks: true, dashboard: true, badge: true });
+      } else {
+        renderReservations();
+        if (typeof window.updateTasksBadge === 'function') {
+          window.updateTasksBadge();
+        }
+        if (typeof window.renderWarehouseWorkerDashboard === 'function') {
+          window.renderWarehouseWorkerDashboard();
+        }
+      }
+    }
   }
 }
 
@@ -9078,8 +10127,9 @@ window.showOrderMaterials = function(orderId) {
       `;
     }
     
-    const reserved = reservations.filter(r => r.itemId === item.itemId && r.status === 'active').reduce((sum, r) => sum + (r.quantity || 0), 0);
-    const available = warehouseItem.quantity - reserved;
+  const reserved = reservations.filter(r => r.itemId === item.itemId && r.status === 'active').reduce((sum, r) => sum + (r.quantity || 0), 0);
+  const available = warehouseItem.quantity - reserved;
+  const deficit = available < 0 ? Math.abs(available) : 0;
     const needed = item.quantity;
     
     let statusIcon = '';
@@ -9102,7 +10152,9 @@ window.showOrderMaterials = function(orderId) {
       borderColor = '#fcd34d';
     } else {
       statusIcon = '❌';
-      statusText = 'Brak w magazynie';
+      statusText = deficit > 0
+        ? `Zapas na minusie: ${deficit} ${item.unit}`
+        : 'Brak w magazynie';
       statusColor = '#dc2626';
       bgColor = '#fef2f2';
       borderColor = '#fecaca';
@@ -9117,6 +10169,7 @@ window.showOrderMaterials = function(orderId) {
             <div style="font-size:14px;color:#64748b;margin-top:4px">Potrzebne: <strong>${needed} ${item.unit}</strong></div>
             <div style="font-size:14px;color:#64748b">W magazynie: <strong>${warehouseItem.quantity} ${item.unit}</strong></div>
             ${reserved > 0 ? `<div style="font-size:13px;color:#64748b">Zarezerwowane: <strong>${reserved} ${item.unit}</strong></div>` : ''}
+            ${available < 0 ? `<div style="font-size:13px;color:#dc2626">Niedobór po rezerwacjach: ${Math.abs(available)} ${item.unit}</div>` : ''}
             <div style="font-size:14px;color:${statusColor};margin-top:4px;font-weight:600">${statusText}</div>
           </div>
         </div>
@@ -9257,64 +10310,68 @@ function issueOrderMaterials(orderId) {
   // Przetwarzaj każdy materiał
   order.materialChecklist.forEach(item => {
     const warehouseItem = warehouseItems.find(w => w.id === item.itemId);
-    
+
     if (!warehouseItem) {
       results.notFound.push(item);
-      // Dodaj do listy zakupów
-      addToShoppingList(item.itemId, item.itemName, item.quantity, item.unit, orderId, order.name, 'Materiał nie znaleziony w magazynie');
-      results.shortage.push(item);
+      const shortageQty = item.quantity;
+      addToShoppingList(item.itemId, item.itemName, shortageQty, item.unit, orderId, order.name, 'Materiał nie znaleziony w magazynie');
+      results.shortage.push({ ...item, shortageQty });
       return;
     }
-    
-    const reserved = reservations.filter(r => r.itemId === item.itemId && r.status === 'active').reduce((sum, r) => sum + (r.quantity || 0), 0);
-    const available = warehouseItem.quantity - reserved;
-    const needed = item.quantity;
-    
-    if (available <= 0) {
-      // Brak w magazynie - dodaj do listy zakupów
-      addToShoppingList(item.itemId, item.itemName, needed, item.unit, orderId, order.name, 'Brak w magazynie');
-      results.shortage.push(item);
-      return;
-    }
-    
-    const issueQty = Math.min(available, needed);
-    
-    // Utwórz transakcję WZ
+
+  const activeReservations = reservations.filter(r => r.itemId === item.itemId && r.status === 'active');
+  const reservedTotal = activeReservations.reduce((sum, r) => sum + (r.quantity || 0), 0);
+  const orderReservations = activeReservations.filter(r => r.orderId === orderId);
+  const reservedForOrder = orderReservations.reduce((sum, r) => sum + (r.quantity || 0), 0);
+  const reservedForOthers = Math.max(reservedTotal - reservedForOrder, 0);
+  const needed = item.quantity;
+  const stockBefore = warehouseItem.quantity;
+  const availableForIssue = Math.max(Math.max(stockBefore, 0) - reservedForOthers, 0);
+    const shortageQty = Math.max(needed - availableForIssue, 0);
+    const issuedFromStock = needed - shortageQty;
+
     const transaction = {
       id: 'wz-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
       itemId: item.itemId,
       itemName: item.itemName,
       type: 'WZ',
-      quantity: -issueQty, // ujemna wartość = wydanie
+      quantity: -needed,
       unit: item.unit,
       date: new Date().toISOString().split('T')[0],
       notes: `Wydanie dla zlecenia: ${order.name}`,
       orderId: orderId,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      metadata: {
+        stockBefore,
+        reservedBefore: reservedForOrder,
+        shortageQty,
+        issuedFromStock
+      }
     };
-    
+
     warehouseTransactions.push(transaction);
-    
-    // Zmniejsz stan magazynowy
-    warehouseItem.quantity -= issueQty;
-    
-    // Oznacz jako wydane w checkliście
-    item.issued = true;
-    item.issuedQty = issueQty;
+
+    warehouseItem.quantity -= needed;
+
+    item.issued = shortageQty === 0;
+    item.issuedQty = needed;
+    item.issuedFromStock = issuedFromStock;
+    item.shortageQty = shortageQty;
     item.issuedAt = Date.now();
-    
-    if (issueQty === needed) {
-      results.issued.push({...item, issuedQty: issueQty});
+
+    if (shortageQty === 0) {
+      results.issued.push({ ...item, issuedQty: needed, stockBefore });
     } else {
-      results.partial.push({...item, issuedQty: issueQty, shortageQty: needed - issueQty});
-      // Dodaj brakującą ilość do listy zakupów
-      addToShoppingList(item.itemId, item.itemName, needed - issueQty, item.unit, orderId, order.name, 'Wydano częściowo');
-      results.shortage.push({...item, shortageQty: needed - issueQty});
+      const shortageEntry = { ...item, issuedQty: needed, issuedFromStock, shortageQty, stockBefore, stockAfter: warehouseItem.quantity };
+      results.partial.push(shortageEntry);
+      results.shortage.push(shortageEntry);
+      if (shortageQty > 0) {
+        const reason = issuedFromStock > 0 ? 'Obciążenie magazynu – wydano częściowo' : 'Obciążenie magazynu – brak w magazynie';
+        addToShoppingList(item.itemId, item.itemName, shortageQty, item.unit, orderId, order.name, reason);
+      }
     }
-    
-    // Oznacz rezerwację jako wykorzystaną (jeśli była)
-    const orderReservations = reservations.filter(r => r.itemId === item.itemId && r.orderId === orderId && r.status === 'active');
-    orderReservations.forEach(r => {
+
+  orderReservations.forEach(r => {
       r.status = 'used';
       r.usedAt = Date.now();
     });
@@ -9400,12 +10457,15 @@ function showIssueReport(orderId, results) {
   // Wydane częściowo
   if (results.partial.length > 0) {
     html += `<div style="margin-bottom:20px">
-      <h4 style="color:#f59e0b;margin-bottom:12px">⚠️ Wydane częściowo (${results.partial.length})</h4>`;
+      <h4 style="color:#f59e0b;margin-bottom:12px">⚠️ Wydane częściowo – obciążono magazyn z niedoborem (${results.partial.length})</h4>`;
     results.partial.forEach(item => {
+      const issuedFromStock = item.issuedFromStock != null ? item.issuedFromStock : Math.max((item.issuedQty || 0) - (item.shortageQty || 0), 0);
+      const stockAfter = item.stockAfter != null ? item.stockAfter : undefined;
       html += `<div style="padding:12px;background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;margin-bottom:8px">
         <div style="font-weight:600">${item.itemName}</div>
-        <div style="font-size:14px;color:#f59e0b">Wydano: ${item.issuedQty} ${item.unit}</div>
-        <div style="font-size:14px;color:#dc2626">Brakuje: ${item.shortageQty} ${item.unit} (dodano do listy zakupów)</div>
+        <div style="font-size:14px;color:#f59e0b">Wydano z magazynu: ${issuedFromStock} ${item.unit}</div>
+        <div style="font-size:14px;color:#dc2626">Niedobór (na minusie): ${item.shortageQty} ${item.unit}</div>
+        ${stockAfter !== undefined ? `<div style="font-size:12px;color:#991b1b;margin-top:4px">Nowy stan magazynu: ${stockAfter} ${item.unit}</div>` : ''}
       </div>`;
     });
     html += `</div>`;
@@ -9416,10 +10476,12 @@ function showIssueReport(orderId, results) {
     html += `<div style="margin-bottom:20px">
       <h4 style="color:#dc2626;margin-bottom:12px">🛒 Dodano do listy zakupów (${results.shortage.length})</h4>`;
     results.shortage.forEach(item => {
-      const qty = item.shortageQty || item.quantity;
+      const qty = item.shortageQty != null ? item.shortageQty : item.quantity;
+      const stockAfter = item.stockAfter != null ? item.stockAfter : undefined;
       html += `<div style="padding:12px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;margin-bottom:8px">
         <div style="font-weight:600">${item.itemName}</div>
         <div style="font-size:14px;color:#dc2626">Do zamówienia: ${qty} ${item.unit}</div>
+        ${stockAfter !== undefined ? `<div style="font-size:12px;color:#b91c1c;margin-top:4px">Stan po operacji: ${stockAfter} ${item.unit}</div>` : ''}
       </div>`;
     });
     html += `</div>`;
@@ -10356,65 +11418,11 @@ if (document.readyState === 'loading') {
 
 // Funkcje synchronizacji z aplikacją pracowników
 function exportTasksForWorkers() {
-  // Przykładowe zadania - w rzeczywistości należy zebrać z systemu MRP
-  const sampleTasks = [
-    {
-      id: 1,
-      title: "Cięcie drzwi #1234",
-      model: "DREWNO-001",
-      quantity: 5,
-      unit: "szt",
-      deadline: "14:00",
-      status: "pending",
-      estimatedTime: 120,
-      priority: "high",
-      assignedTo: "Jan Kowalski"
-    },
-    {
-      id: 2,
-      title: "Montaż okuć #1235",
-      model: "DREWNO-002",
-      quantity: 3,
-      unit: "szt",
-      deadline: "16:00",
-      status: "pending",
-      estimatedTime: 90,
-      priority: "medium",
-      assignedTo: "Anna Nowak"
-    },
-    {
-      id: 3,
-      title: "Lakierowanie #1236",
-      model: "DREWNO-003",
-      quantity: 8,
-      unit: "szt",
-      deadline: "12:00",
-      status: "pending",
-      estimatedTime: 180,
-      priority: "high",
-      assignedTo: "Piotr Wiśniewski"
-    }
-  ];
-
-  const exportData = {
-    exportDate: new Date().toISOString(),
-    tasks: sampleTasks,
-    version: "1.0",
-    system: "Doors Planner Admin"
-  };
-
-  const jsonContent = JSON.stringify(exportData, null, 2);
-  const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', 'tasks-export.json');
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
-  alert('📤 Plik tasks-export.json został pobrany.\n\nPrzenieś go na urządzenie pracownika i zaimportuj w aplikacji Worker App.');
+  if (typeof window.showWarehouseWorkerDispatch === 'function') {
+    window.showWarehouseWorkerDispatch();
+  } else {
+    alert('Brak modułu przydzielania zadań. Odśwież stronę lub skontaktuj się z administratorem.');
+  }
 }
 
 function importWorkerConfirmations() {
@@ -10513,9 +11521,10 @@ function renderWarehouse() {
   
   // Dodatkowe filtrowanie dla pozycji do zamówienia
   if (window.showOnlyLowStock) {
-    filteredItems = filteredItems.filter(item => 
-      item.minStock && item.quantity <= item.minStock
-    );
+    filteredItems = filteredItems.filter(item => {
+      const threshold = item.minStock != null ? item.minStock : 0;
+      return item.quantity <= threshold;
+    });
   }
   
   if (filteredItems.length === 0) {
@@ -10542,8 +11551,12 @@ function renderWarehouse() {
       </thead>
       <tbody>
         ${filteredItems.map((item, index) => {
-          const isLowStock = item.minStock && item.quantity <= item.minStock;
-          const rowStyle = isLowStock ? 'background:#c0392b' : (index % 2 === 0 ? 'background:#34495e' : 'background:#2c3e50');
+          const isNegative = item.quantity < 0;
+          const isLowStock = item.minStock != null ? item.quantity <= item.minStock : false;
+          const needsAttention = isNegative || isLowStock;
+          const rowStyle = needsAttention
+            ? (isNegative ? 'background:linear-gradient(90deg,#7f1d1d,#991b1b)' : 'background:#c0392b')
+            : (index % 2 === 0 ? 'background:#34495e' : 'background:#2c3e50');
           
           // Lokalizacja
           let locationStr = '-';
@@ -10559,9 +11572,10 @@ function renderWarehouse() {
             <tr style="${rowStyle};border-bottom:1px solid #1a252f">
               <td style="padding:12px">
                 <div style="font-weight:600;font-size:15px;color:#ffffff !important">${item.name}</div>
-                ${isLowStock ? '<div style="font-size:12px;color:#ffeb3b !important;font-weight:700;margin-top:2px">⚠️ DO ZAMÓWIENIA</div>' : ''}
+                ${isNegative ? `<div style="font-size:12px;color:#fee2e2 !important;font-weight:700;margin-top:2px">❗ ZAPAS NA MINUSIE (${Math.abs(item.quantity)} ${item.unit})</div>` : ''}
+                ${!isNegative && isLowStock ? '<div style="font-size:12px;color:#ffeb3b !important;font-weight:700;margin-top:2px">⚠️ DO ZAMÓWIENIA</div>' : ''}
               </td>
-              <td style="padding:12px;text-align:center;font-weight:700;font-size:15px;color:${isLowStock ? '#ffeb3b' : '#ffffff'} !important">${item.quantity}</td>
+              <td style="padding:12px;text-align:center;font-weight:700;font-size:15px;color:${isNegative ? '#fee2e2' : (isLowStock ? '#ffeb3b' : '#ffffff')} !important">${item.quantity}</td>
               <td style="padding:12px;text-align:center;font-size:14px;color:#ffffff !important">${item.unit}</td>
               <td style="padding:12px;text-align:right;font-weight:600;font-size:14px;color:#ffffff !important">${item.price.toFixed(2)}</td>
               <td style="padding:12px;text-align:center;font-size:14px;color:#ffffff !important">${item.minStock || '-'}</td>
@@ -10685,8 +11699,17 @@ document.addEventListener('DOMContentLoaded', () => {
       portSpan.textContent = currentPort;
       
       // Sprawdź czy są dane w localStorage
-      const hasData = localStorage.getItem(storeKey);
-      const dataCount = hasData ? JSON.parse(hasData).orders?.length || 0 : 0;
+      const storageKey = typeof storeKey !== 'undefined' ? storeKey : 'door_v50_state';
+      let dataCount = 0;
+      try {
+        const storedRaw = localStorage.getItem(storageKey);
+        if (storedRaw) {
+          const parsed = JSON.parse(storedRaw);
+          dataCount = Array.isArray(parsed?.orders) ? parsed.orders.length : 0;
+        }
+      } catch (parseErr) {
+        console.warn('Port warning parse error', parseErr);
+      }
       
       // Pokaż banner jeśli:
       // 1. Port nie jest standardowy (nie 5500)
