@@ -6887,6 +6887,8 @@ function loadWarehouseFromStorage() {
   const reservations = localStorage.getItem('warehouseReservations');
   if (reservations) {
     window.warehouseReservations = JSON.parse(reservations);
+    // MIGRACJA: Ujednolicenie pól dat - receivedAt → receivedDate, issuedAt → issuedDate
+    migrateReservationDateFields();
   } else {
     window.warehouseReservations = [];
   }
@@ -6909,6 +6911,44 @@ function loadWarehouseFromStorage() {
   
   // Zaktualizuj badge listy zakupów
   updateShoppingListBadge();
+}
+
+// Migracja pól dat w rezerwacjach - ujednolicenie nazw
+function migrateReservationDateFields() {
+  if (!window.warehouseReservations || !Array.isArray(window.warehouseReservations)) {
+    return;
+  }
+  
+  let migrated = 0;
+  
+  window.warehouseReservations.forEach(reservation => {
+    // Migracja receivedAt → receivedDate
+    if (reservation.receivedAt && !reservation.receivedDate) {
+      reservation.receivedDate = reservation.receivedAt;
+      delete reservation.receivedAt;
+      migrated++;
+    }
+    
+    // Migracja issuedAt → issuedDate
+    if (reservation.issuedAt && !reservation.issuedDate) {
+      reservation.issuedDate = reservation.issuedAt;
+      delete reservation.issuedAt;
+      migrated++;
+    }
+    
+    // Migracja reservedAt → date lub createdAt (jeśli brakuje głównej daty rezerwacji)
+    if (reservation.reservedAt && !reservation.date && !reservation.createdAt) {
+      reservation.createdAt = reservation.reservedAt;
+      delete reservation.reservedAt;
+      migrated++;
+    }
+  });
+  
+  if (migrated > 0) {
+    console.log(`✅ Zmigrowano ${migrated} pól dat w rezerwacjach magazynowych`);
+    // Zapisz zmigrowane dane
+    saveWarehouseToStorage();
+  }
 }
 
 // Napraw checklisty w zleceniach - znajdź itemId po nazwie materiału
@@ -7792,9 +7832,8 @@ function showReservationModal() {
           quantity: quantity,
           unit: item.unit,
           notes: notes,
-          date: nowIso, // zachowaj zgodność wstecz
-          reservedAt: nowIso,
-          timestamp: nowTimestamp,
+          createdAt: nowTimestamp,
+          date: nowIso,
           status: 'active' // active, used, cancelled
         };
 
@@ -7906,8 +7945,8 @@ function renderReservations() {
     let allIssued = true;
     
     group.materials.forEach(mat => {
-      const receivedDateObj = parseDateSafe(mat.receivedDate || mat.receivedAt);
-      const issuedDateObj = parseDateSafe(mat.issuedDate || mat.issuedAt);
+      const receivedDateObj = parseDateSafe(mat.receivedDate);
+      const issuedDateObj = parseDateSafe(mat.issuedDate);
 
       if (receivedDateObj) {
         someReceived = true;
@@ -7947,13 +7986,13 @@ function renderReservations() {
     let latestIssued = null;
     
     group.materials.forEach(mat => {
-      const rd = parseDateSafe(mat.receivedDate || mat.receivedAt);
+      const rd = parseDateSafe(mat.receivedDate);
       if (rd) {
         if (!earliestReceived || rd < earliestReceived) {
           earliestReceived = rd;
         }
       }
-      const id = parseDateSafe(mat.issuedDate || mat.issuedAt);
+      const id = parseDateSafe(mat.issuedDate);
       if (id) {
         if (!latestIssued || id > latestIssued) {
           latestIssued = id;
@@ -8016,10 +8055,10 @@ function renderReservations() {
         <div id="${detailsId}" style="display:none;border-top:1px solid #e2e8f0;padding-top:12px;margin-top:8px">
           ${group.materials.map(mat => {
             // Formatuj daty
-            const reservedSource = mat.reservedAt ?? mat.date ?? mat.createdAt ?? mat.timestamp;
+            const reservedSource = mat.date ?? mat.createdAt ?? mat.timestamp;
             const reservedDate = formatDateTime(reservedSource) || 'Brak daty';
-            const receivedDateStr = formatDateTime(mat.receivedDate || mat.receivedAt);
-            const issuedDateStr = formatDateTime(mat.issuedDate || mat.issuedAt);
+            const receivedDateStr = formatDateTime(mat.receivedDate);
+            const issuedDateStr = formatDateTime(mat.issuedDate);
             
             // Sprawdź status materiału na podstawie dat
             let statusBadge = '';
@@ -8581,12 +8620,12 @@ window.syncWarehouseTasks = function() {
     const order = (window.state.orders || []).find(o => o.id === res.orderId);
     const orderName = res.orderName || order?.name || 'Zlecenie';
     const unit = res.unit || 'szt';
-    const reservedIso = toIso(res.reservedAt || res.date || res.timestamp, nowIso) || nowIso;
+    const reservedIso = toIso(res.date || res.createdAt || res.timestamp, nowIso) || nowIso;
     const receiveDue = toIso(res.expectedAt || res.expectedDate || res.plannedDelivery || reservedIso, reservedIso) || reservedIso;
     const issueReference = order?.startDate || order?.installDate || res.issueAt || res.requiredAt || reservedIso;
     const issueDue = toIso(issueReference, reservedIso) || reservedIso;
-    const hasReceived = Boolean(parseDateValue(res.receivedDate || res.receivedAt));
-    const hasIssued = Boolean(parseDateValue(res.issuedDate || res.issuedAt));
+    const hasReceived = Boolean(parseDateValue(res.receivedDate));
+    const hasIssued = Boolean(parseDateValue(res.issuedDate));
 
     ensureTask({
       sourceKey: `reservation:${res.id}:receive`,
@@ -9067,8 +9106,8 @@ window.renderWarehouseWorkerDashboard = function() {
 
   const reservationsRaw = Array.isArray(window.warehouseReservations) ? window.warehouseReservations.filter(res => res && res.status !== 'cancelled') : [];
   const activeReservations = reservationsRaw.filter(res => res.status !== 'completed');
-  const needsReceive = activeReservations.filter(res => !parseDateSafe(res.receivedDate || res.receivedAt));
-  const readyToIssue = activeReservations.filter(res => parseDateSafe(res.receivedDate || res.receivedAt) && !parseDateSafe(res.issuedDate || res.issuedAt));
+  const needsReceive = activeReservations.filter(res => !parseDateSafe(res.receivedDate));
+  const readyToIssue = activeReservations.filter(res => parseDateSafe(res.receivedDate) && !parseDateSafe(res.issuedDate));
 
   if (statsEl) {
     const totalReservations = needsReceive.length + readyToIssue.length;
@@ -9187,8 +9226,8 @@ window.renderWarehouseWorkerDashboard = function() {
       reservationListEl.innerHTML = '<div class="muted">Brak zadań związanych z rezerwacjami.</div>';
     } else {
       const buildReservationCard = (res, mode) => {
-        const reservedDate = formatDateTime(res.reservedAt || res.date || res.createdAt);
-        const receivedDate = formatDateTime(res.receivedDate || res.receivedAt);
+        const reservedDate = formatDateTime(res.date || res.createdAt);
+        const receivedDate = formatDateTime(res.receivedDate);
         const priorityBadge = res.priority === 'urgent'
           ? '<span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#dc2626;color:white;font-size:11px;font-weight:600">Pilne</span>'
           : '';
@@ -10357,7 +10396,7 @@ function issueOrderMaterials(orderId) {
     item.issuedQty = needed;
     item.issuedFromStock = issuedFromStock;
     item.shortageQty = shortageQty;
-    item.issuedAt = Date.now();
+    item.issuedDate = new Date().toISOString();
 
     if (shortageQty === 0) {
       results.issued.push({ ...item, issuedQty: needed, stockBefore });
