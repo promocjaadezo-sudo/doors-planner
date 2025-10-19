@@ -24,10 +24,26 @@
       if (!Array.isArray(state.tasks)) state.tasks = [];
       if (!Array.isArray(state.orders)) state.orders = [];
       if (!Array.isArray(state.processes)) state.processes = [];
+      
+      // Migracja: upewnij się że taskProcessMap i taskOrderMap istnieją
+      if (!state.taskProcessMap) state.taskProcessMap = {};
+      if (!state.taskOrderMap) state.taskOrderMap = {};
+      
+      // Migracja: wypełnij taskProcessMap i taskOrderMap z istniejących tasków
+      state.tasks.forEach(task => {
+        if (task.processId && !state.taskProcessMap[task.id]) {
+          state.taskProcessMap[task.id] = task.processId;
+        }
+        if (task.orderId && !state.taskOrderMap[task.id]) {
+          state.taskOrderMap[task.id] = task.orderId;
+        }
+      });
+      
       console.log('Stan załadowany:', {
         tasksLength: state.tasks.length,
         ordersLength: state.orders.length,
-        processesLength: state.processes.length
+        processesLength: state.processes.length,
+        taskMappingsCount: Object.keys(state.taskProcessMap || {}).length
       });
     } catch(e){ 
       console.error('Błąd ładowania stanu:', e);
