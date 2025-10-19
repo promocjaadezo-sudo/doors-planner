@@ -1,0 +1,24 @@
+# Build & dependency caches
+node_modules/
+venv/
+
+# Test artifacts
+test-results/
+playwright-report/
+trace.zip
+
+# Local backups and temp bundles
+backups/
+incoming/
+scripts/
+*.backup.html
+*.base.html
+index_old.html
+index_temp.html
+index1.html
+*.zip
+backups.code-workspace
+
+# Editor and environment noise
+.DS_Store
+Thumbs.db
