@@ -6879,6 +6879,8 @@ function loadWarehouseFromStorage() {
   const transactions = localStorage.getItem('warehouseTransactions');
   if (transactions) {
     window.warehouseTransactions = JSON.parse(transactions);
+    // MIGRACJA: Ujednolicenie typów transakcji - WZ → out, PZ → in
+    migrateTransactionTypes();
   } else {
     window.warehouseTransactions = [];
   }
@@ -6946,6 +6948,41 @@ function migrateReservationDateFields() {
   
   if (migrated > 0) {
     console.log(`✅ Zmigrowano ${migrated} pól dat w rezerwacjach magazynowych`);
+    // Zapisz zmigrowane dane
+    saveWarehouseToStorage();
+  }
+}
+
+// Migracja typów transakcji - ujednolicenie nazw
+function migrateTransactionTypes() {
+  if (!window.warehouseTransactions || !Array.isArray(window.warehouseTransactions)) {
+    return;
+  }
+  
+  let migrated = 0;
+  
+  window.warehouseTransactions.forEach(transaction => {
+    // Migracja WZ → out
+    if (transaction.type === 'WZ') {
+      transaction.type = 'out';
+      migrated++;
+    }
+    
+    // Migracja PZ → in
+    if (transaction.type === 'PZ') {
+      transaction.type = 'in';
+      migrated++;
+    }
+    
+    // Dodaj brakujące pole person jeśli nie istnieje
+    if (!transaction.person) {
+      transaction.person = 'System';
+      migrated++;
+    }
+  });
+  
+  if (migrated > 0) {
+    console.log(`✅ Zmigrowano ${migrated} pól w transakcjach magazynowych`);
     // Zapisz zmigrowane dane
     saveWarehouseToStorage();
   }
@@ -7677,8 +7714,8 @@ function renderTransactions() {
 
   list.innerHTML = transactions.map(trans => {
     const date = new Date(trans.date);
-    const dateStr = date.toLocaleDateString('pl-PL');
-    const timeStr = date.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+    const dateStr = !isNaN(date.getTime()) ? date.toLocaleDateString('pl-PL') : 'Brak daty';
+    const timeStr = !isNaN(date.getTime()) ? date.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }) : '';
     const typeIcon = trans.type === 'in' ? '📥' : '📤';
     const typeLabel = trans.type === 'in' ? 'Przyjęcie (PZ)' : 'Wydanie (WZ)';
     const typeColor = trans.type === 'in' ? '#10b981' : '#f59e0b';
@@ -8244,12 +8281,13 @@ window.markAsIssued = function(resId) {
       // Utwórz transakcję WZ (wydanie zewnętrzne)
       const transaction = {
         id: generateId(),
-        type: 'WZ',
+        type: 'out',
         itemId: reservation.itemId,
         itemName: reservation.itemName,
         quantity: reservation.quantity,
         unit: reservation.unit,
         date: new Date().toISOString(),
+        person: 'System',
         notes: `Wydano dla zlecenia: ${reservation.orderName}`,
         orderId: reservation.orderId,
         orderName: reservation.orderName
@@ -10373,10 +10411,11 @@ function issueOrderMaterials(orderId) {
       id: 'wz-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
       itemId: item.itemId,
       itemName: item.itemName,
-      type: 'WZ',
+      type: 'out',
       quantity: -needed,
       unit: item.unit,
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString(),
+      person: 'System',
       notes: `Wydanie dla zlecenia: ${order.name}`,
       orderId: orderId,
       createdAt: Date.now(),
