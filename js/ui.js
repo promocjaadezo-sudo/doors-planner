@@ -224,6 +224,9 @@ function renderAll(state) {
   renderOrderPage(state);
   renderEmployees(state);
   renderTaskMappings(state);
+  if (typeof window.renderMapView === 'function') {
+    window.renderMapView(state);
+  }
   renderClientWindow(state);
 }
 
