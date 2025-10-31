@@ -5489,7 +5489,6 @@ setTimeout(() => {
 
 // === MAGAZYN ===
 console.log('🔥 WAREHOUSE SECTION STARTED 🔥');
-alert('WAREHOUSE CODE EXECUTING!');
 
 // Prosty magazyn - funkcyjne podejście
 window.simpleWarehouse = {
@@ -6037,18 +6036,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 100);
 
-  // Observer dla przyszłych zmian
-  const observer = new MutationObserver(() => {
-    const whSection = document.getElementById('p-wh');
-    if (whSection && !whSection.classList.contains('hidden')) {
-      console.log('Warehouse section became visible, rendering...');
-      if (window.simpleWarehouse) {
-        window.simpleWarehouse.render();
+  // Observer dla przyszłych zmian - tylko dla sekcji magazynu
+  const whSection = document.getElementById('p-wh');
+  if (whSection) {
+    const observer = new MutationObserver(() => {
+      if (!whSection.classList.contains('hidden')) {
+        console.log('Warehouse section became visible, rendering...');
+        if (window.simpleWarehouse) {
+          window.simpleWarehouse.render();
+        }
       }
-    }
-  });
-  
-  observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+    });
+    
+    // Obserwuj tylko zmiany atrybutu class na elemencie sekcji magazynu
+    observer.observe(whSection, { attributes: true, attributeFilter: ['class'] });
+  }
 });
 </script>
 </body>
