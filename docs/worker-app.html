@@ -538,11 +538,23 @@
     </div>
 
     <script>
-        // Dane aplikacji
-    let tasks = [];
-    let currentUser = { id: 'emp1', name: "Jan Kowalski" };
+        // Dane aplikacji i synchronizacji
+        const PLANNER_STORAGE_KEYS = ['door_v5627_state', 'door_planner_state', 'state_backup'];
+        let tasks = [];
+        let rawTasks = [];
+        let rawOrders = new Map();
+        let currentUser = null;
         let isOnline = navigator.onLine;
-        
+
+        let firebaseReady = false;
+        let firebaseConfig = null;
+        let firestore = null;
+        let firebasePath = null;
+        let unsubscribeTasks = null;
+        let unsubscribeOrders = null;
+
+        let pendingUpdates = loadPendingUpdates();
+
         // Ustawienia powiadomień
         let notificationSettings = {
             sound: true,
@@ -566,8 +578,10 @@
 
         function formatInstallDate(dateStr) {
             if (!dateStr) return '-';
-            const date = new Date(dateStr);
-            if (!isFinite(date.getTime())) return String(dateStr);
+            const date = toDate(dateStr);
+            if (!date) {
+                return typeof dateStr === 'string' ? dateStr : '-';
+            }
             return date.toLocaleDateString('pl-PL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         }
 
@@ -580,11 +594,391 @@
             return `<a href="tel:${normalized}" style="color: var(--accent); text-decoration: none;">${escapeHtml(trimmed)}</a>`;
         }
 
-        // Inicjalizacja aplikacji
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeApp();
-            loadTasks();
+        function toDate(value) {
+            if (!value && value !== 0) return null;
+            if (value instanceof Date) return isFinite(value.getTime()) ? value : null;
+            if (typeof value === 'number') {
+                const date = new Date(value);
+                return isFinite(date.getTime()) ? date : null;
+            }
+            if (typeof value === 'string') {
+                const parsed = Date.parse(value);
+                if (!Number.isNaN(parsed)) {
+                    return new Date(parsed);
+                }
+                return null;
+            }
+            if (value && typeof value === 'object') {
+                if (typeof value.toDate === 'function') {
+                    const date = value.toDate();
+                    return isFinite(date.getTime()) ? date : null;
+                }
+                if ('seconds' in value && 'nanoseconds' in value) {
+                    const ms = value.seconds * 1000 + Math.round(value.nanoseconds / 1e6);
+                    const date = new Date(ms);
+                    return isFinite(date.getTime()) ? date : null;
+                }
+            }
+            return null;
+        }
+
+        function toMillis(value) {
+            const date = toDate(value);
+            return date ? date.getTime() : null;
+        }
+
+        function formatDeadlineValue(deadline, fallbackMillis) {
+            if (typeof deadline === 'string' && deadline.trim()) {
+                return deadline.trim();
+            }
+            const deadlineMillis = toMillis(deadline) || fallbackMillis;
+            if (!deadlineMillis) return '-';
+            return new Date(deadlineMillis).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function loadPendingUpdates() {
+            try {
+                const raw = localStorage.getItem('worker-pending-updates');
+                if (!raw) return [];
+                const parsed = JSON.parse(raw);
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (err) {
+                console.warn('[WorkerApp] Błąd odczytu pending updates', err);
+                return [];
+            }
+        }
+
+        function savePendingUpdates() {
+            try {
+                localStorage.setItem('worker-pending-updates', JSON.stringify(pendingUpdates));
+            } catch (err) {
+                console.warn('[WorkerApp] Nie udało się zapisać pending updates', err);
+            }
+        }
+
+        function getPlannerStorageConfig() {
+            for (const key of PLANNER_STORAGE_KEYS) {
+                try {
+                    const raw = localStorage.getItem(key);
+                    if (!raw) continue;
+                    const parsed = JSON.parse(raw);
+                    if (parsed && parsed.storage && parsed.storage.fbConfig) {
+                        const { fbConfig, appId, userId } = parsed.storage;
+                        if (fbConfig && appId && userId) {
+                            return { fbConfig, appId, userId };
+                        }
+                    }
+                } catch (err) {
+                    console.warn('[WorkerApp] Błąd parsowania stanu planera z key', key, err);
+                }
+            }
+            const fallback = localStorage.getItem('worker-firebase-config');
+            if (fallback) {
+                try {
+                    const parsed = JSON.parse(fallback);
+                    if (parsed && parsed.fbConfig && parsed.appId && parsed.userId) {
+                        return parsed;
+                    }
+                } catch (err) {
+                    console.warn('[WorkerApp] Błąd odczytu worker-firebase-config', err);
+                }
+            }
+            return null;
+        }
+
+        async function ensureFirebaseInstance(config) {
+            if (firebaseReady) return firestore;
+            if (!config || !config.fbConfig) {
+                throw new Error('Brak konfiguracji Firebase. Otwórz główną aplikację i zsynchronizuj dane.');
+            }
+            firebaseConfig = config;
+            const compatUrls = [
+                'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
+                'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js',
+                'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js'
+            ];
+            if (typeof firebase === 'undefined') {
+                for (const url of compatUrls) {
+                    await loadExternalScript(url);
+                }
+            }
+            if (!firebase.apps.length) {
+                firebase.initializeApp(config.fbConfig);
+            }
+            try {
+                if (!firebase.auth().currentUser) {
+                    await firebase.auth().signInAnonymously();
+                }
+            } catch (authErr) {
+                console.warn('[WorkerApp] Nie udało się zalogować anonimowo', authErr);
+            }
+            try {
+                await firebase.firestore().enablePersistence({ synchronizeTabs: true });
+            } catch (err) {
+                console.warn('[WorkerApp] Nie udało się włączyć offline persistence', err);
+            }
+            firestore = firebase.firestore();
+            firebasePath = firestore
+                .collection('planner')
+                .doc(config.appId)
+                .collection('users')
+                .doc(config.userId);
+            firebaseReady = true;
+            return firestore;
+        }
+
+        function loadExternalScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error('Nie można załadować ' + src));
+                document.head.appendChild(script);
+            });
+        }
+
+        function subscribeToPlannerData() {
+            if (!firebaseReady || !firebasePath) return;
+            unsubscribeOrders = firebasePath.collection('orders').onSnapshot(snapshot => {
+                const next = new Map();
+                snapshot.forEach(doc => next.set(doc.id, { id: doc.id, ...doc.data() }));
+                rawOrders = next;
+                rebuildTasksFromRemote();
+            }, err => console.error('[WorkerApp] Błąd nasłuchiwania orders', err));
+
+            unsubscribeTasks = firebasePath.collection('tasks').onSnapshot(snapshot => {
+                rawTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                rebuildTasksFromRemote();
+                flushPendingUpdates();
+            }, err => console.error('[WorkerApp] Błąd nasłuchiwania tasks', err));
+        }
+
+        function rebuildTasksFromRemote() {
+            if (!currentUser) return;
+            const workerId = String(currentUser.id);
+            const filtered = rawTasks.filter(task => {
+                if (!task) return false;
+                if (task.deletedAt) return false;
+                if (task.employeeId && String(task.employeeId) === workerId) return true;
+                if (Array.isArray(task.assignees)) {
+                    return task.assignees.some(assignee => {
+                        const id = assignee && assignee.id ? assignee.id : assignee;
+                        return String(id) === workerId;
+                    });
+                }
+                if (task.assignee && String(task.assignee.id) === workerId) return true;
+                return false;
+            });
+            tasks = filtered.map(task => mapRemoteTaskToWorker(task, rawOrders.get(task.orderId)));
+            saveTasks();
+            renderTasks();
+            startRemindersForActiveTasks();
             updateStats();
+            updateLastSync();
+        }
+
+        function mapRemoteTaskToWorker(task, order) {
+            const orderSafe = order || {};
+            const status = task.status || 'todo';
+            const viewStatus = mapPlannerStatus(status);
+            const startMillis = toMillis(task.startedAt ?? task.startTime ?? task.startedAtMs);
+            const endMillis = toMillis(task.completedAt ?? task.endTime ?? task.completedAtMs);
+            const startPlannedMs = toMillis(task.startPlanned ?? task.startPlannedMs);
+            const endPlannedMs = toMillis(task.endPlanned ?? task.endPlannedMs);
+            const deadlineText = formatDeadlineValue(task.deadline, endPlannedMs);
+            return {
+                id: task.id,
+                title: task.opName || task.name || orderSafe.name || `Zadanie ${task.id}`,
+                model: orderSafe.model || orderSafe.name || task.orderId || '-',
+                quantity: orderSafe.quantity || task.quantity || task.qty || 1,
+                unit: task.unit || 'szt',
+                deadline: deadlineText,
+                status: viewStatus,
+                startTime: startMillis,
+                endTime: endMillis,
+                estimatedTime: task.estMin || task.duration || orderSafe.estimatedTime || null,
+                priority: task.priority || 'normal',
+                orderId: task.orderId || '-',
+                startPlanned: startPlannedMs ?? task.startPlanned ?? null,
+                endPlanned: endPlannedMs ?? task.endPlanned ?? null,
+                client: orderSafe.client || '',
+                address: orderSafe.address || '',
+                postalCode: orderSafe.postalCode || '',
+                contactPhone: orderSafe.phone || task.contactPhone || '',
+                installDate: orderSafe.installDate || task.installDate || '',
+                leadEmployeeId: orderSafe.leadEmployeeId || task.leadEmployeeId || '',
+                leadEmployeeName: orderSafe.leadEmployeeName || orderSafe.lead || task.leadEmployeeName || '',
+                orderNotes: orderSafe.notes || task.notes || task.orderNotes || '',
+                _remote: task
+            };
+        }
+
+        function mapPlannerStatus(status) {
+            switch (status) {
+                case 'run':
+                case 'in-progress':
+                    return 'in-progress';
+                case 'done':
+                case 'completed':
+                    return 'completed';
+                case 'paused':
+                case 'hold':
+                    return 'paused';
+                default:
+                    return 'pending';
+            }
+        }
+
+        function convertStatusForPlanner(status) {
+            switch (status) {
+                case 'in-progress':
+                    return 'run';
+                case 'completed':
+                    return 'done';
+                case 'paused':
+                    return 'paused';
+                default:
+                    return 'todo';
+            }
+        }
+
+        function flushPendingUpdates() {
+            if (!firebaseReady || !firebasePath || !pendingUpdates.length) return;
+            const queue = pendingUpdates.map(entry => ({
+                taskId: entry.taskId,
+                updates: cloneForTransport(entry.updates),
+                original: entry
+            }));
+            pendingUpdates = [];
+            savePendingUpdates();
+            queue.forEach(entry => {
+                const docRef = firebasePath.collection('tasks').doc(entry.taskId);
+                const payload = prepareFirestorePayload(entry.updates);
+                docRef.set(payload, { merge: true }).catch(err => {
+                    console.warn('[WorkerApp] Nie udało się wysłać aktualizacji zadania', entry.taskId, err);
+                    pendingUpdates.push(entry.original);
+                    savePendingUpdates();
+                });
+            });
+        }
+
+        function queuePendingUpdate(taskId, updates) {
+            const normalizedUpdates = cloneForTransport(updates);
+            const entry = {
+                taskId: String(taskId),
+                updates: normalizedUpdates,
+                queuedAt: Date.now()
+            };
+            pendingUpdates.push(entry);
+            savePendingUpdates();
+            if (firebaseReady && isOnline) {
+                flushPendingUpdates();
+            }
+        }
+
+        function cloneForTransport(value) {
+            try {
+                if (typeof structuredClone === 'function') {
+                    return structuredClone(value);
+                }
+            } catch (err) {
+                console.warn('[WorkerApp] structuredClone niepowodzenie', err);
+            }
+            return JSON.parse(JSON.stringify(value));
+        }
+
+        function prepareFirestorePayload(updates) {
+            const payload = { ...updates };
+            const toDate = (ms) => {
+                if (ms == null) return null;
+                const date = new Date(ms);
+                return isFinite(date.getTime()) ? date : null;
+            };
+
+            if ('startedAtMs' in payload) {
+                const date = toDate(payload.startedAtMs);
+                if (date) payload.startedAt = date;
+                delete payload.startedAtMs;
+            }
+
+            if ('completedAtMs' in payload) {
+                const date = toDate(payload.completedAtMs);
+                if (date) payload.completedAt = date;
+                delete payload.completedAtMs;
+            }
+
+            if ('pausedAtMs' in payload) {
+                const date = toDate(payload.pausedAtMs);
+                if (date) payload.pausedAt = date;
+                delete payload.pausedAtMs;
+            }
+
+            if ('resumedAtMs' in payload) {
+                const date = toDate(payload.resumedAtMs);
+                if (date) payload.resumedAt = date;
+                delete payload.resumedAtMs;
+            }
+
+            if ('updatedAtMs' in payload) {
+                const date = toDate(payload.updatedAtMs);
+                if (firebaseReady && firebase.firestore && firebase.firestore.FieldValue && payload.useServerTimestamp) {
+                    payload.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+                } else if (date) {
+                    payload.updatedAt = date;
+                }
+                delete payload.updatedAtMs;
+            }
+
+            if ('workerUpdatedAtMs' in payload) {
+                const date = toDate(payload.workerUpdatedAtMs);
+                if (date) payload.workerUpdatedAt = date;
+                delete payload.workerUpdatedAtMs;
+            }
+
+            if ('useServerTimestamp' in payload) {
+                delete payload.useServerTimestamp;
+            }
+
+            return payload;
+        }
+
+        function syncTaskStatus(task, extraUpdates = {}) {
+            if (!task || !task.id) return;
+            const now = Date.now();
+            const updates = {
+                status: convertStatusForPlanner(task.status),
+                workerStatus: task.status,
+                workerUpdatedAtMs: now,
+                updatedAtMs: now,
+                useServerTimestamp: true,
+                workerDevice: 'worker-app-v1',
+                workerId: currentUser && currentUser.id ? currentUser.id : 'unknown-worker',
+                workerName: currentUser && currentUser.name ? currentUser.name : ''
+            };
+
+            if (task.startTime) {
+                updates.startedAtMs = task.startTime;
+            }
+
+            if (task.endTime) {
+                updates.completedAtMs = task.endTime;
+            }
+
+            if (task.status === 'paused') {
+                updates.pausedAtMs = now;
+            }
+
+            if (task.status === 'in-progress') {
+                updates.resumedAtMs = now;
+            }
+
+            Object.assign(updates, extraUpdates);
+            queuePendingUpdate(task.id, updates);
+        }
+
+        // Inicjalizacja aplikacji
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initializeApp();
             updateDate();
         });
 
@@ -592,23 +986,43 @@
         window.addEventListener('online', function() {
             isOnline = true;
             document.getElementById('offline-indicator').style.display = 'none';
+            showToast('Połączono z siecią. Synchronizuję zadania...', 'success');
+            if (firebaseReady) {
+                flushPendingUpdates();
+            }
         });
 
         window.addEventListener('offline', function() {
             isOnline = false;
             document.getElementById('offline-indicator').style.display = 'block';
+            showToast('Brak połączenia z internetem. Pracujesz offline.', 'warning');
         });
 
-        function initializeApp() {
-            // Próba wczytania danych z localStorage
-            const savedTasks = localStorage.getItem('worker-tasks');
-            if (savedTasks) {
-                tasks = JSON.parse(savedTasks);
+        async function initializeApp() {
+            try {
+                const savedTasks = localStorage.getItem('worker-tasks');
+                if (savedTasks) {
+                    tasks = JSON.parse(savedTasks);
+                }
+            } catch (err) {
+                console.warn('[WorkerApp] Błąd wczytywania worker-tasks', err);
+                tasks = [];
             }
 
-            const savedUser = localStorage.getItem('worker-user');
-            if (savedUser) {
-                currentUser = JSON.parse(savedUser);
+            try {
+                const savedUser = localStorage.getItem('worker-user');
+                if (savedUser) {
+                    currentUser = JSON.parse(savedUser);
+                }
+            } catch (err) {
+                console.warn('[WorkerApp] Błąd wczytywania worker-user', err);
+            }
+
+            if (!currentUser) {
+                currentUser = {
+                    id: 'unknown-worker',
+                    name: 'Pracownik'
+                };
             }
 
             const plannerState = loadPlannerState();
@@ -621,18 +1035,47 @@
                 }
             }
 
-            // Wczytanie ustawień powiadomień
             const savedSettings = localStorage.getItem('worker-notifications');
             if (savedSettings) {
-                notificationSettings = { ...notificationSettings, ...JSON.parse(savedSettings) };
-                updateNotificationUI();
+                try {
+                    notificationSettings = { ...notificationSettings, ...JSON.parse(savedSettings) };
+                } catch (err) {
+                    console.warn('[WorkerApp] Błąd wczytywania worker-notifications', err);
+                }
+            }
+            updateNotificationUI();
+
+            document.title = `Worker App - ${currentUser.name}`;
+
+            renderTasks();
+            updateStats();
+            startRemindersForActiveTasks();
+
+            const offlineIndicator = document.getElementById('offline-indicator');
+            if (offlineIndicator) {
+                offlineIndicator.style.display = isOnline ? 'none' : 'block';
             }
 
-            // Ustawienie nazwy użytkownika w tytule
-            document.title = `Worker App - ${currentUser.name}`;
-            
-            // Uruchomienie przypomnień dla aktywnych zadań
-            startRemindersForActiveTasks();
+            const config = getPlannerStorageConfig();
+            if (!config) {
+                showToast('Brak konfiguracji Firebase. Otwórz aplikację planera i wybierz "Udostępnij dla pracownika".', 'warn');
+                return;
+            }
+
+            try {
+                localStorage.setItem('worker-firebase-config', JSON.stringify(config));
+            } catch (err) {
+                console.warn('[WorkerApp] Nie udało się zapisać konfiguracji Firebase', err);
+            }
+
+            try {
+                await ensureFirebaseInstance(config);
+                subscribeToPlannerData();
+                flushPendingUpdates();
+            } catch (err) {
+                console.error('[WorkerApp] Nie udało się połączyć z Firebase', err);
+                showToast('Nie udało się połączyć z chmurą. Pracujesz w trybie offline.', 'error');
+            }
         }
 
         function updateDate() {
@@ -648,53 +1091,6 @@
         }
 
         function loadTasks() {
-            // Symulacja ładowania zadań (w rzeczywistości będzie z API)
-            if (tasks.length === 0) {
-                // Przykładowe zadania do demonstracji
-                tasks = [
-                    {
-                        id: 1,
-                        title: "Cięcie drzwi #1234",
-                        model: "DREWNO-001",
-                        quantity: 5,
-                        unit: "szt",
-                        deadline: "14:00",
-                        status: "pending",
-                        startTime: null,
-                        endTime: null,
-                        estimatedTime: 120, // minuty
-                        priority: "high"
-                    },
-                    {
-                        id: 2,
-                        title: "Montaż okuć #1235",
-                        model: "DREWNO-002",
-                        quantity: 3,
-                        unit: "szt",
-                        deadline: "16:00",
-                        status: "pending",
-                        startTime: null,
-                        endTime: null,
-                        estimatedTime: 90,
-                        priority: "medium"
-                    },
-                    {
-                        id: 3,
-                        title: "Lakierowanie #1236",
-                        model: "DREWNO-003",
-                        quantity: 8,
-                        unit: "szt",
-                        deadline: "12:00",
-                        status: "in-progress",
-                        startTime: Date.now() - 3600000, // 1 godzina temu
-                        endTime: null,
-                        estimatedTime: 180,
-                        priority: "high"
-                    }
-                ];
-                saveTasks();
-            }
-
             renderTasks();
         }
 
@@ -843,8 +1239,8 @@
 
         function formatDateTime(ts) {
             if (!ts) return '-';
-            const date = new Date(ts);
-            if (!isFinite(date.getTime())) return '-';
+            const date = toDate(ts);
+            if (!date) return '-';
             return date.toLocaleString('pl-PL', {
                 weekday: 'short',
                 hour: '2-digit',
@@ -853,21 +1249,22 @@
         }
 
         function getTaskActions(task) {
+            const idArg = JSON.stringify(task.id);
             switch (task.status) {
                 case 'pending':
-                    return `<button class="btn btn-primary" onclick="startTask(${task.id})">▶️ Rozpocznij</button>`;
+                    return `<button class="btn btn-primary" onclick='startTask(${idArg})'>▶️ Rozpocznij</button>`;
 
                 case 'in-progress':
                     return `
-                        <button class="btn btn-success" onclick="showCompleteConfirmation(${task.id})">✅ Zakończ</button>
-                        <button class="btn btn-warning" onclick="pauseTask(${task.id})">⏸️ Wstrzymaj</button>
+                        <button class="btn btn-success" onclick='showCompleteConfirmation(${idArg})'>✅ Zakończ</button>
+                        <button class="btn btn-warning" onclick='pauseTask(${idArg})'>⏸️ Wstrzymaj</button>
                     `;
 
                 case 'completed':
                     return `<button class="btn btn-secondary" disabled>Ukończone</button>`;
 
                 case 'paused':
-                    return `<button class="btn btn-primary" onclick="resumeTask(${task.id})">▶️ Wznów</button>`;
+                    return `<button class="btn btn-primary" onclick='resumeTask(${idArg})'>▶️ Wznów</button>`;
 
                 default:
                     return '';
@@ -875,13 +1272,14 @@
         }
 
         function startTask(taskId) {
-            const task = tasks.find(t => t.id === taskId);
+            const task = tasks.find(t => String(t.id) === String(taskId));
             if (task) {
                 task.status = 'in-progress';
                 task.startTime = Date.now();
                 saveTasks();
                 renderTasks();
                 startRemindersForActiveTasks();
+                syncTaskStatus(task);
 
                 // Wibracja na urządzeniach mobilnych
                 if (navigator.vibrate) {
@@ -891,12 +1289,13 @@
         }
 
         function completeTask(taskId) {
-            const task = tasks.find(t => t.id === taskId);
+            const task = tasks.find(t => String(t.id) === String(taskId));
             if (task) {
                 task.status = 'completed';
                 task.endTime = Date.now();
                 saveTasks();
                 renderTasks();
+                syncTaskStatus(task);
 
                 // Zatrzymaj przypomnienia dla tego zadania
                 if (reminderIntervals.has(taskId)) {
@@ -914,11 +1313,12 @@
         }
 
         function pauseTask(taskId) {
-            const task = tasks.find(t => t.id === taskId);
+            const task = tasks.find(t => String(t.id) === String(taskId));
             if (task) {
                 task.status = 'paused';
                 saveTasks();
                 renderTasks();
+                syncTaskStatus(task);
 
                 // Zatrzymaj przypomnienia dla wstrzymanego zadania
                 if (reminderIntervals.has(taskId)) {
@@ -929,11 +1329,12 @@
         }
 
         function resumeTask(taskId) {
-            const task = tasks.find(t => t.id === taskId);
+            const task = tasks.find(t => String(t.id) === String(taskId));
             if (task) {
                 task.status = 'in-progress';
                 saveTasks();
                 renderTasks();
+                syncTaskStatus(task);
                 startRemindersForActiveTasks();
             }
         }
@@ -971,15 +1372,18 @@
 
         function mapPlannerTasks(plannerState) {
             if (!plannerState || !Array.isArray(plannerState.tasks)) return [];
-            const currentId = currentUser && currentUser.id;
+            const currentId = currentUser && currentUser.id ? String(currentUser.id) : null;
             const ordersById = new Map((plannerState.orders || []).map(o => [o.id, o]));
             const employeesById = new Map((plannerState.employees || []).map(e => [e.id, e]));
             const keepAll = !currentId;
 
             const filtered = plannerState.tasks.filter(task => {
                 if (keepAll) return true;
-                const direct = task.employeeId && task.employeeId === currentId;
-                const assigneeHit = Array.isArray(task.assignees) && task.assignees.includes(currentId);
+                const direct = task.employeeId && String(task.employeeId) === currentId;
+                const assigneeHit = Array.isArray(task.assignees) && task.assignees.some(assignee => {
+                    const id = assignee && assignee.id ? assignee.id : assignee;
+                    return String(id) === currentId;
+                });
                 return direct || assigneeHit;
             });
 
@@ -988,21 +1392,23 @@
                 const baseDuration = task.estMin || task.duration || 0;
                 const leadEmployeeId = order.leadEmployeeId || '';
                 const lead = leadEmployeeId ? employeesById.get(leadEmployeeId) : null;
+                const startPlannedMs = toMillis(task.startPlanned ?? task.startPlannedMs);
+                const endPlannedMs = toMillis(task.endPlanned ?? task.endPlannedMs);
                 return {
                     id: task.id,
                     title: task.name || task.opName || `Zadanie ${task.id}`,
                     model: order.model || task.orderId || '-',
                     quantity: task.qty || order.quantity || 1,
                     unit: task.unit || 'szt',
-                    deadline: task.endPlanned ? new Date(task.endPlanned).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }) : '-',
+                    deadline: formatDeadlineValue(task.deadline, endPlannedMs),
                     status: mapPlannerStatus(task.status),
                     startTime: null,
                     endTime: null,
                     estimatedTime: baseDuration,
                     priority: task.priority || 'normal',
                     orderId: task.orderId || '-',
-                    startPlanned: task.startPlanned || null,
-                    endPlanned: task.endPlanned || null,
+                    startPlanned: startPlannedMs ?? task.startPlanned ?? null,
+                    endPlanned: endPlannedMs ?? task.endPlanned ?? null,
                     client: order.client || '',
                     address: order.address || '',
                     postalCode: order.postalCode || '',
@@ -1015,25 +1421,10 @@
             });
         }
 
-        function mapPlannerStatus(status) {
-            switch (status) {
-                case 'run':
-                case 'in-progress':
-                    return 'in-progress';
-                case 'done':
-                case 'completed':
-                    return 'completed';
-                case 'paused':
-                    return 'paused';
-                default:
-                    return 'pending';
-            }
-        }
-
         function mergeIncomingTasks(importedTasks) {
-            const existingMap = new Map(tasks.map(task => [task.id, task]));
+            const existingMap = new Map(tasks.map(task => [String(task.id), task]));
             tasks = importedTasks.map(task => {
-                const existing = existingMap.get(task.id);
+                const existing = existingMap.get(String(task.id));
                 if (existing) {
                     return Object.assign({}, existing, task, {
                         status: existing.status,
@@ -1130,7 +1521,7 @@
                             if (importData.tasks && Array.isArray(importData.tasks)) {
                                 // Importuj nowe zadania
                                 const newTasks = importData.tasks.filter(importedTask => 
-                                    !tasks.some(existingTask => existingTask.id === importedTask.id)
+                                    !tasks.some(existingTask => String(existingTask.id) === String(importedTask.id))
                                 );
                                 
                                 if (newTasks.length > 0) {
@@ -1172,8 +1563,10 @@
                 reminderIntervals.clear();
                 localStorage.removeItem('worker-tasks');
                 localStorage.removeItem('worker-notifications');
+                localStorage.removeItem('worker-pending-updates');
                 // Nie usuwamy worker-user, żeby zachować profil pracownika
                 tasks = [];
+                pendingUpdates = [];
                 renderTasks();
                 updateStats();
                 const lastSync = document.getElementById('last-sync');
@@ -1293,7 +1686,7 @@
         }
 
         function showCompleteConfirmation(taskId) {
-            const task = tasks.find(t => t.id === taskId);
+            const task = tasks.find(t => String(t.id) === String(taskId));
             if (!task) return;
 
             // Wypełnij informacje o zadaniu
@@ -1320,9 +1713,18 @@
         }
 
         function confirmCompleteTask() {
-            const taskId = parseInt(document.getElementById('confirm-complete-btn').getAttribute('data-task-id'));
+            const storedId = document.getElementById('confirm-complete-btn').getAttribute('data-task-id');
+            const taskId = storedId && storedId !== '' ? storedId : null;
+            if (taskId === null) {
+                console.warn('[WorkerApp] Nie znaleziono ID zadania do potwierdzenia');
+                return;
+            }
             hideConfirmationModal();
             completeTask(taskId);
+        }
+
+        function showToast(message, type = 'info') {
+            showNotification(message, type);
         }
 
         function showNotification(message, type = 'info') {

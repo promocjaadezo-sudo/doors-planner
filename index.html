@@ -163,6 +163,30 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
 #custom-modal input:not([disabled]) {
   cursor: pointer !important;
 }
+
+/* Map view styles */
+#map-view { display: flex; flex-direction: column; gap: 12px; }
+#map-canvas { display: flex; flex-direction: column; gap: 12px; }
+.map-card { background: var(--panel); border-radius: 14px; padding: 16px; border: 1px solid rgba(148, 163, 184, 0.18); box-shadow: 0 14px 32px rgba(15, 23, 42, 0.45); }
+.map-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+.map-card-title { font-size: 18px; font-weight: 700; color: #ffffff; margin: 0; }
+.map-card-subtitle { color: rgba(148, 163, 184, 0.9); font-size: 13px; }
+.map-card-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: rgba(209, 231, 255, 0.9); font-size: 12px; }
+.map-chip { display: inline-flex; align-items: center; gap: 6px; background: rgba(37, 99, 235, 0.18); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 999px; padding: 4px 10px; font-weight: 600; color: #bfdbfe; }
+.map-section { margin-top: 12px; }
+.map-section-title { font-weight: 600; color: #ffffff; margin-bottom: 6px; font-size: 14px; }
+.map-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.map-list li { background: rgba(148, 163, 184, 0.08); border: 1px solid rgba(148, 163, 184, 0.08); border-radius: 10px; padding: 10px 12px; color: #e2e8f0; font-size: 13px; line-height: 1.4; }
+.map-order-meta { display: block; margin-top: 4px; font-size: 12px; color: rgba(148, 163, 184, 0.9); }
+.map-stat { background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(148, 163, 184, 0.18); border-radius: 12px; padding: 14px 16px; min-width: 140px; box-shadow: 0 10px 24px rgba(15, 23, 42, 0.5); }
+.map-stat-value { display: block; font-size: 22px; font-weight: 700; color: #ffffff; }
+.map-stat-label { font-size: 12px; color: rgba(148, 163, 184, 0.9); text-transform: uppercase; letter-spacing: 0.05em; }
+.map-empty { text-align: center; padding: 40px; color: rgba(148, 163, 184, 0.9); border: 1px dashed rgba(148, 163, 184, 0.3); border-radius: 12px; background: rgba(148, 163, 184, 0.06); font-style: italic; }
+
+@media (max-width: 768px) {
+  .map-card-header { flex-direction: column; align-items: flex-start; }
+  .map-card-meta { width: 100%; }
+}
 </style>
 </head>
 <body>
@@ -195,7 +219,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
 
 <!-- Banner ostrzegawczy o różnych portach -->
 <div id="port-warning-banner" style="display:none;background:#dc2626;color:white;padding:12px 20px;text-align:center;font-size:14px;font-weight:600;border-bottom:3px solid #991b1b">
-  ⚠️ UWAGA: Aplikacja na porcie <span id="current-port"></span> ma OSOBNE dane! 
+  ⚠️ UWAGA: <span id="port-warning-detail">Aplikacja na porcie <span id="current-port"></span> ma OSOBNE dane!</span>
   <button onclick="window.showPortInfo()" style="background:white;color:#dc2626;border:none;padding:4px 12px;border-radius:4px;margin-left:12px;cursor:pointer;font-weight:600">📊 Pokaż info</button>
   <button onclick="window.exportDataToFile()" style="background:#10b981;color:white;border:none;padding:4px 12px;border-radius:4px;margin-left:8px;cursor:pointer;font-weight:600">💾 Eksport</button>
   <button onclick="window.importDataFromFile()" style="background:#3b82f6;color:white;border:none;padding:4px 12px;border-radius:4px;margin-left:8px;cursor:pointer;font-weight:600">📁 Import</button>
@@ -207,69 +231,53 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
 
   <div class="card" id="p-dash">
     <h3>Panel</h3>
-    <div class="grid3">
-      <div class="card"><div>Zlecenia</div><div id="dash-orders" class="pill">0</div></div>
-      <div class="card"><div>Procesy</div><div id="dash-proc" class="pill">0</div></div>
-      <div class="card"><div>Operacje</div><div id="dash-ops" class="pill">0</div></div>
+    <div class="grid3" style="margin-top:12px;gap:12px">
+      <div style="background:rgba(37,99,235,0.18);border:1px solid rgba(59,130,246,0.35);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:6px;box-shadow:0 4px 14px rgba(15,23,42,0.45)">
+        <span style="font-size:13px;color:#cbd5f5;text-transform:uppercase;letter-spacing:0.08em">Zlecenia</span>
+        <span id="dash-orders" style="font-size:28px;font-weight:700;color:#ffffff">0</span>
+      </div>
+      <div style="background:rgba(16,185,129,0.18);border:1px solid rgba(16,185,129,0.35);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:6px;box-shadow:0 4px 14px rgba(15,23,42,0.45)">
+        <span style="font-size:13px;color:#bbf7d0;text-transform:uppercase;letter-spacing:0.08em">Procesy</span>
+        <span id="dash-proc" style="font-size:28px;font-weight:700;color:#ffffff">0</span>
+      </div>
+      <div style="background:rgba(249,115,22,0.18);border:1px solid rgba(249,115,22,0.35);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:6px;box-shadow:0 4px 14px rgba(15,23,42,0.45)">
+        <span style="font-size:13px;color:#fed7aa;text-transform:uppercase;letter-spacing:0.08em">Operacje</span>
+        <span id="dash-ops" style="font-size:28px;font-weight:700;color:#ffffff">0</span>
+      </div>
     </div>
 
-    <!-- Sekcja powiadomień o terminach -->
-    <div id="deadline-alerts" style="margin-top:16px;">
-      <h4 style="color:#d97706; margin-bottom:8px;">⏰ Powiadomienia o terminach</h4>
+    <div id="deadline-alerts" style="margin-top:16px">
+      <h4 style="color:#f59e0b;margin-bottom:8px">⏰ Powiadomienia o terminach</h4>
+      <p class="no-alerts">Brak pilnych terminów zamówień</p>
     </div>
-  </div>
-
-  <div class="card hidden" id="p-tasks">
-    <div class="row" style="justify-content:space-between">
-      <h3>Listy produkcyjne</h3>
-      <div class="row">
-          <span class="pill" id="tasks-count">0</span>
-          <select id="tasks-filter-order"></select>
-          <select id="tasks-filter-status"><option value="">Wszystkie</option><option value="todo">todo</option><option value="run">run</option><option value="done">done</option></select>
-          <button class="btn" id="tasks-gen-by-emp" title="Generuj listy zadań pogrupowane według pracownika">Generuj wg prac.</button>
-          <button class="btn" id="tasks-export-csv-by-emp" title="Eksportuj listy pracowników do CSV">Eksport CSV</button>
-          <button class="btn" id="tasks-show-by-emp" title="Pokaż/ukryj podział na pracowników">Pokaż podział</button>
-        </div>
-    </div>
-    <div id="tasks-list" class="list"></div>
-    <div id="tasks-by-worker" class="list" style="margin-top:12px"></div>
   </div>
 
   <div class="card hidden" id="p-order">
-    <div class="row" style="justify-content:space-between"><h3>Zlecenia</h3></div>
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;flex-wrap:wrap">
+      <h3>Zlecenia</h3>
+      <div class="row" style="gap:8px">
+        <button class="btn" type="button" onclick="window.exportDataToFile()">💾 Eksport</button>
+        <button class="btn" type="button" onclick="window.importDataFromFile()">📁 Import</button>
+      </div>
+    </div>
     <form class="grid3" id="order-form">
       <input type="hidden" id="o-id">
-      <div><label>Nr zlecenia</label><input id="o-name" required></div>
-      <div><label>Klient</label><input id="o-client"></div>
-      <div><label>Model</label><input id="o-model" placeholder="np. HYGGE-80"></div>
-      <div><label>Ilość sztuk</label><input id="o-qty" type="number" min="1" value="1"></div>
+      <div><label>Nazwa zlecenia</label><input id="o-name" placeholder="np. Zamówienie #123" required></div>
+      <div><label>Klient</label><input id="o-client" placeholder="Nazwa klienta"></div>
+      <div><label>Model</label><input id="o-model" placeholder="Model / wariant"></div>
+      <div><label>Ilość</label><input id="o-qty" type="number" min="1" value="1"></div>
       <div><label>Data przyjęcia</label><input id="o-start" type="date"></div>
-      <div>
-        <label>Ilość tygodni</label>
-        <select id="o-weeks">
-          <option value="1">1 tydzień</option>
-          <option value="2" selected>2 tygodnie</option>
-          <option value="3">3 tygodnie</option>
-          <option value="4">4 tygodnie</option>
-          <option value="5">5 tygodni</option>
-          <option value="6">6 tygodni</option>
-          <option value="7">7 tygodni</option>
-          <option value="8">8 tygodni</option>
-          <option value="9">9 tygodni</option>
-          <option value="10">10 tygodni</option>
-        </select>
-      </div>
-      <div><label>Termin (auto)</label><input id="o-end" type="date"></div>
+      <div><label>Termin produkcji</label><input id="o-end" type="date"></div>
+      <div style="grid-column:1/-1"><label>Uwagi</label><textarea id="o-notes" rows="2" placeholder="Dodatkowe informacje, wymagania, kontakt..."></textarea></div>
+      <div><label>Termin montażu</label><input id="o-install" type="date"></div>
+      <div><label>Adres montażu</label><input id="o-addr" placeholder="ulica nr, miejscowość"></div>
+      <div><label>Kod montażu</label><input id="o-post" placeholder="kod miejsca / 00-000"></div>
+      <div><label>Telefon</label><input id="o-phone" placeholder="+48 600 000 000" pattern="\+?[0-9\s]{6,}" title="Minimum 6 cyfr, opcjonalny '+' na początku"></div>
       <div><label>Proces</label><select id="o-proc"></select></div>
-      <div><label>Uwagi</label><textarea id="o-notes" rows="2"></textarea></div>
-    <div><label>Termin montażu</label><input id="o-install" type="date"></div>
-  <div><label>Adres montażu</label><input id="o-addr" placeholder="ulica nr, miejscowość"></div>
-  <div><label>Kod montażu</label><input id="o-post" placeholder="kod miejsca / 00-000" ></div>
-  <div><label>Telefon</label><input id="o-phone" placeholder="+48 600 000 000" pattern="\+?[0-9\s]{6,}" title="Minimum 6 cyfr, opcjonalny '+' na początku"></div>
-  <div><label>Pracownik prowadzący</label><select id="o-lead"><option value="">— wybierz pracownika —</option></select></div>
-      <div style="grid-column:1/-1;text-align:right"><button class="btn primary" type="submit">Zapisz</button></div>
+      <div><label>Pracownik prowadzący</label><select id="o-lead"><option value="">— wybierz pracownika —</option></select></div>
+      <div style="grid-column:1/-1;text-align:right"><button class="btn primary" type="submit">Zapisz zlecenie</button></div>
     </form>
-    <div class="table" style="margin-top:8px">
+    <div class="table" style="margin-top:12px">
       <table>
         <thead>
           <tr>
@@ -290,6 +298,32 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
         <tbody id="ord-tb"></tbody>
       </table>
     </div>
+  </div>
+
+  <div class="card hidden" id="p-tasks">
+    <div class="row" style="justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+      <div>
+        <h3>Zadania</h3>
+        <div class="muted">Wyświetlane zadania: <span id="tasks-count">0</span></div>
+      </div>
+      <div class="row" style="gap:8px;flex-wrap:wrap;justify-content:flex-end">
+        <select id="tasks-filter-order" style="min-width:180px">
+          <option value="">Wszystkie zlecenia</option>
+        </select>
+        <select id="tasks-filter-status" style="min-width:160px">
+          <option value="">Wszystkie statusy</option>
+          <option value="todo">Do zrobienia</option>
+          <option value="run">W realizacji</option>
+          <option value="done">Zamknięte</option>
+        </select>
+        <button class="btn" id="tasks-gen-by-emp" type="button">Zbuduj raport</button>
+        <button class="btn" id="tasks-export-csv-by-emp" type="button">Eksport CSV</button>
+        <button class="btn" id="tasks-show-by-emp" type="button">Pokaż podział</button>
+      </div>
+    </div>
+    <div class="muted" style="margin-bottom:8px">Użyj filtrów, aby zawęzić listę i szybko przygotować raporty dla brygad.</div>
+    <div class="list" id="tasks-list"></div>
+    <div id="tasks-by-worker" class="list" style="margin-top:16px"></div>
   </div>
 
   <div class="card hidden" id="p-opcat">
@@ -377,7 +411,32 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
     <div class="list" id="as-list"></div>
   </div>
 
-  <div class="card hidden" id="p-map"><h3>Mapy Model↔Proces</h3><div class="muted">Placeholder.</div></div>
+  <div class="card hidden" id="p-map">
+    <div class="row" style="justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <h3 style="margin:0">Mapy Model↔Proces</h3>
+      <div class="row" style="gap:8px;flex-wrap:wrap">
+        <button class="btn" id="map-export-json">📄 Eksport JSON</button>
+        <button class="btn" id="map-export-png">🖼️ Eksport PNG</button>
+      </div>
+    </div>
+    <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:12px">
+      <select id="map-filter-model" style="min-width:180px;padding:8px;border-radius:8px;background:#111827;color:#e2e8f0;border:1px solid rgba(148,163,184,0.3)">
+        <option value="__ALL__">Wszystkie modele</option>
+      </select>
+      <select id="map-filter-process" style="min-width:180px;padding:8px;border-radius:8px;background:#111827;color:#e2e8f0;border:1px solid rgba(148,163,184,0.3)">
+        <option value="__ALL__">Wszystkie procesy</option>
+      </select>
+      <select id="map-filter-status" style="min-width:180px;padding:8px;border-radius:8px;background:#111827;color:#e2e8f0;border:1px solid rgba(148,163,184,0.3)">
+        <option value="__ALL__">Wszystkie statusy</option>
+      </select>
+    </div>
+    <div id="map-stats" class="row" style="gap:12px;flex-wrap:wrap;margin-top:16px"></div>
+    <div id="map-view" style="margin-top:16px">
+      <div id="map-canvas" class="list">
+        <div class="map-empty">Ładowanie danych mapy...</div>
+      </div>
+    </div>
+  </div>
   <div class="card hidden" id="p-monitor"><h3>Monitoring postępów</h3><div class="muted">Placeholder.</div></div>
   <div class="card hidden" id="p-mrp">
     <div class="row" style="justify-content:space-between">
@@ -842,6 +901,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
 <script src="js/ui.js?v=20251005-1415"></script>
 <script src="js/schedule.js?v=20251005-1500"></script>
 <script src="js/app-helpers.js?v=20251005-1400"></script>
+<script src="js/map.js?v=20251019-01"></script>
 <script>
 // === MAGAZYN - NAJWYŻSZY PRIORYTET ===
 // System magazynowy zostanie zainicjalizowany później w kodzie
@@ -3094,6 +3154,8 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     if(state.uiShowTasksByEmpTable){ tasksShowByEmpBtn.textContent = 'Ukryj podział'; generateTasksByWorker(); }
     else { tasksShowByEmpBtn.textContent = 'Pokaż podział'; const byW = qs('#tasks-by-worker'); if(byW) byW.innerHTML = ''; }
   }); }
+  const tasksFilterOrder = qs('#tasks-filter-order'); if(tasksFilterOrder){ tasksFilterOrder.addEventListener('change', ()=>{ renderTasks(); }); }
+  const tasksFilterStatus = qs('#tasks-filter-status'); if(tasksFilterStatus){ tasksFilterStatus.addEventListener('change', ()=>{ renderTasks(); }); }
 
   function renderEmployees(){ const tb=qs('#emp-tb'); tb.innerHTML=''; (state.employees||[]).forEach(e=>{ const tr=document.createElement('tr'); tr.innerHTML='<td>'+e.name+'</td><td>'+(e.cap||100)+'</td><td>'+(e.hoursPerDay||8)+'</td><td><button class="btn" data-emp-ed="'+e.id+'">Edytuj</button> <button class="btn red" data-emp-del="'+e.id+'">Usuń</button></td>'; tb.appendChild(tr); } ); }
 
@@ -10674,36 +10736,46 @@ document.addEventListener('DOMContentLoaded', () => {
     genDeadlineBtn.addEventListener('click', generateDeadlineTestOrders);
   }
   
-  // Wykryj port i pokaż ostrzeżenie jeśli to nie standardowy port
+  // Wykryj port i pokaż ostrzeżenie o osobnych danych
   try {
     const currentPort = window.location.port;
-    const currentHost = window.location.hostname;
     const banner = document.getElementById('port-warning-banner');
     const portSpan = document.getElementById('current-port');
-    
-    if (banner && portSpan && currentPort) {
-      portSpan.textContent = currentPort;
-      
-      // Sprawdź czy są dane w localStorage
-      const hasData = localStorage.getItem(storeKey);
-      const dataCount = hasData ? JSON.parse(hasData).orders?.length || 0 : 0;
-      
-      // Pokaż banner jeśli:
-      // 1. Port nie jest standardowy (nie 5500)
-      // 2. Lub brak danych (może być na złym porcie)
-      if (currentPort !== '5500' || dataCount === 0) {
-        banner.style.display = 'block';
-        
-        // Dodaj info o liczbie zleceń
-        if (dataCount === 0) {
-          banner.innerHTML = banner.innerHTML.replace(
-            'ma OSOBNE dane!',
-            'ma OSOBNE dane! <strong style="background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:3px">⚠️ Brak zleceń - może niewłaściwy port?</strong>'
-          );
+    const detailSpan = document.getElementById('port-warning-detail');
+    const storageKey = window.storeKey || 'door_v50_state';
+
+    if (banner && portSpan && detailSpan) {
+      const friendlyPort = currentPort ? currentPort : 'brak (plik lokalny)';
+      portSpan.textContent = friendlyPort;
+
+      const storedState = localStorage.getItem(storageKey);
+      let dataCount = 0;
+      if (storedState) {
+        try {
+          const parsed = JSON.parse(storedState);
+          dataCount = Array.isArray(parsed?.orders) ? parsed.orders.length : 0;
+        } catch(parseErr) {
+          console.warn('Błąd parsowania danych magazynu dla banera portu:', parseErr);
         }
-        
-        console.log('⚠️ OSTRZEŻENIE: Port', currentPort, '| Zleceń:', dataCount);
       }
+
+      let detailHtml = '';
+
+      if (!currentPort) {
+        detailHtml = 'Otwierasz plik lokalny (<strong>brak portu</strong>) — dane mogą się nie synchronizować. <strong>Uruchom plik przez serwer (np. Five Server), aby używać tych samych danych co reszta zespołu.</strong>';
+      } else if (currentPort === '5500') {
+        detailHtml = 'Aplikacja działa na domyślnym porcie <strong>5500</strong>. To osobny magazyn danych od innych portów — upewnij się, że wszyscy korzystają z tego samego portu.';
+      } else {
+        detailHtml = `Aplikacja na porcie <strong>${friendlyPort}</strong> ma <strong>osobne dane</strong> niż instancja na porcie 5500.`;
+      }
+
+      if (dataCount === 0) {
+        detailHtml += ' <strong style="background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:3px">⚠️ Brak zleceń — sprawdź, czy to właściwy port lub zaimportuj backup.</strong>';
+      }
+
+      detailSpan.innerHTML = detailHtml;
+      banner.style.display = 'block';
+      console.log('⚠️ OSTRZEŻENIE: Port', friendlyPort, '| Zleceń:', dataCount);
     }
   } catch(e) {
     console.warn('Błąd wykrywania portu:', e);
