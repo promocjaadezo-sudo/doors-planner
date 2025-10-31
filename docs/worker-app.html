@@ -505,6 +505,20 @@
     <div class="header">
         <h1>📋 Lista Zadań</h1>
         <div class="date" id="current-date"></div>
+        <div style="margin-top: 12px;">
+            <select id="employee-select" onchange="onEmployeeChange()" style="
+                width: 100%;
+                padding: 10px;
+                background: var(--bg);
+                color: var(--text);
+                border: 1px solid rgba(148, 163, 184, 0.4);
+                border-radius: 8px;
+                font-size: 1rem;
+                cursor: pointer;
+            ">
+                <option value="">Ładowanie pracowników...</option>
+            </select>
+        </div>
     </div>
 
     <div class="stats">
@@ -538,10 +552,23 @@
     </div>
 
     <script>
+        // Firebase Config (wbudowana)
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyD93UqqsHWoAUBV7g8OVKAnajIfGDX_ZdY",
+            authDomain: "doors-planner.firebaseapp.com",
+            projectId: "doors-planner",
+            storageBucket: "doors-planner.appspot.com",
+            messagingSenderId: "513098608067",
+            appId: "1:513098608067:web:1fe3855b3470ca7ef22176"
+        };
+
         // Dane aplikacji
-    let tasks = [];
-    let currentUser = { id: 'emp1', name: "Jan Kowalski" };
+        let tasks = [];
+        let allEmployees = [];
+        let currentUser = null;
         let isOnline = navigator.onLine;
+        let firebaseApp = null;
+        let firestore = null;
         
         // Ustawienia powiadomień
         let notificationSettings = {
@@ -580,12 +607,160 @@
             return `<a href="tel:${normalized}" style="color: var(--accent); text-decoration: none;">${escapeHtml(trimmed)}</a>`;
         }
 
+        // Inicjalizacja Firebase
+        async function initializeFirebase() {
+            try {
+                // Dynamiczne ładowanie Firebase SDK
+                const script1 = document.createElement('script');
+                script1.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js';
+                document.head.appendChild(script1);
+
+                const script2 = document.createElement('script');
+                script2.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js';
+                document.head.appendChild(script2);
+
+                const script3 = document.createElement('script');
+                script3.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js';
+                document.head.appendChild(script3);
+
+                // Czekaj na załadowanie
+                await new Promise(resolve => {
+                    script3.onload = resolve;
+                });
+
+                // Inicjalizuj Firebase
+                firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+                firestore = firebase.firestore();
+                
+                // Włącz persistence
+                await firestore.enablePersistence({ synchronizeTabs: true });
+
+                // Zaloguj anonimowo
+                await firebase.auth().signInAnonymously();
+
+                console.log('✅ Firebase zainicjalizowany');
+                
+                // Pobierz pracowników i zadania
+                await loadEmployeesFromFirebase();
+                await loadTasksFromFirebase();
+                
+            } catch (error) {
+                console.error('❌ Błąd Firebase:', error);
+            }
+        }
+
+        // Pobieranie pracowników z Firebase
+        async function loadEmployeesFromFirebase() {
+            try {
+                const snapshot = await firestore.collection('employees').get();
+                allEmployees = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                // Aktualizuj dropdown
+                const select = document.getElementById('employee-select');
+                select.innerHTML = '<option value="">Wybierz pracownika...</option>';
+                
+                allEmployees.forEach(emp => {
+                    const option = document.createElement('option');
+                    option.value = emp.id;
+                    option.textContent = emp.name;
+                    select.appendChild(option);
+                });
+
+                // Przywróć ostatnio wybranego pracownika
+                const savedUserId = localStorage.getItem('worker-current-employee-id');
+                if (savedUserId) {
+                    select.value = savedUserId;
+                    currentUser = allEmployees.find(e => e.id === savedUserId);
+                    if (currentUser) {
+                        loadTasks();
+                        updateStats();
+                    }
+                }
+
+                console.log(`✅ Załadowano ${allEmployees.length} pracowników`);
+            } catch (error) {
+                console.error('❌ Błąd pobierania pracowników:', error);
+            }
+        }
+
+        // Pobieranie zadań z Firebase
+        async function loadTasksFromFirebase() {
+            try {
+                const snapshot = await firestore.collection('tasks').get();
+                const allTasks = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                console.log(`✅ Załadowano ${allTasks.length} zadań z Firebase`);
+                
+                // Zapisz wszystkie zadania
+                localStorage.setItem('worker-all-tasks', JSON.stringify(allTasks));
+                
+                // Jeśli jest wybrany pracownik, przefiltruj zadania
+                if (currentUser) {
+                    tasks = filterTasksForEmployee(allTasks, currentUser.id);
+                    saveTasks();
+                    loadTasks();
+                    updateStats();
+                }
+            } catch (error) {
+                console.error('❌ Błąd pobierania zadań:', error);
+            }
+        }
+
+        // Filtrowanie zadań dla pracownika
+        function filterTasksForEmployee(allTasks, employeeId) {
+            return allTasks.filter(task => {
+                // Sprawdź pole employeeId
+                if (task.employeeId === employeeId) return true;
+                
+                // Sprawdź tablicę assignees
+                if (Array.isArray(task.assignees) && task.assignees.includes(employeeId)) return true;
+                
+                return false;
+            });
+        }
+
+        // Obsługa zmiany pracownika
+        function onEmployeeChange() {
+            const select = document.getElementById('employee-select');
+            const employeeId = select.value;
+            
+            if (!employeeId) {
+                currentUser = null;
+                tasks = [];
+                localStorage.removeItem('worker-current-employee-id');
+                loadTasks();
+                updateStats();
+                return;
+            }
+
+            currentUser = allEmployees.find(e => e.id === employeeId);
+            localStorage.setItem('worker-current-employee-id', employeeId);
+            
+            // Przefiltruj zadania
+            const allTasksStr = localStorage.getItem('worker-all-tasks');
+            if (allTasksStr) {
+                const allTasks = JSON.parse(allTasksStr);
+                tasks = filterTasksForEmployee(allTasks, employeeId);
+                saveTasks();
+            }
+            
+            loadTasks();
+            updateStats();
+            
+            console.log(`✅ Wybrano pracownika: ${currentUser.name}`);
+        }
+
         // Inicjalizacja aplikacji
         document.addEventListener('DOMContentLoaded', function() {
             initializeApp();
-            loadTasks();
-            updateStats();
             updateDate();
+            initializeFirebase(); // Uruchom Firebase
         });
 
         // Sprawdzanie połączenia internetowego
@@ -604,11 +779,6 @@
             const savedTasks = localStorage.getItem('worker-tasks');
             if (savedTasks) {
                 tasks = JSON.parse(savedTasks);
-            }
-
-            const savedUser = localStorage.getItem('worker-user');
-            if (savedUser) {
-                currentUser = JSON.parse(savedUser);
             }
 
             const plannerState = loadPlannerState();
