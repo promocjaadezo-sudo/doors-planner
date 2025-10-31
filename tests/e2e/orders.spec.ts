@@ -1,6 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 
-const STORE_KEY = 'door_v50_state';
+const STORE_KEY = 'door_v5627_state';
 
 async function gotoOrdersPage(page: Page) {
   await page.goto('/index.html');
