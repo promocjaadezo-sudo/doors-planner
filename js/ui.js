@@ -8,6 +8,9 @@ function renderDash(state) {
     const dOrders = qs('#dash-orders'); if (dOrders) dOrders.textContent = String((state.orders || []).length);
     const dProc = qs('#dash-proc'); if (dProc) dProc.textContent = String((state.processes || []).length);
     const dOps = qs('#dash-ops'); if (dOps) dOps.textContent = String((state.operationsCatalog || []).length);
+    
+    // Renderuj alerty terminów zamówień
+    renderDeadlineAlerts(state);
   }catch(e){ console.warn('[renderDash] error', e&&e.message); }
 }
 // Eksport do globalnego scope (diagnostyka w index.html sprawdza window.renderDash)
@@ -120,6 +123,7 @@ function showEmployeeForm(employee = null) {
             <div><label>Godziny h/d</label><input id="emp-hours" type="number" min="0" max="24" step="0.5" value="8" /></div>
             <div><label>Obciążenie (cap)</label><input id="emp-cap" type="number" min="0" max="100" value="100" /></div>
             <div><label>Kwalifikacje (oddziel średnikiem)</label><input id="emp-skills" /></div>
+            <div><label><input type="checkbox" id="emp-is-production"> Pracownik produkcji</label></div>
             <div style="margin-top:10px;"><button class="btn" type="submit">Zapisz</button> <button type="button" class="btn red" id="emp-cancel">Anuluj</button></div>
           </form>
         </div>
@@ -129,6 +133,30 @@ function showEmployeeForm(employee = null) {
     // ensure clicking overlay closes
     modal.addEventListener('click', (ev) => { if (ev.target === modal) modal.style.display='none'; });
     const cancel = qs('#emp-cancel'); if (cancel) cancel.addEventListener('click', () => { modal.style.display='none'; });
+    // add submit handler
+    const form = qs('#emp-form');
+    if (form) {
+      form.addEventListener('submit', (ev) => {
+        ev.preventDefault();
+        const id = qs('#emp-id').value.trim();
+        const name = qs('#emp-name').value.trim();
+        const hours = parseFloat(qs('#emp-hours').value) || 8;
+        const cap = parseInt(qs('#emp-cap').value) || 100;
+        const skills = qs('#emp-skills').value.split(';').map(s => s.trim()).filter(Boolean);
+        const isProductionWorker = qs('#emp-is-production').checked;
+        if (!name) { alert('Podaj imię i nazwisko'); return; }
+        const emp = { id: id || uid(), name, hoursPerDay: hours, cap, skills, isProductionWorker };
+        if (id) {
+          const existing = state.employees.find(e => e.id === id);
+          if (existing) Object.assign(existing, emp);
+        } else {
+          state.employees.push(emp);
+        }
+        save();
+        renderEmployees(state);
+        modal.style.display = 'none';
+      });
+    }
   }
   // reset form
   const form = qs('#emp-form'); if (form) form.reset();
@@ -147,6 +175,7 @@ function showEmployeeForm(employee = null) {
     const capEl = qs('#emp-cap'); if (capEl) capEl.value = 100;
     const skillsEl = qs('#emp-skills'); if (skillsEl) skillsEl.value = '';
   }
+  const isProdEl = qs('#emp-is-production'); if (isProdEl) isProdEl.checked = employee ? (employee.isProductionWorker || false) : false;
   modal.style.display = 'flex';
 }
 
@@ -195,6 +224,9 @@ function renderAll(state) {
   renderOrderPage(state);
   renderEmployees(state);
   renderTaskMappings(state);
+  if (typeof window.renderMapView === 'function') {
+    window.renderMapView(state);
+  }
   renderClientWindow(state);
 }
 
@@ -207,6 +239,87 @@ function showNotification(message, type = 'info') {
   if (type === 'error') infoEl.classList.add('err');
   infoEl.textContent = `${typeMap[type] || ''} ${message}`;
 }
+
+// Funkcja sprawdzająca terminy zamówień i zwracająca alerty
+function checkOrderDeadlines(state) {
+  const alerts = [];
+  const now = new Date();
+  now.setHours(0, 0, 0, 0); // Reset czasu dla porównania dat
+
+  (state.orders || []).forEach(order => {
+    if (!order.endDate) return;
+
+    const endDate = new Date(order.endDate);
+    endDate.setHours(0, 0, 0, 0);
+
+    const daysDiff = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+
+    let alertType = null;
+    let message = '';
+
+    if (daysDiff < 0) {
+      // Przekroczony termin
+      alertType = 'overdue';
+      message = `Zamówienie "${order.name || 'Bez nazwy'}" (${order.client || 'Brak klienta'}) - termin przekroczony o ${Math.abs(daysDiff)} dni`;
+    } else if (daysDiff <= 3) {
+      // Krytyczny termin (3 dni lub mniej)
+      alertType = 'danger';
+      message = `Zamówienie "${order.name || 'Bez nazwy'}" (${order.client || 'Brak klienta'}) - termin za ${daysDiff} dni`;
+    } else if (daysDiff <= 7) {
+      // Ostrzeżenie (7 dni lub mniej)
+      alertType = 'warning';
+      message = `Zamówienie "${order.name || 'Bez nazwy'}" (${order.client || 'Brak klienta'}) - termin za ${daysDiff} dni`;
+    }
+
+    if (alertType) {
+      alerts.push({
+        type: alertType,
+        message: message,
+        orderId: order.id,
+        daysLeft: daysDiff,
+        endDate: order.endDate
+      });
+    }
+  });
+
+  // Sortuj alerty: najpierw overdue, potem danger, potem warning
+  return alerts.sort((a, b) => {
+    const priority = { overdue: 0, danger: 1, warning: 2 };
+    if (priority[a.type] !== priority[b.type]) {
+      return priority[a.type] - priority[b.type];
+    }
+    return a.daysLeft - b.daysLeft;
+  });
+}
+
+// Funkcja renderująca alerty terminów w dashboardzie
+function renderDeadlineAlerts(state) {
+  const alertsContainer = qs('#deadline-alerts');
+  if (!alertsContainer) return;
+
+  const alerts = checkOrderDeadlines(state);
+
+  if (alerts.length === 0) {
+    alertsContainer.innerHTML = '<p class="no-alerts">Brak pilnych terminów zamówień</p>';
+    return;
+  }
+
+  alertsContainer.innerHTML = '';
+
+  alerts.forEach(alert => {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `deadline-alert ${alert.type}`;
+    alertDiv.innerHTML = `
+      <div class="alert-icon">${alert.type === 'overdue' ? '⚠️' : alert.type === 'danger' ? '🔴' : '🟡'}</div>
+      <div class="alert-content">
+        <div class="alert-message">${alert.message}</div>
+        <div class="alert-date">Termin: ${new Date(alert.endDate).toLocaleDateString('pl-PL')}</div>
+      </div>
+    `;
+    alertsContainer.appendChild(alertDiv);
+  });
+}
+
 
 // Global export (legacy non-module environment)
 if(typeof window!=='undefined'){
