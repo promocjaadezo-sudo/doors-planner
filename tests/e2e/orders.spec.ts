@@ -1,0 +1,238 @@
+import { test, expect, Page } from '@playwright/test';
+
+const STORE_KEY = 'door_v50_state';
+
+async function gotoOrdersPage(page: Page) {
+  await page.goto('/index.html');
+  await openOrdersTab(page);
+}
+
+async function openOrdersTab(page: Page) {
+  await page.waitForFunction(() => Boolean((window as any).state));
+  await page.getByRole('button', { name: /Zlecenia/i }).click();
+  await expect(page.locator('#p-order')).toBeVisible();
+  await page.waitForFunction(() => {
+    const state = (window as any).state;
+    return !!state && Array.isArray(state.orders);
+  });
+}
+
+async function seedHandoverScenario(page: Page) {
+  const timestamp = Date.now();
+  const ids = {
+    itemId: `wh-${timestamp}`,
+    templateId: `tmpl-${timestamp}`,
+    processId: `proc-${timestamp}`,
+    orderId: `order-${timestamp}`,
+  };
+
+  await page.evaluate(({ ids, timestamp }) => {
+    const item = {
+      id: ids.itemId,
+      name: 'Płyta testowa Handover',
+      quantity: 1,
+      unit: 'szt',
+      minStock: 0,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+
+    (window as any).warehouseItems = [item];
+    localStorage.setItem('warehouseItems', JSON.stringify((window as any).warehouseItems));
+
+    const template = {
+      id: ids.templateId,
+      name: 'Szablon przekazania',
+      materials: [
+        {
+          itemId: ids.itemId,
+          itemName: 'Płyta testowa Handover',
+          quantity: 2,
+          unit: 'szt',
+        },
+      ],
+      createdAt: timestamp,
+    };
+
+    (window as any).materialTemplates = [template];
+    localStorage.setItem('materialTemplates', JSON.stringify((window as any).materialTemplates));
+
+    const process = {
+      id: ids.processId,
+      name: 'Proces przekazania',
+      materialTemplateId: ids.templateId,
+      operations: [],
+    };
+
+    const order = {
+      id: ids.orderId,
+      name: 'Zlecenie do magazynu',
+      client: 'Klient Handover',
+      model: 'MODEL-H',
+      quantity: 1,
+      startDate: '',
+      endDate: '',
+      installDate: '',
+      address: '',
+      postalCode: '',
+      phone: '',
+      notes: '',
+      processId: ids.processId,
+      materialChecklist: template.materials.map(material => ({
+        itemId: material.itemId,
+        itemName: material.itemName,
+        quantity: material.quantity,
+        unit: material.unit,
+        checked: false,
+        checkedAt: null,
+        checkedBy: null,
+      })),
+    };
+
+    const state = (window as any).state || {};
+    state.orders = [order];
+    state.processes = [process];
+    state.tasks = [];
+    state.after = state.after || [];
+    (window as any).state = state;
+
+    if (typeof (window as any).save === 'function') {
+      (window as any).save();
+    }
+    if (typeof (window as any).renderOrderPage === 'function') {
+      (window as any).renderOrderPage();
+    }
+    if (typeof (window as any).updateTasksBadge === 'function') {
+      (window as any).updateTasksBadge();
+    }
+  }, { ids, timestamp });
+
+  return ids;
+}
+
+test.beforeEach(async ({ page }) => {
+  await page.goto('/index.html');
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+});
+
+test('order persists across reloads and updates local storage', async ({ page }) => {
+  const orderName = `Zlecenie testowe ${Date.now()}`;
+  const initialClient = 'Klient Testowy';
+  const updatedClient = 'Klient Po Aktualizacji';
+
+  await gotoOrdersPage(page);
+
+  await page.fill('#o-name', orderName);
+  await page.fill('#o-client', initialClient);
+  await page.fill('#o-model', 'Model X');
+  await page.fill('#o-qty', '4');
+  await page.fill('#o-notes', 'Sprawdzenie lokalnego zapisu');
+  await page.locator('#order-form').getByRole('button', { name: /Zapisz zlecenie/i }).click();
+
+  const ordersTable = page.locator('#ord-tb');
+  await expect(ordersTable).toContainText(orderName);
+  await expect(ordersTable).toContainText(initialClient);
+
+  const savedAfterCreate = await page.evaluate((key) => {
+    const raw = window.localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  }, STORE_KEY);
+
+  expect(savedAfterCreate?.orders).toBeDefined();
+  expect(savedAfterCreate.orders).toHaveLength(1);
+  expect(savedAfterCreate.orders[0]).toMatchObject({
+    name: orderName,
+    client: initialClient,
+    quantity: 4,
+  });
+
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await openOrdersTab(page);
+
+  await expect(page.locator('#ord-tb')).toContainText(orderName);
+  await expect(page.locator('#ord-tb')).toContainText(initialClient);
+
+  const editButton = page.locator('#ord-tb tr').first().getByRole('button', { name: /^Edytuj$/ });
+  await editButton.click();
+
+  await expect(page.locator('#o-id')).not.toHaveValue('');
+  await page.fill('#o-client', updatedClient);
+  await page.locator('#order-form').getByRole('button', { name: /Zapisz zlecenie/i }).click();
+
+  await expect(page.locator('#ord-tb')).toContainText(updatedClient);
+
+  const savedAfterUpdate = await page.evaluate((key) => {
+    const raw = window.localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  }, STORE_KEY);
+
+  const storedOrder = savedAfterUpdate?.orders?.find((o: any) => o.name === orderName);
+  expect(storedOrder).toBeDefined();
+  expect(storedOrder.client).toBe(updatedClient);
+
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await openOrdersTab(page);
+
+  await expect(page.locator('#ord-tb')).toContainText(updatedClient);
+});
+
+test('handover from orders view creates warehouse task and keeps actions read-only', async ({ page }) => {
+  await gotoOrdersPage(page);
+  const ids = await seedHandoverScenario(page);
+
+  const ordersTable = page.locator('#ord-tb');
+  await expect(ordersTable).toContainText('Zlecenie do magazynu');
+
+  await page.evaluate((orderId) => {
+    const win = window as any;
+    if (typeof win.showMaterialChecklist !== 'function') {
+      throw new Error('showMaterialChecklist is not available');
+    }
+    win.showMaterialChecklist(orderId, { readOnly: true, source: 'orders' });
+  }, ids.orderId);
+
+  const modal = page.locator('#custom-modal').last();
+  await expect(modal).toBeVisible();
+    await expect(modal).toContainText('Checklist materiałów - Zlecenie do magazynu');
+  await expect(modal).toContainText('Zakładka Zlecenia ma charakter informacyjny');
+  await expect(modal.getByText('👷 Obsługa magazynu')).toBeVisible();
+
+  await expect(modal.getByRole('button', { name: /📤 WYDAJ/ })).toHaveCount(0);
+  await expect(modal.getByRole('button', { name: /🛒 ZAMÓW/ })).toHaveCount(0);
+
+  const dialogPromise = page.waitForEvent('dialog');
+  await Promise.all([
+    dialogPromise.then((dialog) => {
+      expect(dialog.message()).toContain('zadanie magazynowe');
+      return dialog.accept();
+    }),
+    modal.getByRole('button', { name: /Przekaż do magazynu/ }).click(),
+  ]);
+
+  await openOrdersTab(page);
+
+  const stateAfter = await page.evaluate(() => ({
+    order: (window as any).state.orders?.[0],
+    tasks: ((window as any).state.tasks || []).filter((task: any) => task.type === 'warehouse-preparation'),
+  }));
+
+  expect(stateAfter.order?.warehouseStatus).toBe('pending');
+  expect(stateAfter.tasks).toHaveLength(1);
+  expect(stateAfter.tasks[0].orderId).toBe(ids.orderId);
+
+  await page.evaluate((orderId) => {
+    const win = window as any;
+    if (typeof win.showMaterialChecklist !== 'function') {
+      throw new Error('showMaterialChecklist is not available');
+    }
+    win.showMaterialChecklist(orderId, { readOnly: true, source: 'orders' });
+  }, ids.orderId);
+
+  const checklistModal = page.locator('#custom-modal').last();
+  await expect(checklistModal).toBeVisible();
+  await expect(checklistModal).toContainText('Zakładka Zlecenia ma charakter informacyjny');
+  await expect(checklistModal.getByText('👷 Obsługa magazynu')).toBeVisible();
+});

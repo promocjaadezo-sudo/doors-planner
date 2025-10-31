@@ -1,0 +1,154 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================
+    // REGUŁY BEZPIECZEŃSTWA DLA DOORS PLANNER
+    // ============================================
+    
+    // Funkcja sprawdzająca, czy użytkownik jest zalogowany (nawet anonimowo)
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Funkcja sprawdzająca, czy użytkownik należy do danej aplikacji
+    function belongsToApp(appId) {
+      return isAuthenticated() && 
+             request.auth.token.appId == appId;
+    }
+    
+    // ============================================
+    // GŁÓWNA KOLEKCJA PLANNER
+    // ============================================
+    match /planner/{appId} {
+      
+      // Metadane aplikacji (read-only dla wszystkich zalogowanych)
+      match /metadata/{document} {
+        allow read: if isAuthenticated();
+        allow write: if false; // Tylko przez admin SDK
+      }
+      
+      // ============================================
+      // DANE UŻYTKOWNIKÓW
+      // ============================================
+      match /users/{userId} {
+        
+        // Kolekcja pracowników
+        match /employees/{employeeId} {
+          // Wszyscy mogą czytać listę pracowników
+          allow read: if isAuthenticated();
+          // Tylko planer może edytować
+          allow write: if isAuthenticated();
+        }
+        
+        // Kolekcja zadań (TASKS)
+        match /tasks/{taskId} {
+          // Odczyt:
+          // - Każdy zalogowany może czytać zadania swojej aplikacji
+          allow read: if isAuthenticated();
+          
+          // Zapis:
+          // - Planer może wszystko (create, update, delete)
+          // - Worker może tylko update statusu, jeśli jest przypisany do zadania
+          allow create, delete: if isAuthenticated();
+          
+          allow update: if isAuthenticated() && (
+            // Planer może wszystko
+            true ||
+            // Worker może tylko zmienić status/czas, jeśli jest przypisany
+            (
+              request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['status', 'workerStatus', 'startedAt', 'completedAt', 
+                          'pausedAt', 'resumedAt', 'updatedAt', 'workerUpdatedAt',
+                          'workerDevice', 'workerId', 'workerName'])
+              &&
+              (
+                resource.data.employeeId == request.auth.uid ||
+                resource.data.assignees.hasAny([request.auth.uid]) ||
+                resource.data.assignee.id == request.auth.uid
+              )
+            )
+          );
+        }
+        
+        // Kolekcja zleceń (ORDERS)
+        match /orders/{orderId} {
+          allow read: if isAuthenticated();
+          allow write: if isAuthenticated(); // Tylko planer powinien pisać
+        }
+        
+        // Kolekcja procesów
+        match /processes/{processId} {
+          allow read: if isAuthenticated();
+          allow write: if isAuthenticated();
+        }
+        
+        // Katalog operacji
+        match /operationsCatalog/{opId} {
+          allow read: if isAuthenticated();
+          allow write: if isAuthenticated();
+        }
+        
+        // Mapowania (task->process, task->order)
+        match /taskProcessMap/{mapId} {
+          allow read: if isAuthenticated();
+          allow write: if isAuthenticated();
+        }
+        
+        match /taskOrderMap/{mapId} {
+          allow read: if isAuthenticated();
+          allow write: if isAuthenticated();
+        }
+        
+        // Dodatkowe dane (after)
+        match /after/{docId} {
+          allow read: if isAuthenticated();
+          allow write: if isAuthenticated();
+        }
+        
+        // Magazyn
+        match /warehouse/{warehouseId} {
+          allow read: if isAuthenticated();
+          allow write: if isAuthenticated();
+        }
+        
+        // Rezerwacje magazynowe
+        match /warehouseReservations/{reservationId} {
+          allow read: if isAuthenticated();
+          allow write: if isAuthenticated();
+        }
+        
+        // Transakcje magazynowe
+        match /warehouseTransactions/{transactionId} {
+          allow read: if isAuthenticated();
+          allow write: if isAuthenticated();
+        }
+        
+        // Zadania magazynowe
+        match /warehouseTasks/{taskId} {
+          allow read: if isAuthenticated();
+          allow write: if isAuthenticated();
+        }
+        
+        // Szablony materiałowe
+        match /materialTemplates/{templateId} {
+          allow read: if isAuthenticated();
+          allow write: if isAuthenticated();
+        }
+        
+        // Montaże/Reklamacje
+        match /assemblies/{assemblyId} {
+          allow read: if isAuthenticated();
+          allow write: if isAuthenticated();
+        }
+      }
+    }
+    
+    // ============================================
+    // BLOKADA WSZYSTKIEGO INNEGO
+    // ============================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

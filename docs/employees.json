@@ -1,0 +1,14 @@
+[
+  {
+    "id": "emp1",
+    "name": "Jan Kowalski"
+  },
+  {
+    "id": "emp2", 
+    "name": "Anna Nowak"
+  },
+  {
+    "id": "emp3",
+    "name": "Piotr Wiśniewski"
+  }
+]
