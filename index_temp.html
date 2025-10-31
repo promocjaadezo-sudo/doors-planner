@@ -1843,7 +1843,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left} th{background
         state.orders.push(orderObj);
         (window.logDev||console.log)('[order-form] inserted new order', orderObj.id, 'len=', state.orders.length);
         try{
-          const afterEntry = { id: uid(), type:'montaż', order: orderObj.id, status:'nowe', desc: orderObj.notes, installDate: orderObj.installDate, departTime:'', visitTime:'' };
+          const afterEntry = { id: uid(), type:'montaż', order: orderObj.id, status:'nowe', desc: orderObj.notes, installDate: orderObj.installDate, departTime:'', visitTime:'', phone: orderObj.phone, postalCode: orderObj.postalCode, address: orderObj.address };
           state.after.push(afterEntry);
         }catch(e){ console.warn('[order-form] after push error', e.message); }
         try{
@@ -3972,9 +3972,11 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left} th{background
       const d=document.createElement('div'); d.className='card';
       const orderObj = (state.orders||[]).find(o=>o.id===a.order) || {};
       const placeCode = orderObj.placeCode || orderObj.placecode || a.postalCode || '';
+      const phone = a.phone || orderObj.phone || '';
+      const address = a.address || orderObj.address || '';
       d.innerHTML=`<div class="row" style="justify-content:space-between"><div><b>${a.type}</b> • ${a.status} • ${orderObj.name||a.order||''}
       <div class="muted">Montaż: ${a.installDate||'-'} • wyjazd: ${a.departTime||'-'} • wizyta: ${a.visitTime||'-'}</div>
-      <div class="muted">Kod miejsca: ${placeCode || '-'}</div>
+      <div class="muted">Adres: ${address || '-'} • Kod miejsca: ${placeCode || '-'} • Telefon: ${phone || '-'}</div>
       <div class="muted">${a.desc||''}</div></div><div><button class="btn" data-as-ed="${a.id}">Edytuj</button> <button class="btn red" data-as-del="${a.id}">Usuń</button></div></div>`;
       host.appendChild(d);
     });
