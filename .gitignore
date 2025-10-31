@@ -10,7 +10,6 @@ trace.zip
 # Local backups and temp bundles
 backups/
 incoming/
-scripts/
 *.backup.html
 *.base.html
 index_old.html
