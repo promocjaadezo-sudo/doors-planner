@@ -13,8 +13,9 @@ function logDebug(operation, details) {
   const entry = { timestamp, operation, ...details };
   
   operationHistory.push(entry);
-  if (operationHistory.length > MAX_HISTORY) {
-    operationHistory.shift();
+  // Batch remove old entries when limit is exceeded
+  if (operationHistory.length > MAX_HISTORY + 10) {
+    operationHistory.splice(0, 10);
   }
   
   if (DEBUG_MODE) {
@@ -262,9 +263,31 @@ export function getRetryConfig() {
 }
 
 export function setRetryConfig(config) {
+  // Validate input
+  if (config.maxAttempts !== undefined) {
+    if (typeof config.maxAttempts !== 'number' || config.maxAttempts < 1) {
+      throw new Error('maxAttempts must be a positive number');
+    }
+  }
+  if (config.initialDelay !== undefined) {
+    if (typeof config.initialDelay !== 'number' || config.initialDelay < 0) {
+      throw new Error('initialDelay must be a non-negative number');
+    }
+  }
+  if (config.maxDelay !== undefined) {
+    if (typeof config.maxDelay !== 'number' || config.maxDelay < 0) {
+      throw new Error('maxDelay must be a non-negative number');
+    }
+  }
+  if (config.backoffMultiplier !== undefined) {
+    if (typeof config.backoffMultiplier !== 'number' || config.backoffMultiplier < 1) {
+      throw new Error('backoffMultiplier must be >= 1');
+    }
+  }
+  
   Object.assign(RETRY_CONFIG, config);
   console.log('🔧 Retry configuration updated:', RETRY_CONFIG);
-  return RETRY_CONFIG;
+  return { ...RETRY_CONFIG };
 }
 
 export function getNetworkStatus() {
@@ -287,8 +310,9 @@ export function getNetworkStatus() {
 export async function compareLocalAndRemoteData(state) {
   const { appId, userId } = state.storage;
   if (!appId || !userId) {
-    console.error('❌ Cannot compare: missing appId or userId');
-    return null;
+    const error = new Error('Cannot compare: missing appId or userId');
+    console.error('❌', error.message);
+    throw error;
   }
   
   console.log('🔄 Comparing local vs remote data...');

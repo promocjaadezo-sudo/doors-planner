@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase Debug Test</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #0f172a;
+      color: #e5e7eb;
+    }
+    h1 { color: #3b82f6; }
+    h2 { color: #60a5fa; margin-top: 30px; }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover { background: #2563eb; }
+    button.danger { background: #ef4444; }
+    button.danger:hover { background: #dc2626; }
+    button.success { background: #10b981; }
+    button.success:hover { background: #059669; }
+    .section {
+      background: #1e293b;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      border: 1px solid #334155;
+    }
+    .info {
+      background: #1e3a8a;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+      border-left: 4px solid #3b82f6;
+    }
+    .warning {
+      background: #78350f;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+      border-left: 4px solid #f59e0b;
+    }
+    pre {
+      background: #0f172a;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      border: 1px solid #334155;
+    }
+    code {
+      color: #fbbf24;
+    }
+    #output {
+      background: #111827;
+      padding: 15px;
+      border-radius: 6px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      margin-top: 20px;
+      border: 1px solid #334155;
+    }
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      margin: 0 5px;
+    }
+    .status.online { background: #10b981; color: white; }
+    .status.offline { background: #ef4444; color: white; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Firebase Debugging Test Page</h1>
+  
+  <div class="info">
+    <strong>ℹ️ Info:</strong> This page demonstrates Firebase debugging capabilities. 
+    Open browser console (F12) to see detailed logs.
+  </div>
+
+  <div class="section">
+    <h2>📦 Firebase Status</h2>
+    <p>Firebase SDK: <span id="sdk-status" class="status offline">Not Loaded</span></p>
+    <p>Debug Mode: <span id="debug-status" class="status offline">Disabled</span></p>
+    <p>Network: <span id="network-status" class="status online">Checking...</span></p>
+    <button onclick="checkFirebaseStatus()">🔄 Check Status</button>
+    <button onclick="loadFirebaseSDK()">📥 Load Firebase SDK</button>
+  </div>
+
+  <div class="section">
+    <h2>🎛️ Debug Controls</h2>
+    <button class="success" onclick="enableDebug()">✅ Enable Debug Mode</button>
+    <button class="danger" onclick="disableDebug()">❌ Disable Debug Mode</button>
+    <button onclick="viewHistory()">📜 View Operation History</button>
+    <button onclick="clearHistory()">🗑️ Clear History</button>
+    <button onclick="checkNetwork()">🌐 Check Network Status</button>
+  </div>
+
+  <div class="section">
+    <h2>🧪 Test Operations</h2>
+    <div class="warning">
+      <strong>⚠️ Note:</strong> These tests require Firebase to be configured. 
+      Check console for detailed results.
+    </div>
+    <button onclick="testSave()">💾 Test Save Operation</button>
+    <button onclick="testLoad()">📥 Test Load Operation</button>
+    <button onclick="testCompare()">🔄 Compare Local vs Remote</button>
+    <button onclick="testConsistency()">✅ Verify Consistency</button>
+    <button onclick="testRetry()">🔁 Test Retry Logic</button>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ Retry Configuration</h2>
+    <p>View and modify retry settings:</p>
+    <button onclick="viewRetryConfig()">👁️ View Config</button>
+    <button onclick="setSlowNetworkConfig()">🐌 Slow Network Mode</button>
+    <button onclick="setDefaultRetryConfig()">🔧 Reset to Default</button>
+  </div>
+
+  <div class="section">
+    <h2>📊 Output Console</h2>
+    <button onclick="clearOutput()">🗑️ Clear Output</button>
+    <button onclick="exportReport()">💾 Export Debug Report</button>
+    <div id="output">Ready. Click buttons above to test debugging features...</div>
+  </div>
+
+  <script type="module">
+    // Import Firebase debugging tools
+    // Note: This assumes firebase.js is loaded and exports are available
+    
+    const FIREBASE_VERSION = '9.22.2';
+    let firebaseModule = null;
+    
+    // Helper to add output
+    window.addOutput = function(message, type = 'info') {
+      const output = document.getElementById('output');
+      const timestamp = new Date().toLocaleTimeString();
+      const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+      output.textContent += `\n[${timestamp}] ${prefix} ${message}`;
+      output.scrollTop = output.scrollHeight;
+      console.log(`${prefix} ${message}`);
+    };
+    
+    window.clearOutput = function() {
+      document.getElementById('output').textContent = 'Output cleared.';
+    };
+    
+    // Status checks
+    window.checkFirebaseStatus = function() {
+      const hasFirebase = typeof firebase !== 'undefined';
+      const hasDebugTools = typeof window.firebaseDebug !== 'undefined';
+      
+      document.getElementById('sdk-status').textContent = hasFirebase ? 'Loaded' : 'Not Loaded';
+      document.getElementById('sdk-status').className = hasFirebase ? 'status online' : 'status offline';
+      
+      addOutput(`Firebase SDK: ${hasFirebase ? 'Loaded ✅' : 'Not Loaded ❌'}`, hasFirebase ? 'success' : 'error');
+      addOutput(`Debug Tools: ${hasDebugTools ? 'Available ✅' : 'Not Available ❌'}`, hasDebugTools ? 'success' : 'error');
+      
+      if (!hasFirebase) {
+        addOutput('Click "Load Firebase SDK" to initialize', 'warning');
+      }
+    };
+    
+    window.loadFirebaseSDK = async function() {
+      addOutput('Loading Firebase SDK...');
+      try {
+        // Load Firebase scripts
+        const baseUrl = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
+        await loadScript(`${baseUrl}/firebase-app-compat.js`);
+        await loadScript(`${baseUrl}/firebase-auth-compat.js`);
+        await loadScript(`${baseUrl}/firebase-firestore-compat.js`);
+        
+        // Load our firebase.js module
+        const module = await import('./js/firebase.js');
+        firebaseModule = module;
+        
+        addOutput('Firebase SDK loaded successfully!', 'success');
+        checkFirebaseStatus();
+      } catch (error) {
+        addOutput(`Failed to load Firebase: ${error.message}`, 'error');
+      }
+    };
+    
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error(`Failed to load ${src}`));
+        document.head.appendChild(script);
+      });
+    }
+    
+    // Debug controls
+    window.enableDebug = function() {
+      if (!window.firebaseDebug) {
+        addOutput('Debug tools not available. Load Firebase first.', 'error');
+        return;
+      }
+      window.firebaseDebug.enableDebugMode(true);
+      document.getElementById('debug-status').textContent = 'Enabled';
+      document.getElementById('debug-status').className = 'status online';
+      addOutput('Debug mode ENABLED - verbose logging active', 'success');
+    };
+    
+    window.disableDebug = function() {
+      if (!window.firebaseDebug) return;
+      window.firebaseDebug.enableDebugMode(false);
+      document.getElementById('debug-status').textContent = 'Disabled';
+      document.getElementById('debug-status').className = 'status offline';
+      addOutput('Debug mode DISABLED', 'warning');
+    };
+    
+    window.viewHistory = function() {
+      if (!window.firebaseDebug) {
+        addOutput('Debug tools not available', 'error');
+        return;
+      }
+      const history = window.firebaseDebug.getOperationHistory();
+      addOutput(`Operation history: ${history.length} entries`);
+      console.table(history);
+      addOutput('History printed to console (F12)', 'success');
+    };
+    
+    window.clearHistory = function() {
+      if (!window.firebaseDebug) return;
+      window.firebaseDebug.clearOperationHistory();
+      addOutput('Operation history cleared', 'success');
+    };
+    
+    window.checkNetwork = function() {
+      if (!window.firebaseDebug) {
+        addOutput('Debug tools not available', 'error');
+        return;
+      }
+      const status = window.firebaseDebug.getNetworkStatus();
+      document.getElementById('network-status').textContent = status.online ? 'Online' : 'Offline';
+      document.getElementById('network-status').className = status.online ? 'status online' : 'status offline';
+      
+      addOutput(`Network Status:
+- Online: ${status.online}
+- Recent Operations: ${status.recentOperations}
+- Total Errors: ${status.totalErrors}
+- Network Errors: ${status.networkErrors}
+- Auth Errors: ${status.authErrors}
+- Recent Issues: ${status.hasRecentNetworkIssues ? 'Yes ⚠️' : 'No ✅'}`);
+      
+      if (status.lastNetworkError) {
+        addOutput(`Last network error: ${status.lastNetworkError.error}`, 'error');
+      }
+    };
+    
+    // Test operations
+    window.testSave = async function() {
+      addOutput('Testing save operation...');
+      addOutput('NOTE: This requires Firebase to be configured with valid credentials', 'warning');
+      // Actual implementation would require state
+      addOutput('Use browser console to call saveToDB() manually with your state', 'info');
+    };
+    
+    window.testLoad = async function() {
+      addOutput('Testing load operation...');
+      addOutput('NOTE: This requires Firebase to be configured', 'warning');
+      addOutput('Use browser console to call loadFromDB() manually', 'info');
+    };
+    
+    window.testCompare = async function() {
+      if (!window.firebaseDebug || !window.state) {
+        addOutput('State or debug tools not available', 'error');
+        return;
+      }
+      addOutput('Comparing local vs remote data...');
+      try {
+        const comparison = await window.firebaseDebug.compareLocalAndRemoteData(window.state);
+        addOutput(`Comparison complete: ${Object.keys(comparison.differences).length} differences found`, 'success');
+        console.log('Comparison:', comparison);
+      } catch (error) {
+        addOutput(`Comparison failed: ${error.message}`, 'error');
+      }
+    };
+    
+    window.testConsistency = async function() {
+      if (!window.firebaseDebug || !window.state) {
+        addOutput('State or debug tools not available', 'error');
+        return;
+      }
+      addOutput('Verifying data consistency...');
+      try {
+        const isConsistent = await window.firebaseDebug.verifyDataConsistency(window.state);
+        addOutput(`Data is ${isConsistent ? 'CONSISTENT ✅' : 'INCONSISTENT ❌'}`, isConsistent ? 'success' : 'error');
+      } catch (error) {
+        addOutput(`Verification failed: ${error.message}`, 'error');
+      }
+    };
+    
+    window.testRetry = function() {
+      addOutput('Testing retry logic requires simulating network failures', 'warning');
+      addOutput('Steps to test:', 'info');
+      addOutput('1. Open DevTools (F12) → Network tab', 'info');
+      addOutput('2. Set throttling to "Offline"', 'info');
+      addOutput('3. Try a save/load operation', 'info');
+      addOutput('4. Watch console for retry attempts', 'info');
+      addOutput('5. Switch back to "Online" to see retry succeed', 'info');
+    };
+    
+    // Retry config
+    window.viewRetryConfig = function() {
+      if (!window.firebaseDebug) {
+        addOutput('Debug tools not available', 'error');
+        return;
+      }
+      const config = window.firebaseDebug.getRetryConfig();
+      addOutput(`Retry Configuration:
+- Max Attempts: ${config.maxAttempts}
+- Initial Delay: ${config.initialDelay}ms
+- Max Delay: ${config.maxDelay}ms
+- Backoff Multiplier: ${config.backoffMultiplier}x`);
+    };
+    
+    window.setSlowNetworkConfig = function() {
+      if (!window.firebaseDebug) return;
+      window.firebaseDebug.setRetryConfig({
+        maxAttempts: 5,
+        initialDelay: 3000,
+        maxDelay: 30000
+      });
+      addOutput('Retry config updated for slow networks', 'success');
+      viewRetryConfig();
+    };
+    
+    window.setDefaultRetryConfig = function() {
+      if (!window.firebaseDebug) return;
+      window.firebaseDebug.setRetryConfig({
+        maxAttempts: 3,
+        initialDelay: 1000,
+        maxDelay: 10000,
+        backoffMultiplier: 2
+      });
+      addOutput('Retry config reset to defaults', 'success');
+      viewRetryConfig();
+    };
+    
+    window.exportReport = async function() {
+      if (!window.firebaseDebug) {
+        addOutput('Debug tools not available', 'error');
+        return;
+      }
+      
+      const report = {
+        timestamp: new Date().toISOString(),
+        operationHistory: window.firebaseDebug.getOperationHistory(),
+        networkStatus: window.firebaseDebug.getNetworkStatus(),
+        retryConfig: window.firebaseDebug.getRetryConfig()
+      };
+      
+      const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `firebase-debug-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      addOutput('Debug report exported', 'success');
+    };
+    
+    // Initial status check
+    checkFirebaseStatus();
+    checkNetwork();
+  </script>
+</body>
+</html>

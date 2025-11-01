@@ -406,7 +406,6 @@ saves.forEach(save => {
 ## Related Documentation
 - [TEST_DELETE_MANUAL.md](../TEST_DELETE_MANUAL.md) - Testing deletion persistence
 - [DOKUMENTACJA_WORKER_APP.md](../DOKUMENTACJA_WORKER_APP.md) - Worker app data sources
-- [firebase-setup.md](./firebase-setup.md) - Initial Firebase configuration
 
 ## Support
 
