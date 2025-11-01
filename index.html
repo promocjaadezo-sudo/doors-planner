@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <!-- MOJE OZNAKOWANIE: To jest mój własny kod projektu "Planner Produkcji Drzwi" - wersja użytkownika KOMPUTER. Nie kopiuj z zewnętrznych źródeł. -->
 <html lang="pl">
 <head>
@@ -902,6 +902,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
 <script src="js/schedule.js?v=20251005-1500"></script>
 <script src="js/app-helpers.js?v=20251005-1400"></script>
 <script src="js/map.js?v=20251019-01"></script>
+<script src="js/warehouse.js?v=20251020-01"></script>
 <script>
 // === MAGAZYN - NAJWYŻSZY PRIORYTET ===
 // System magazynowy zostanie zainicjalizowany później w kodzie
@@ -1264,6 +1265,11 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   }},
     employees:[],operationsCatalog:[],processes:[],orders:[],tasks:[],after:[],PROC_TMP:[],page:'dash',_timers:{}};
   state.uiShowTasksByEmpTable = false;
+  try {
+    window.state = state;
+  } catch (initExposeErr) {
+    console.warn('init: unable to expose state early', initExposeErr && initExposeErr.message ? initExposeErr.message : initExposeErr);
+  }
   // migracja istniejących tasków (dodanie nowych pól jeśli brak)
   try{ if(window.scheduleCore){ window.scheduleCore.migrateTasks(state); } }catch(e){ console.warn('migrateTasks warn', e.message); }
   // migracja orderów - pole tasksGenerated
@@ -1282,7 +1288,8 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     
     // Sprawdź kluczowe właściwości stanu
     const requiredProps = ['storage', 'employees', 'operationsCatalog', 'processes', 'orders', 'tasks'];
-    const missing = requiredProps.filter(prop => !state.hasOwnProperty(prop));
+    const currentState = window.state || state;
+    const missing = requiredProps.filter(prop => !Object.prototype.hasOwnProperty.call(currentState, prop));
     if(missing.length > 0){
       console.error('Brakujące właściwości stanu:', missing);
       alert('Błąd stanu aplikacji! Brakujące właściwości: ' + missing.join(', '));
@@ -1414,16 +1421,12 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
 
   function save(){
     try{ 
-      // Update timestamp on every save
-      state.lastModified = Date.now();
-      
       console.log('💾 SAVE: Zapisuję dane...', {
         employees: state.employees?.length || 0,
         operations: state.operationsCatalog?.length || 0,
         processes: state.processes?.length || 0,
         orders: state.orders?.length || 0,
-        tasks: state.tasks?.length || 0,
-        timestamp: new Date(state.lastModified).toLocaleString('pl-PL')
+        tasks: state.tasks?.length || 0
       });
       const dataToSave = safeStringifyState(state);
       console.log('💾 SAVE: Klucz:', storeKey, '| Wielkość:', dataToSave.length, 'znaków');
@@ -1668,12 +1671,10 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   }
   // ensure stored autosave preference exists
   state.storage.autoSaveAssign = state.storage.autoSaveAssign === undefined ? true : !!state.storage.autoSaveAssign;
-  // ensure stored autoload preference exists (default: FALSE - manual load to prevent data loss)
-  state.storage.autoLoadFromDB = state.storage.autoLoadFromDB === undefined ? false : !!state.storage.autoLoadFromDB;
+  // ensure stored autoload preference exists (default: true)
+  state.storage.autoLoadFromDB = state.storage.autoLoadFromDB === undefined ? true : !!state.storage.autoLoadFromDB;
   // ensure stored spellcheck enforce preference exists (default: true)
   state.storage.spellcheckEnforce = state.storage.spellcheckEnforce === undefined ? true : !!state.storage.spellcheckEnforce;
-  // ensure lastModified timestamp exists for smart sync
-  if(!state.lastModified) state.lastModified = Date.now();
   // (przeniesione wyżej – odczyt localStorage przed seedingiem)
   // ensure settings object exists and default autoCleanup = true
   state.settings = state.settings || {};
@@ -1764,14 +1765,50 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         if(t.dataset.od) {
           const id = t.dataset.od; 
           console.log('🗑️ USUŃ ZLECENIE:', id);
+          
+          // Ustaw flagę blokującą auto-load
+          window._deleteInProgress = true;
+          
+          const tasksToRemove = (state.tasks||[]).filter(task => task.orderId === id);
+          const afterToRemove = (state.after||[]).filter(entry => entry.order === id);
           console.log('📊 Zleceń przed usunięciem:', state.orders.length);
-          state.orders = state.orders.filter(x => x.id !== id); 
-          state.tasks = state.tasks.filter(t => t.orderId !== id); 
-          state.after = state.after.filter(a => a.order !== id); 
-          console.log('📊 Zleceń po usunięciu:', state.orders.length);
-          save();
-          console.log('💾 Zapisano po usunięciu');
-          renderOrderPage(); renderASPage(); renderDash(window.state||state); renderGantt(); break;
+          
+          // Najpierw spróbuj usunąć z Firestore (jeśli tryb firebase)
+          let fbDeleteSuccess = true;
+          if(state.storage.mode === 'firebase'){
+            try{ 
+              fbDeleteSuccess = await deleteOrderFromDB(id, { 
+                taskIds: tasksToRemove.map(t => t && t.id).filter(Boolean), 
+                afterIds: afterToRemove.map(a => a && a.id).filter(Boolean) 
+              }); 
+              console.log('🔥 Firestore delete result:', fbDeleteSuccess);
+            }catch(err){ 
+              console.warn('deleteOrderFromDB invoke error', err && err.message); 
+              fbDeleteSuccess = false;
+            }
+          }
+          
+          // Tylko jeśli Firestore potwierdził usunięcie (lub tryb localStorage), usuń lokalnie
+          if(fbDeleteSuccess || state.storage.mode !== 'firebase'){
+            state.orders = state.orders.filter(x => x.id !== id); 
+            state.tasks = state.tasks.filter(t => t.orderId !== id); 
+            state.after = state.after.filter(a => a.order !== id); 
+            console.log('📊 Zleceń po usunięciu:', state.orders.length);
+            save();
+            console.log('💾 Zapisano po usunięciu');
+            renderOrderPage(); renderASPage(); renderDash(window.state||state); renderGantt();
+          } else {
+            console.error('❌ Nie udało się usunąć zlecenia z Firestore - zmiany NIE zostały zapisane lokalnie');
+            alert('Błąd usuwania zlecenia z bazy danych. Sprawdź połączenie z Firebase.');
+          }
+          
+          // Zwolnij flagę po małym opóźnieniu (daj czas na propagację do Firestore)
+          setTimeout(() => {
+            window._deleteInProgress = false;
+            console.log('🔓 Delete operation completed, auto-load unlocked');
+          }, 1000);
+          
+          break;
         }
         if(t.dataset.oed) {
           const id = t.dataset.oed;
@@ -1959,7 +1996,70 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
             try{ return await confirmModal('Usunąć zadanie?'); }catch(_){ return false; }
           })();
           if(!doDelete) return; const toDel = (state.tasks||[]).find(x=>x.id===id); state.tasks = (state.tasks||[]).filter(x=>x.id!==id); save(); try{ if(toDel) updateOrderProgress(toDel.orderId); }catch(_){ } renderTasks(); break; }
-        if(t.dataset.empDel) { state.employees = state.employees.filter(x => x.id !== t.dataset.empDel); save(); renderEmployees(); break; }
+        if(t.dataset.empDel) {
+          const empId = t.dataset.empDel;
+          
+          // Ustaw flagę blokującą auto-load
+          window._deleteInProgress = true;
+          
+          const affectedTaskIds = (state.tasks||[]).filter(task => {
+            if(!Array.isArray(task.assignees)) return false;
+            return task.assignees.some(a => {
+              if(typeof a === 'string') return a === empId;
+              if(a && typeof a === 'object') return a.id === empId;
+              return false;
+            });
+          }).map(task => task && task.id).filter(Boolean);
+          
+          // Najpierw usuń przypisania z zadań lokalnie (bo to musimy przekazać do Firestore)
+          state.tasks = (state.tasks||[]).map(task=>{
+            if(!Array.isArray(task.assignees)) return task;
+            const updated = task.assignees.filter(a=>{
+              if(typeof a === 'string') return a !== empId;
+              if(a && typeof a === 'object') return a.id !== empId;
+              return true;
+            });
+            return Object.assign({}, task, { assignees: updated });
+          });
+          
+          // Teraz spróbuj usunąć z Firestore (jeśli tryb firebase)
+          let fbDeleteSuccess = true;
+          if(state.storage.mode === 'firebase'){
+            try{ 
+              fbDeleteSuccess = await deleteEmployeeFromDB(empId, { taskIds: affectedTaskIds }); 
+              console.log('🔥 Firestore employee delete result:', fbDeleteSuccess);
+            }catch(err){ 
+              console.warn('deleteEmployeeFromDB invoke error', err && err.message); 
+              fbDeleteSuccess = false;
+            }
+          }
+          
+          // Tylko jeśli Firestore potwierdził usunięcie (lub tryb localStorage), usuń pracownika lokalnie
+          if(fbDeleteSuccess || state.storage.mode !== 'firebase'){
+            state.employees = state.employees.filter(x => x.id !== empId);
+            save();
+            renderEmployees();
+            console.log('💾 Pracownik usunięty:', empId);
+          } else {
+            console.error('❌ Nie udało się usunąć pracownika z Firestore - przywracam stan');
+            // Przywróć assignees w zadaniach
+            try{ 
+              const stored = localStorage.getItem(storeKey);
+              if(stored){
+                const oldState = JSON.parse(stored);
+                state.tasks = oldState.tasks || [];
+              }
+            }catch(_){}
+            alert('Błąd usuwania pracownika z bazy danych. Sprawdź połączenie z Firebase.');
+          }
+          
+          // Zwolnij flagę po małym opóźnieniu
+          setTimeout(() => {
+            window._deleteInProgress = false;
+            console.log('🔓 Employee delete operation completed, auto-load unlocked');
+          }, 1000);
+          
+          break; }
         if(t.dataset.empEd) {
           const e = state.employees.find(x => x.id === t.dataset.empEd); if (!e) return;
           const n = prompt('Nowe imię', e.name) || e.name; e.name = n; save(); renderEmployees(); break;
@@ -2125,8 +2225,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   })();
   document.addEventListener('input', handleEvents);
 
-  // sync storage mode select UI with state on load
-  try{ const sm = qs('#set-mode'); if(sm) sm.value = state.storage.mode || 'firebase'; }catch(e){}
   // sync autosave checkbox UI with state on load
   try{ const cb = qs('#set-autosave-assign'); if(cb) cb.checked = !!state.storage.autoSaveAssign; }catch(e){}
   // sync autoload DB checkbox UI with state on load
@@ -5452,28 +5550,58 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     });
   }
   async function ensureFirebase(){
-    if(window.firebase&&firebase.apps&&firebase.apps.length){return true;}
+    async function ensureAuthSession(){
+      try{
+        const auth = firebase.auth();
+        if(!auth.currentUser){
+          const cred = await auth.signInAnonymously();
+          console.log('[firebase] signed in anonymously', cred && cred.user ? cred.user.uid : 'unknown');
+        }else{
+          console.log('[firebase] existing session', auth.currentUser && auth.currentUser.uid);
+        }
+        return true;
+      }catch(err){
+        console.warn('ensureAuthSession error', err && err.message);
+        qs('#set-info').textContent = '❌ Firebase auth error: ' + (err && err.message ? err.message : err);
+        return false;
+      }
+    }
+
+    if(window.firebase&&firebase.apps&&firebase.apps.length){
+      return ensureAuthSession();
+    }
     try{
       const cfg=state.storage.fbConfig||{}; if(!cfg.apiKey) throw new Error('Brak config');
       
       // Sprawdź czy jesteśmy na localhost - jeśli tak, ostrzeż o potencjalnych problemach
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       if(isLocalhost && window.location.protocol !== 'https:'){
-        console.warn('Firebase na HTTP localhost - spróbuję połączyć mimo to.');
-        // Nie przełączamy automatycznie - pozwól użytkownikowi samemu zadecydować
+        console.warn('Firebase może nie działać w pełni na HTTP localhost – kontynuuję próbę połączenia i pozostawiam tryb firebase.');
+        if(state.storage && state.storage.mode === 'firebase'){
+          try{
+            state.storage.allowHttpFirebase = true;
+            save();
+          }catch(_){ }
+        }
       }
       
       await loadScript('https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js');
       await loadScript('https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js');
       await loadScript('https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js');
       if(!firebase.apps.length){firebase.initializeApp(cfg);}
-      return true;
+      return ensureAuthSession();
     }catch(e){
       console.warn('Firebase load/init error:',e.message);
-      qs('#set-info').textContent='⚠️ Firebase niedostępny - sprawdź połączenie lub przełącz na localStorage w ustawieniach';
+      qs('#set-info').textContent='⚠️ Firebase niedostępny - przełączono na tryb offline (localStorage)';
       
-      // Nie przełączamy automatycznie - użytkownik może chcieć spróbować ponownie
-      console.log('Firebase niedostępny - pozostawiam tryb:', state.storage.mode);
+      // Automatycznie przełącz na localStorage gdy Firebase nie działa
+      if(state.storage.mode === 'firebase'){
+        state.storage.mode = 'localStorage';
+        qs('#set-mode').value = 'localStorage';
+        save();
+        updateConnectionStatus();
+        console.log('Automatycznie przełączono na tryb localStorage');
+      }
       
       return false;
     }
@@ -5487,19 +5615,9 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       const up=(name,arr)=> (arr||[]).forEach(x=>{if(!x.id) x.id=uid(); batch.set(r.collection(name).doc(x.id), JSON.parse(JSON.stringify(x)), {merge:true});});
       up('employees',state.employees); up('operationsCatalog',state.operationsCatalog); up('processes',state.processes);
       up('orders',state.orders); up('tasks',state.tasks); up('after',state.after);
-      
-      // Save metadata with timestamp
-      batch.set(r.collection('metadata').doc('sync'), {
-        lastModified: state.lastModified || Date.now(),
-        lastSync: Date.now(),
-        source: 'planner'
-      }, {merge: true});
-      
       await batch.commit();
-      console.log('✅ Zapisano do Firebase z timestamp:', new Date(state.lastModified).toLocaleString('pl-PL'));
       qs('#set-info').textContent='✅ Zapisano kolekcje do DB.';
     } catch(e) {
-      console.error('❌ Błąd zapisu do Firebase:', e.message);
       qs('#set-info').textContent='❌ Błąd zapisu do DB: '+e.message;
     }
   }
@@ -5509,6 +5627,83 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     const t = (state.tasks||[]).find(x=>x.id===taskId); if(!t) throw new Error('task not found');
     const payload = JSON.parse(JSON.stringify(t));
     await fbRoot().collection('tasks').doc(taskId).set(payload, { merge: true });
+  }
+
+  async function deleteOrderFromDB(orderId, opts){
+    if(!orderId) return false;
+    if(state.storage.mode !== 'firebase') return true;
+    const ok = await ensureFirebase(); if(!ok) return false;
+    try{
+      const root = fbRoot();
+      const db = firebase.firestore();
+      const batch = db.batch();
+      batch.delete(root.collection('orders').doc(orderId));
+
+      const taskIds = Array.isArray(opts && opts.taskIds) ? opts.taskIds.filter(Boolean) : [];
+      const afterIds = Array.isArray(opts && opts.afterIds) ? opts.afterIds.filter(Boolean) : [];
+
+      if(taskIds.length === 0){
+        try{
+          const snap = await root.collection('tasks').where('orderId','==',orderId).get();
+          snap.forEach(doc=>{ if(doc && doc.id) taskIds.push(doc.id); });
+        }catch(fetchErr){ console.warn('deleteOrderFromDB fallback task fetch error', fetchErr && fetchErr.message); }
+      }
+
+      if(afterIds.length === 0){
+        try{
+          const snap = await root.collection('after').where('order','==',orderId).get();
+          snap.forEach(doc=>{ if(doc && doc.id) afterIds.push(doc.id); });
+        }catch(fetchErr){ console.warn('deleteOrderFromDB fallback after fetch error', fetchErr && fetchErr.message); }
+      }
+
+      const uniqueTaskIds = Array.from(new Set(taskIds));
+      uniqueTaskIds.forEach(taskId=>{
+        batch.delete(root.collection('tasks').doc(taskId));
+      });
+
+      const uniqueAfterIds = Array.from(new Set(afterIds));
+      uniqueAfterIds.forEach(entryId=>{
+        batch.delete(root.collection('after').doc(entryId));
+      });
+
+      await batch.commit();
+      console.log('[firebase] deleted order', orderId, 'with related docs');
+      return true;
+    }catch(err){
+      console.warn('deleteOrderFromDB error', err && err.message);
+      qs('#set-info').textContent = '❌ Błąd usuwania zlecenia: ' + (err && err.message ? err.message : err);
+      return false;
+    }
+  }
+
+  async function deleteEmployeeFromDB(employeeId, opts){
+    if(!employeeId) return false;
+    if(state.storage.mode !== 'firebase') return true;
+    const ok = await ensureFirebase(); if(!ok) return false;
+    try{
+      const root = fbRoot();
+      const db = firebase.firestore();
+      const batch = db.batch();
+      batch.delete(root.collection('employees').doc(employeeId));
+
+      const taskIds = Array.isArray(opts && opts.taskIds) ? opts.taskIds.filter(Boolean) : [];
+
+      const uniqueTaskIds = Array.from(new Set(taskIds));
+      uniqueTaskIds.forEach(taskId=>{
+        const updatedTask = (state.tasks||[]).find(task => task && task.id === taskId);
+        if(!updatedTask) return;
+        const payload = JSON.parse(JSON.stringify(updatedTask));
+        batch.set(root.collection('tasks').doc(taskId), payload, { merge: true });
+      });
+
+      await batch.commit();
+      console.log('[firebase] deleted employee', employeeId);
+      return true;
+    }catch(err){
+      console.warn('deleteEmployeeFromDB error', err && err.message);
+      qs('#set-info').textContent = '❌ Błąd usuwania pracownika: ' + (err && err.message ? err.message : err);
+      return false;
+    }
   }
 
   async function saveTaskToDB(taskId, opts){
@@ -5541,12 +5736,18 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         try{
           snapshot.docChanges().forEach(ch=>{
             const data = Object.assign({id: ch.doc.id}, ch.doc.data());
+            const idx = (state.tasks||[]).findIndex(t=>t.id === data.id);
             if(ch.type === 'added' || ch.type === 'modified'){
-              const idx = (state.tasks||[]).findIndex(t=>t.id === data.id);
-              if(idx >= 0){ state.tasks[idx] = Object.assign({}, state.tasks[idx], data); }
-              else if(!isInitialLoad || ch.type === 'modified') { state.tasks = state.tasks || []; state.tasks.push(data); }
+              if(idx >= 0){
+                state.tasks[idx] = Object.assign({}, state.tasks[idx], data);
+              }else{
+                state.tasks = state.tasks || [];
+                state.tasks.push(data);
+              }
             } else if(ch.type === 'removed'){
-              state.tasks = (state.tasks||[]).filter(t=>t.id !== data.id);
+              if(idx >= 0){
+                state.tasks = (state.tasks||[]).filter(t=>t.id !== data.id);
+              }
             }
           });
           isInitialLoad = false;
@@ -5561,31 +5762,65 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     }catch(e){ console.warn('subscribeToTaskUpdates error', e && e.message); }
   }
 
-  (async function autoSubscribeIfNeeded(){ try{ if(state.storage && state.storage.mode==='firebase' && state.storage.autoLoadFromDB){ await subscribeToTaskUpdates(); } }catch(e){ console.warn('autoSubscribeIfNeeded err', e && e.message); } })();
+  // Flaga blokująca auto-load podczas operacji usuwania
+  window._deleteInProgress = false;
+
+  (async function autoSubscribeIfNeeded(){
+    console.log('[autoSubscribeIfNeeded] START', { 
+      mode: state.storage?.mode, 
+      autoLoadFromDB: state.storage?.autoLoadFromDB,
+      deleteInProgress: window._deleteInProgress
+    });
+    try{
+      if(state.storage && state.storage.mode==='firebase' && state.storage.autoLoadFromDB){
+        console.log('[autoSubscribeIfNeeded] Warunki spełnione, rozpoczynam ładowanie...');
+        try{
+          // Poczekaj na zakończenie ewentualnych operacji usuwania
+          let retries = 0;
+          while(window._deleteInProgress && retries < 50) {
+            console.log('[autoSubscribeIfNeeded] Czekam na zakończenie operacji usuwania...');
+            await new Promise(r => setTimeout(r, 100));
+            retries++;
+          }
+          console.log('[autoSubscribeIfNeeded] Wywołuję loadFromDB()...');
+          await loadFromDB();
+          console.log('[autoSubscribeIfNeeded] loadFromDB() zakończone');
+        }catch(loadErr){
+          console.warn('autoSubscribeIfNeeded loadFromDB err', loadErr && loadErr.message);
+        }
+        console.log('[autoSubscribeIfNeeded] Subskrybuję aktualizacje zadań...');
+        await subscribeToTaskUpdates();
+        console.log('[autoSubscribeIfNeeded] Subskrypcja aktywna');
+      } else {
+        console.log('[autoSubscribeIfNeeded] Warunki NIE spełnione - pomijam ładowanie z Firebase');
+      }
+    }catch(e){ console.warn('autoSubscribeIfNeeded err', e && e.message); }
+  })();
   async function loadFromDB(){
-    if(state.storage.mode!=='firebase'){qs('#set-info').textContent='Tryb localStorage (offline)';return;}
-    const ok=await ensureFirebase(); if(!ok){return;}
+    console.log('🔄 [loadFromDB] START', { mode: state.storage?.mode, deleteInProgress: window._deleteInProgress });
+    
+    if(state.storage.mode!=='firebase'){
+      console.log('⏭️ [loadFromDB] Tryb localStorage - pomijam');
+      qs('#set-info').textContent='Tryb localStorage (offline)';
+      return;
+    }
+    
+    // Nie ładuj jeśli trwa operacja usuwania
+    if(window._deleteInProgress){
+      console.warn('⚠️ [loadFromDB] Operacja usuwania w toku - pomijam ładowanie z Firestore');
+      return { skipped: true, reason: 'delete-in-progress' };
+    }
+    
+    console.log('🔑 [loadFromDB] Wywołuję ensureFirebase()...');
+    const ok=await ensureFirebase(); 
+    if(!ok){
+      console.warn('❌ [loadFromDB] ensureFirebase() zwróciło false');
+      return;
+    }
+    console.log('✅ [loadFromDB] Firebase gotowy, pobieram dane...');
+    
     try {
       const r=fbRoot();
-      
-      // Get metadata with timestamp
-      const metadataDoc = await r.collection('metadata').doc('sync').get();
-      const remoteTimestamp = metadataDoc.exists ? (metadataDoc.data().lastModified || 0) : 0;
-      const localTimestamp = state.lastModified || 0;
-      
-      console.log('🔄 Porównanie timestampów:', {
-        local: new Date(localTimestamp).toLocaleString('pl-PL'),
-        remote: new Date(remoteTimestamp).toLocaleString('pl-PL'),
-        localNewer: localTimestamp > remoteTimestamp
-      });
-      
-      // If local data is newer, skip loading and save to Firebase instead
-      if(localTimestamp > remoteTimestamp && localTimestamp > 0){
-        console.log('⚠️ Lokalne dane nowsze - POMIJAM wczytywanie z Firebase');
-        qs('#set-info').textContent='⚠️ Lokalne dane nowsze - nie załadowano z Firebase (zapisz ręcznie jeśli chcesz nadpisać)';
-        return { skipped: true, reason: 'local-newer', localTimestamp, remoteTimestamp };
-      }
-      
       const getAll=async(name)=>(await r.collection(name).get()).docs.map(d=>({id:d.id,...d.data()}));
       const [employees,operationsCatalog,processes,orders,tasks,after]=await Promise.all([
         getAll('employees'),getAll('operationsCatalog'),getAll('processes'),getAll('orders'),getAll('tasks'),getAll('after')
@@ -5633,10 +5868,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         return { skippedCollections: skipped };
       }
 
-      // Update local timestamp to match remote after successful load
-      state.lastModified = remoteTimestamp;
-      console.log('✅ Wczytano z Firebase - zaktualizowano lokalny timestamp:', new Date(remoteTimestamp).toLocaleString('pl-PL'));
-      
       save();
       if(skipped.length){
         console.warn('[firebase] loadFromDB: pominięto puste kolekcje', skipped);
@@ -6749,6 +6980,10 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   }catch(e){console.warn('spellcheck/lang init error', e);} 
 })();
 
+/*
+ * [DEPRECATED INLINE WAREHOUSE LOGIC]
+ * Poniższy blok pozostawiono jedynie jako archiwalne odniesienie.
+ * Aktualna implementacja magazynu żyje w pliku js/warehouse.js i to on jest wykonywany.
 // Kod magazynu przywrócony jako adapter do nowych funkcji
 
 function ensureWarehouseArrays() {
@@ -10736,6 +10971,8 @@ document.addEventListener('click', (e) => {
     setTimeout(renderWarehouse, 100);
   }
 });
+
+*/
 
 // Funkcja do generowania testowych zamówień z terminami
 function generateDeadlineTestOrders() {
