@@ -1414,12 +1414,16 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
 
   function save(){
     try{ 
+      // Update timestamp on every save
+      state.lastModified = Date.now();
+      
       console.log('💾 SAVE: Zapisuję dane...', {
         employees: state.employees?.length || 0,
         operations: state.operationsCatalog?.length || 0,
         processes: state.processes?.length || 0,
         orders: state.orders?.length || 0,
-        tasks: state.tasks?.length || 0
+        tasks: state.tasks?.length || 0,
+        timestamp: new Date(state.lastModified).toLocaleString('pl-PL')
       });
       const dataToSave = safeStringifyState(state);
       console.log('💾 SAVE: Klucz:', storeKey, '| Wielkość:', dataToSave.length, 'znaków');
@@ -1664,10 +1668,12 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   }
   // ensure stored autosave preference exists
   state.storage.autoSaveAssign = state.storage.autoSaveAssign === undefined ? true : !!state.storage.autoSaveAssign;
-  // ensure stored autoload preference exists (default: true)
-  state.storage.autoLoadFromDB = state.storage.autoLoadFromDB === undefined ? true : !!state.storage.autoLoadFromDB;
+  // ensure stored autoload preference exists (default: FALSE - manual load to prevent data loss)
+  state.storage.autoLoadFromDB = state.storage.autoLoadFromDB === undefined ? false : !!state.storage.autoLoadFromDB;
   // ensure stored spellcheck enforce preference exists (default: true)
   state.storage.spellcheckEnforce = state.storage.spellcheckEnforce === undefined ? true : !!state.storage.spellcheckEnforce;
+  // ensure lastModified timestamp exists for smart sync
+  if(!state.lastModified) state.lastModified = Date.now();
   // (przeniesione wyżej – odczyt localStorage przed seedingiem)
   // ensure settings object exists and default autoCleanup = true
   state.settings = state.settings || {};
@@ -5481,9 +5487,19 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       const up=(name,arr)=> (arr||[]).forEach(x=>{if(!x.id) x.id=uid(); batch.set(r.collection(name).doc(x.id), JSON.parse(JSON.stringify(x)), {merge:true});});
       up('employees',state.employees); up('operationsCatalog',state.operationsCatalog); up('processes',state.processes);
       up('orders',state.orders); up('tasks',state.tasks); up('after',state.after);
+      
+      // Save metadata with timestamp
+      batch.set(r.collection('metadata').doc('sync'), {
+        lastModified: state.lastModified || Date.now(),
+        lastSync: Date.now(),
+        source: 'planner'
+      }, {merge: true});
+      
       await batch.commit();
+      console.log('✅ Zapisano do Firebase z timestamp:', new Date(state.lastModified).toLocaleString('pl-PL'));
       qs('#set-info').textContent='✅ Zapisano kolekcje do DB.';
     } catch(e) {
+      console.error('❌ Błąd zapisu do Firebase:', e.message);
       qs('#set-info').textContent='❌ Błąd zapisu do DB: '+e.message;
     }
   }
@@ -5551,6 +5567,25 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     const ok=await ensureFirebase(); if(!ok){return;}
     try {
       const r=fbRoot();
+      
+      // Get metadata with timestamp
+      const metadataDoc = await r.collection('metadata').doc('sync').get();
+      const remoteTimestamp = metadataDoc.exists ? (metadataDoc.data().lastModified || 0) : 0;
+      const localTimestamp = state.lastModified || 0;
+      
+      console.log('🔄 Porównanie timestampów:', {
+        local: new Date(localTimestamp).toLocaleString('pl-PL'),
+        remote: new Date(remoteTimestamp).toLocaleString('pl-PL'),
+        localNewer: localTimestamp > remoteTimestamp
+      });
+      
+      // If local data is newer, skip loading and save to Firebase instead
+      if(localTimestamp > remoteTimestamp && localTimestamp > 0){
+        console.log('⚠️ Lokalne dane nowsze - POMIJAM wczytywanie z Firebase');
+        qs('#set-info').textContent='⚠️ Lokalne dane nowsze - nie załadowano z Firebase (zapisz ręcznie jeśli chcesz nadpisać)';
+        return { skipped: true, reason: 'local-newer', localTimestamp, remoteTimestamp };
+      }
+      
       const getAll=async(name)=>(await r.collection(name).get()).docs.map(d=>({id:d.id,...d.data()}));
       const [employees,operationsCatalog,processes,orders,tasks,after]=await Promise.all([
         getAll('employees'),getAll('operationsCatalog'),getAll('processes'),getAll('orders'),getAll('tasks'),getAll('after')
@@ -5598,6 +5633,10 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         return { skippedCollections: skipped };
       }
 
+      // Update local timestamp to match remote after successful load
+      state.lastModified = remoteTimestamp;
+      console.log('✅ Wczytano z Firebase - zaktualizowano lokalny timestamp:', new Date(remoteTimestamp).toLocaleString('pl-PL'));
+      
       save();
       if(skipped.length){
         console.warn('[firebase] loadFromDB: pominięto puste kolekcje', skipped);
