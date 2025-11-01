@@ -1664,6 +1664,8 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   }
   // ensure stored autosave preference exists
   state.storage.autoSaveAssign = state.storage.autoSaveAssign === undefined ? true : !!state.storage.autoSaveAssign;
+  // ensure stored autoload preference exists (default: true)
+  state.storage.autoLoadFromDB = state.storage.autoLoadFromDB === undefined ? true : !!state.storage.autoLoadFromDB;
   // ensure stored spellcheck enforce preference exists (default: true)
   state.storage.spellcheckEnforce = state.storage.spellcheckEnforce === undefined ? true : !!state.storage.spellcheckEnforce;
   // (przeniesione wyżej – odczyt localStorage przed seedingiem)
