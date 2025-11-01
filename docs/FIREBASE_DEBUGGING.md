@@ -222,6 +222,22 @@ await window.firebaseDebug.compareLocalAndRemoteData(state);
 await window.firebaseDebug.verifyDataConsistency(state);
 ```
 
+### Network and Retry Configuration
+```javascript
+// Check network status and recent errors
+window.firebaseDebug.getNetworkStatus();
+
+// Get current retry configuration
+window.firebaseDebug.getRetryConfig();
+
+// Update retry settings (e.g., for slower networks)
+window.firebaseDebug.setRetryConfig({
+  maxAttempts: 5,        // More retry attempts
+  initialDelay: 2000,    // Wait longer initially
+  maxDelay: 30000        // Maximum wait time
+});
+```
+
 ### Manual Save/Load (for testing)
 ```javascript
 const state = window.state || window.store;
@@ -294,6 +310,58 @@ window.firebaseDebug.enableDebugMode(true);
    - `lastModified` - Timestamp of last data change
    - `lastSaveTime` - Timestamp of last save operation
    - `documentCounts` - Count per collection
+
+## Network Error Handling
+
+### Automatic Retry
+The system automatically retries failed operations when network errors are detected:
+- **Default retry attempts:** 3
+- **Initial delay:** 1000ms
+- **Backoff multiplier:** 2x (1s → 2s → 4s)
+- **Max delay:** 10000ms
+
+### Network Error Detection
+The following errors trigger automatic retry:
+- `unavailable` - Service temporarily unavailable
+- `deadline-exceeded` - Operation timeout
+- `cancelled` - Request cancelled (often network)
+- Any error containing: "network", "offline", "connection", "timeout", "fetch"
+
+### Monitoring Network Issues
+```javascript
+// Check for recent network problems
+const status = window.firebaseDebug.getNetworkStatus();
+console.log('Online:', status.online);
+console.log('Recent network errors:', status.networkErrors);
+console.log('Last network error:', status.lastNetworkError);
+
+// View retry attempts in history
+window.firebaseDebug.printOperationHistory();
+// Look for: SAVE_ATTEMPT, LOAD_ATTEMPT, RETRY_WAIT, RETRY_SUCCESS
+```
+
+### Troubleshooting Network Errors
+
+**Slow or unstable connection:**
+```javascript
+// Increase retry attempts and delays
+window.firebaseDebug.setRetryConfig({
+  maxAttempts: 5,
+  initialDelay: 3000,
+  maxDelay: 30000
+});
+```
+
+**Frequent timeouts:**
+1. Check browser console for specific error codes
+2. Verify Firestore service status
+3. Test network speed and stability
+4. Consider increasing timeout limits
+
+**Operation appears stuck:**
+1. Check operation history for RETRY_WAIT entries
+2. Wait for max retry timeout (default: 10s × 3 attempts = ~30s)
+3. If still stuck, reload page and check network status
 
 ## Common Issues and Solutions
 

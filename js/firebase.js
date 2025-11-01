@@ -24,20 +24,114 @@ function logDebug(operation, details) {
 
 function logError(operation, error, context) {
   const timestamp = new Date().toISOString();
-  console.error(`❌ [Firebase Error] ${operation}:`, {
+  const errorInfo = {
     timestamp,
     error: error.message || error,
     code: error.code,
-    context
-  });
+    context,
+    isNetworkError: isNetworkError(error),
+    isAuthError: isAuthError(error),
+    isPermissionError: isPermissionError(error)
+  };
+  
+  console.error(`❌ [Firebase Error] ${operation}:`, errorInfo);
   
   operationHistory.push({
     timestamp,
     operation: `${operation}_ERROR`,
-    error: error.message || String(error),
-    code: error.code,
-    context
+    ...errorInfo
   });
+}
+
+// Network error detection
+function isNetworkError(error) {
+  if (!error) return false;
+  const code = error.code || '';
+  const message = (error.message || '').toLowerCase();
+  
+  return code === 'unavailable' ||
+         code === 'deadline-exceeded' ||
+         code === 'cancelled' ||
+         message.includes('network') ||
+         message.includes('offline') ||
+         message.includes('connection') ||
+         message.includes('timeout') ||
+         message.includes('fetch');
+}
+
+function isAuthError(error) {
+  if (!error) return false;
+  const code = error.code || '';
+  
+  return code.includes('auth') ||
+         code === 'unauthenticated' ||
+         code === 'permission-denied';
+}
+
+function isPermissionError(error) {
+  if (!error) return false;
+  const code = error.code || '';
+  const message = (error.message || '').toLowerCase();
+  
+  return code === 'permission-denied' ||
+         code === 'insufficient-permissions' ||
+         message.includes('permission') ||
+         message.includes('access denied');
+}
+
+// Retry configuration
+const RETRY_CONFIG = {
+  maxAttempts: 3,
+  initialDelay: 1000,
+  maxDelay: 10000,
+  backoffMultiplier: 2
+};
+
+// Retry with exponential backoff
+async function retryWithBackoff(operation, operationFn, context = {}) {
+  let lastError;
+  let delay = RETRY_CONFIG.initialDelay;
+  
+  for (let attempt = 1; attempt <= RETRY_CONFIG.maxAttempts; attempt++) {
+    try {
+      logDebug(`${operation}_ATTEMPT`, { attempt, maxAttempts: RETRY_CONFIG.maxAttempts, ...context });
+      
+      const result = await operationFn();
+      
+      if (attempt > 1) {
+        console.log(`✅ ${operation} succeeded on attempt ${attempt}`);
+        logDebug(`${operation}_RETRY_SUCCESS`, { attempt, ...context });
+      }
+      
+      return result;
+    } catch (error) {
+      lastError = error;
+      
+      const shouldRetry = isNetworkError(error) && attempt < RETRY_CONFIG.maxAttempts;
+      
+      if (shouldRetry) {
+        console.warn(`⚠️ ${operation} failed (attempt ${attempt}/${RETRY_CONFIG.maxAttempts}), retrying in ${delay}ms...`);
+        logDebug(`${operation}_RETRY_WAIT`, { 
+          attempt, 
+          delay, 
+          error: error.message,
+          isNetworkError: isNetworkError(error),
+          ...context 
+        });
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay = Math.min(delay * RETRY_CONFIG.backoffMultiplier, RETRY_CONFIG.maxDelay);
+      } else {
+        if (!shouldRetry && isNetworkError(error)) {
+          console.error(`❌ ${operation} failed after ${attempt} attempts (network error)`);
+        }
+        logError(operation, error, { attempt, ...context });
+        throw error;
+      }
+    }
+  }
+  
+  throw lastError;
 }
 
 async function ensureAuth() {
@@ -161,6 +255,33 @@ export function clearOperationHistory() {
 
 export function printOperationHistory() {
   console.table(operationHistory);
+}
+
+export function getRetryConfig() {
+  return { ...RETRY_CONFIG };
+}
+
+export function setRetryConfig(config) {
+  Object.assign(RETRY_CONFIG, config);
+  console.log('🔧 Retry configuration updated:', RETRY_CONFIG);
+  return RETRY_CONFIG;
+}
+
+export function getNetworkStatus() {
+  const recentOps = operationHistory.slice(-20);
+  const errors = recentOps.filter(op => op.operation.includes('ERROR'));
+  const networkErrors = errors.filter(op => op.isNetworkError);
+  const authErrors = errors.filter(op => op.isAuthError);
+  
+  return {
+    recentOperations: recentOps.length,
+    totalErrors: errors.length,
+    networkErrors: networkErrors.length,
+    authErrors: authErrors.length,
+    hasRecentNetworkIssues: networkErrors.length > 0,
+    lastNetworkError: networkErrors[networkErrors.length - 1] || null,
+    online: navigator.onLine
+  };
 }
 
 export async function compareLocalAndRemoteData(state) {
@@ -331,7 +452,12 @@ export async function saveToDB(state) {
     };
     batch.set(metadataRef, syncMetadata, { merge: true });
     
-    await batch.commit();
+    // Commit with retry on network errors
+    await retryWithBackoff('SAVE_COMMIT', () => batch.commit(), { 
+      appId, 
+      userId, 
+      totalDocuments 
+    });
     
     const duration = Date.now() - startTime;
     console.log(`✅ Zapisano ${totalDocuments} dokumentów do Firebase (${duration}ms)`);
@@ -374,10 +500,15 @@ export async function loadFromDB(state) {
   try {
     const dbRoot = getDbRoot(appId, userId);
     
-    // First, load metadata to compare timestamps
+    // First, load metadata to compare timestamps (with retry)
     let remoteTimestamp = null;
     try {
-      const metadataSnap = await dbRoot.collection('metadata').doc('sync').get();
+      const metadataSnap = await retryWithBackoff(
+        'LOAD_METADATA',
+        () => dbRoot.collection('metadata').doc('sync').get(),
+        { appId, userId }
+      );
+      
       if (metadataSnap.exists) {
         const metadata = metadataSnap.data();
         remoteTimestamp = metadata.lastModified || metadata.lastSaveTime;
@@ -406,7 +537,12 @@ export async function loadFromDB(state) {
       return null;
     }
     
-    const snaps = await Promise.all(collections.map((name) => dbRoot.collection(name).get()));
+    // Load collections with retry
+    const snaps = await retryWithBackoff(
+      'LOAD_COLLECTIONS',
+      () => Promise.all(collections.map((name) => dbRoot.collection(name).get())),
+      { appId, userId, collectionCount: collections.length }
+    );
     
     const data = {};
     const loadSummary = {};
@@ -459,7 +595,10 @@ if (typeof window !== 'undefined') {
     clearOperationHistory,
     printOperationHistory,
     compareLocalAndRemoteData,
-    verifyDataConsistency
+    verifyDataConsistency,
+    getRetryConfig,
+    setRetryConfig,
+    getNetworkStatus
   };
   
   console.log('🔧 Firebase debugging tools available: window.firebaseDebug');
@@ -468,4 +607,7 @@ if (typeof window !== 'undefined') {
   console.log('  - printOperationHistory() - Print operations as table');
   console.log('  - compareLocalAndRemoteData(state) - Compare local vs remote');
   console.log('  - verifyDataConsistency(state) - Verify data is synced');
+  console.log('  - getRetryConfig() - Get retry settings');
+  console.log('  - setRetryConfig({maxAttempts, initialDelay, etc}) - Update retry');
+  console.log('  - getNetworkStatus() - Check network error status');
 }
