@@ -2119,6 +2119,8 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   })();
   document.addEventListener('input', handleEvents);
 
+  // sync storage mode select UI with state on load
+  try{ const sm = qs('#set-mode'); if(sm) sm.value = state.storage.mode || 'firebase'; }catch(e){}
   // sync autosave checkbox UI with state on load
   try{ const cb = qs('#set-autosave-assign'); if(cb) cb.checked = !!state.storage.autoSaveAssign; }catch(e){}
   // sync autoload DB checkbox UI with state on load
@@ -5451,16 +5453,8 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       // Sprawdź czy jesteśmy na localhost - jeśli tak, ostrzeż o potencjalnych problemach
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       if(isLocalhost && window.location.protocol !== 'https:'){
-        console.warn('Firebase może nie działać poprawnie na HTTP localhost. Rozważ użycie HTTPS lub trybu offline.');
-        // Na localhost automatycznie przełącz na localStorage dla lepszego UX
-        if(state.storage.mode === 'firebase'){
-          console.log('Wykryto localhost - automatycznie przełączam na localStorage dla lepszego działania');
-          state.storage.mode = 'localStorage';
-          qs('#set-mode').value = 'localStorage';
-          save();
-          updateConnectionStatus();
-          return false;
-        }
+        console.warn('Firebase na HTTP localhost - spróbuję połączyć mimo to.');
+        // Nie przełączamy automatycznie - pozwól użytkownikowi samemu zadecydować
       }
       
       await loadScript('https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js');
@@ -5470,16 +5464,10 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       return true;
     }catch(e){
       console.warn('Firebase load/init error:',e.message);
-      qs('#set-info').textContent='⚠️ Firebase niedostępny - przełączono na tryb offline (localStorage)';
+      qs('#set-info').textContent='⚠️ Firebase niedostępny - sprawdź połączenie lub przełącz na localStorage w ustawieniach';
       
-      // Automatycznie przełącz na localStorage gdy Firebase nie działa
-      if(state.storage.mode === 'firebase'){
-        state.storage.mode = 'localStorage';
-        qs('#set-mode').value = 'localStorage';
-        save();
-        updateConnectionStatus();
-        console.log('Automatycznie przełączono na tryb localStorage');
-      }
+      // Nie przełączamy automatycznie - użytkownik może chcieć spróbować ponownie
+      console.log('Firebase niedostępny - pozostawiam tryb:', state.storage.mode);
       
       return false;
     }
