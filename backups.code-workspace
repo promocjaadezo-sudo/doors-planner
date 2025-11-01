@@ -1,11 +1,10 @@
 {
 	"folders": [
 		{
-			"path": "backups"
-		},
-		{
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"liveServer.settings.port": 5502
+	}
 }
