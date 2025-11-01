@@ -1,6 +1,21 @@
 import { test, expect, Page } from '@playwright/test';
 
-const STORE_KEY = 'door_v5627_state';
+async function getPersistedState(page: Page) {
+  return page.evaluate(() => {
+    const key = (window as any).storeKey || 'door_v5627_state';
+    const raw = window.localStorage.getItem(key);
+    let parsed: any = null;
+    if (raw) {
+      try {
+        parsed = JSON.parse(raw);
+      } catch (err) {
+        console.warn('Invalid JSON in persisted store', err);
+        parsed = null;
+      }
+    }
+    return { key, state: parsed };
+  });
+}
 
 async function gotoOrdersPage(page: Page) {
   await page.goto('/index.html');
@@ -136,10 +151,20 @@ test('order persists across reloads and updates local storage', async ({ page })
   await expect(ordersTable).toContainText(orderName);
   await expect(ordersTable).toContainText(initialClient);
 
-  const savedAfterCreate = await page.evaluate((key) => {
+  await page.waitForFunction(() => {
+    const key = (window as any).storeKey || 'door_v5627_state';
     const raw = window.localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
-  }, STORE_KEY);
+    if (!raw) return false;
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed?.orders) && parsed.orders.length > 0;
+    } catch (err) {
+      console.warn('Failed to read store during wait', err);
+      return false;
+    }
+  });
+
+  const { state: savedAfterCreate } = await getPersistedState(page);
 
   expect(savedAfterCreate?.orders).toBeDefined();
   expect(savedAfterCreate.orders).toHaveLength(1);
@@ -164,10 +189,21 @@ test('order persists across reloads and updates local storage', async ({ page })
 
   await expect(page.locator('#ord-tb')).toContainText(updatedClient);
 
-  const savedAfterUpdate = await page.evaluate((key) => {
+  await page.waitForFunction(({ name, expectedClient }: { name: string; expectedClient: string }) => {
+    const key = (window as any).storeKey || 'door_v5627_state';
     const raw = window.localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
-  }, STORE_KEY);
+    if (!raw) return false;
+    try {
+      const parsed = JSON.parse(raw);
+      const match = Array.isArray(parsed?.orders) ? parsed.orders.find((o: any) => o?.name === name) : null;
+      return !!match && match.client === expectedClient;
+    } catch (err) {
+      console.warn('Failed to parse store while waiting for update', err);
+      return false;
+    }
+  }, { name: orderName, expectedClient: updatedClient });
+
+  const { state: savedAfterUpdate } = await getPersistedState(page);
 
   const storedOrder = savedAfterUpdate?.orders?.find((o: any) => o.name === orderName);
   expect(storedOrder).toBeDefined();
