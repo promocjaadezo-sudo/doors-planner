@@ -2099,6 +2099,15 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   if (state.storage && state.storage.mode === 'firebase') {
     console.log('🔄 INIT: Tryb Firebase - łączę się z bazą...');
     
+    // KRYTYCZNE: Włącz kolejkę synchronizacji NATYCHMIAST w trybie Firebase
+    // Zapobiega to utracie operacji wykonanych przed pełnym połączeniem z Firebase
+    if (window.FirebaseSyncQueue) {
+      window.FirebaseSyncQueue.enable();
+      console.log('✅ [INIT] Kolejka synchronizacji włączona NATYCHMIAST (zapobiega utracie danych)');
+    } else {
+      console.warn('⚠️ [INIT] FirebaseSyncQueue nie jest dostępna - synchronizacja może być niestabilna');
+    }
+    
     // Funkcja automatycznego łączenia
     async function autoConnectFirebase() {
       try {
@@ -2166,13 +2175,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     
     // Uruchom automatyczne łączenie z małym opóźnieniem
     setTimeout(() => {
-      // KROK 1: Włącz kolejkę PRZED jakimkolwiek połączeniem z Firebase
-      if (window.FirebaseSyncQueue) {
-        window.FirebaseSyncQueue.enable();
-        console.log('🔄 INIT: Kolejka synchronizacji włączona (pre-connect)');
-      }
-      
-      // KROK 2: Teraz połącz z Firebase
+      // Połącz z Firebase (kolejka już włączona wcześniej)
       autoConnectFirebase().then(success => {
         if (success) {
           console.log('🎉 INIT: Automatyczne łączenie z Firebase zakończone sukcesem!');
@@ -2284,15 +2287,34 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           save();
           
           // Synchronizuj z Firebase przez kolejkę (PRIORYTET WYSOKI!)
-          if (state.storage && state.storage.mode === 'firebase' && window.FirebaseSyncQueue) {
-            // 1. Usuń dokument zlecenia (wysoki priorytet)
-            window.FirebaseSyncQueue.enqueue('delete', {
-              collection: 'orders',
-              documentId: id
-            }, 20);
-            
-            // 2. Następnie pełny zapis aktualnego stanu
-            window.FirebaseSyncQueue.enqueue('save', { state }, 10);
+          if (state.storage && state.storage.mode === 'firebase') {
+            if (window.FirebaseSyncQueue && window.FirebaseSyncQueue.isEnabled) {
+              // ŚCIEŻKA 1: Użyj kolejki synchronizacji (preferowana)
+              console.log('🔄 [DELETE] Używam kolejki synchronizacji dla usunięcia zlecenia:', id);
+              
+              // 1. Usuń dokument zlecenia (wysoki priorytet)
+              window.FirebaseSyncQueue.enqueue('delete', {
+                collection: 'orders',
+                documentId: id
+              }, 20);
+              
+              // 2. Następnie pełny zapis aktualnego stanu
+              window.FirebaseSyncQueue.enqueue('save', { state }, 10);
+            } else {
+              // ŚCIEŻKA 2: Fallback - bezpośredni zapis do Firebase (gdy kolejka wyłączona)
+              console.warn('⚠️ [DELETE] Kolejka wyłączona - używam bezpośredniego zapisu do Firebase');
+              
+              // Natychmiastowa synchronizacja z Firebase bez kolejki
+              if (typeof window.saveToDB === 'function') {
+                window.saveToDB().then(() => {
+                  console.log('✅ [DELETE] Zlecenie usunięte z Firebase (bezpośredni zapis)');
+                }).catch(err => {
+                  console.error('❌ [DELETE] Błąd usuwania z Firebase:', err.message);
+                  // Pokaż użytkownikowi że może być problem z synchronizacją
+                  alert('⚠️ Uwaga: Zlecenie usunięte lokalnie, ale może wystąpić problem z synchronizacją Firebase.\n\nSprawdź połączenie i odśwież stronę aby upewnić się, że zmiany zostały zapisane.');
+                });
+              }
+            }
           }
           
           // Wymuszenie odświeżenia wszystkich widoków
