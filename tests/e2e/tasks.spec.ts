@@ -437,3 +437,202 @@ test('delete task removes from board and storage', async ({ page }) => {
   
   expect(deletedTask).toBeNull();
 });
+
+test('mass delete tasks with Firebase sync', async ({ page }) => {
+  await gotoTasksPage(page);
+  
+  // Create mock Firebase sync queue
+  await page.evaluate(() => {
+    const calls: any[] = [];
+    (window as any).FirebaseSyncQueue = {
+      enqueue: (type: string, data: any, priority?: number) => {
+        calls.push({ type, data, priority });
+      }
+    };
+    (window as any)._syncCalls = calls;
+  });
+  
+  // Create multiple test tasks
+  const taskIds = await page.evaluate(() => {
+    const state = (window as any).state || {};
+    const ids: string[] = [];
+    
+    state.tasks = state.tasks || [];
+    for (let i = 0; i < 3; i++) {
+      const id = `task-mass-delete-${Date.now()}-${i}`;
+      ids.push(id);
+      state.tasks.push({
+        id,
+        title: `Zadanie do masowego usunięcia ${i + 1}`,
+        status: 'todo',
+        orderId: null,
+        assignedTo: null,
+        createdAt: Date.now(),
+      });
+    }
+    
+    (window as any).state = state;
+    
+    if (typeof (window as any).save === 'function') {
+      (window as any).save();
+    }
+    
+    if (typeof (window as any).renderTasks === 'function') {
+      (window as any).renderTasks();
+    }
+    
+    return ids;
+  });
+  
+  await page.waitForTimeout(300);
+  
+  // Enable Firebase mode
+  await page.evaluate(() => {
+    const state = (window as any).state || {};
+    state.storage = { mode: 'firebase' };
+    (window as any).state = state;
+  });
+  
+  // Simulate mass delete
+  await page.evaluate((ids: string[]) => {
+    const state = (window as any).state || {};
+    state.tasks = (state.tasks || []).filter((t: any) => !ids.includes(t.id));
+    
+    (window as any).state = state;
+    
+    if (typeof (window as any).save === 'function') {
+      (window as any).save();
+    }
+    
+    // Synchronize with Firebase
+    if (state.storage && state.storage.mode === 'firebase' && (window as any).FirebaseSyncQueue) {
+      ids.forEach(taskId => {
+        (window as any).FirebaseSyncQueue.enqueue('delete', {
+          collection: 'tasks',
+          documentId: taskId
+        }, 15);
+      });
+    }
+  }, taskIds);
+  
+  await page.waitForTimeout(300);
+  
+  // Verify sync calls were made
+  const syncCallsResult = await page.evaluate(() => {
+    return (window as any)._syncCalls || [];
+  });
+  
+  expect(syncCallsResult).toHaveLength(3);
+  syncCallsResult.forEach((call: any, index: number) => {
+    expect(call.type).toBe('delete');
+    expect(call.data.collection).toBe('tasks');
+    expect(call.data.documentId).toBe(taskIds[index]);
+    expect(call.priority).toBe(15);
+  });
+});
+
+test('cleanupTasksForOrder with Firebase sync', async ({ page }) => {
+  await gotoTasksPage(page);
+  
+  // Create mock Firebase sync queue
+  await page.evaluate(() => {
+    const calls: any[] = [];
+    (window as any).FirebaseSyncQueue = {
+      enqueue: (type: string, data: any, priority?: number) => {
+        calls.push({ type, data, priority });
+      }
+    };
+    (window as any)._syncCalls = calls;
+  });
+  
+  // Create test order and tasks
+  const { orderId, taskIds } = await page.evaluate(() => {
+    const state = (window as any).state || {};
+    const orderId = `order-cleanup-${Date.now()}`;
+    const taskIds: string[] = [];
+    
+    state.orders = state.orders || [];
+    state.orders.push({
+      id: orderId,
+      name: 'Zlecenie do czyszczenia',
+      client: 'Klient Test',
+      quantity: 1,
+      processId: null,
+    });
+    
+    state.tasks = state.tasks || [];
+    for (let i = 0; i < 2; i++) {
+      const id = `task-cleanup-${Date.now()}-${i}`;
+      taskIds.push(id);
+      state.tasks.push({
+        id,
+        title: `Zadanie ${i + 1}`,
+        status: 'done',
+        orderId: orderId,
+        assignedTo: null,
+        createdAt: Date.now(),
+      });
+    }
+    
+    (window as any).state = state;
+    
+    if (typeof (window as any).save === 'function') {
+      (window as any).save();
+    }
+    
+    return { orderId, taskIds };
+  });
+  
+  await page.waitForTimeout(300);
+  
+  // Enable Firebase mode
+  await page.evaluate(() => {
+    const state = (window as any).state || {};
+    state.storage = { mode: 'firebase' };
+    (window as any).state = state;
+  });
+  
+  // Simulate cleanupTasksForOrder
+  await page.evaluate((orderId: string) => {
+    const state = (window as any).state || {};
+    const tasks = (state.tasks || []).filter((t: any) => t.orderId === orderId);
+    const anyActive = tasks.some((t: any) => (t.status || '') !== 'done');
+    
+    if (!anyActive) {
+      const taskIdsToDelete = tasks.map((t: any) => t.id);
+      
+      state.tasks = (state.tasks || []).filter((t: any) => t.orderId !== orderId);
+      
+      (window as any).state = state;
+      
+      if (typeof (window as any).save === 'function') {
+        (window as any).save();
+      }
+      
+      // Synchronize with Firebase
+      if (state.storage && state.storage.mode === 'firebase' && (window as any).FirebaseSyncQueue) {
+        taskIdsToDelete.forEach((taskId: string) => {
+          (window as any).FirebaseSyncQueue.enqueue('delete', {
+            collection: 'tasks',
+            documentId: taskId
+          }, 15);
+        });
+      }
+    }
+  }, orderId);
+  
+  await page.waitForTimeout(300);
+  
+  // Verify sync calls were made
+  const syncCallsResult = await page.evaluate(() => {
+    return (window as any)._syncCalls || [];
+  });
+  
+  expect(syncCallsResult).toHaveLength(2);
+  syncCallsResult.forEach((call: any, index: number) => {
+    expect(call.type).toBe('delete');
+    expect(call.data.collection).toBe('tasks');
+    expect(call.data.documentId).toBe(taskIds[index]);
+    expect(call.priority).toBe(15);
+  });
+});

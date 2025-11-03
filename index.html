@@ -3615,6 +3615,17 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           const idsToDelete = rows.map(t => t.id);
           state.tasks = (state.tasks || []).filter(t => !idsToDelete.includes(t.id));
           save();
+          
+          // Synchronizuj usunięcie z Firebase przez kolejkę
+          if (state.storage && state.storage.mode === 'firebase' && window.FirebaseSyncQueue) {
+            idsToDelete.forEach(taskId => {
+              window.FirebaseSyncQueue.enqueue('delete', {
+                collection: 'tasks',
+                documentId: taskId
+              }, 15);
+            });
+          }
+          
           renderTasks();
           setInfoText('Usunięto ' + rows.length + ' zadań', 'success');
         }
@@ -3703,10 +3714,23 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       if(tasks.length===0) return; // nothing to do
       const anyActive = tasks.some(t=> (t.status||'') !== 'done');
       if(!anyActive){
+        // Collect task IDs to delete before removing them from state
+        const taskIdsToDelete = tasks.map(t => t.id);
+        
         // remove tasks belonging to this order
         state.tasks = (state.tasks||[]).filter(t=> t.orderId !== orderId);
         save(); try{ renderTasks(); renderMonitor && renderMonitor(); }catch(_){ }
         (window.logDev||console.log)('[cleanupTasksForOrder] removed tasks for order', orderId);
+        
+        // Synchronizuj usunięcie z Firebase przez kolejkę
+        if (state.storage && state.storage.mode === 'firebase' && window.FirebaseSyncQueue) {
+          taskIdsToDelete.forEach(taskId => {
+            window.FirebaseSyncQueue.enqueue('delete', {
+              collection: 'tasks',
+              documentId: taskId
+            }, 15);
+          });
+        }
       }
     }catch(e){ (window.logDev||console.log)('[cleanupTasksForOrder] error', e && e.message); }
   }
