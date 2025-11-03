@@ -329,3 +329,16 @@ if(typeof window!=='undefined'){
   window.renderAll = renderAll;
   window.showNotification = showNotification;
 }
+
+const setMode = qs('#set-mode'); 
+if (setMode) {
+  setMode.addEventListener('change', async (event) => {
+    const newMode = event.target.value;
+    if (newMode === 'firebase' && window.state.storage.mode !== 'firebase') {
+      console.log('[setMode] Synchronizuję dane lokalne z Firebase przed przełączeniem...');
+      await window.saveState(true); // Wymuszenie zapisu do Firebase
+    }
+    window.state.storage.mode = newMode;
+    console.log(`[setMode] Tryb przechowywania zmieniony na: ${newMode}`);
+  });
+}

@@ -150,7 +150,12 @@
   try { window.storeKey = PRIMARY_STORE_KEY; } catch(_){ /* ignore */ }
 
   const defaultState = {
-    storage: { mode: 'firebase', appId: 'doors-demo', userId: 'hala-1', fbConfig: {} },
+    storage: {
+      mode: 'local', // Domyślny tryb przechowywania
+      appId: '',
+      userId: '',
+      fbConfig: null
+    },
     employees: [],
     operationsCatalog: [],
     processes: [],
@@ -246,6 +251,17 @@
 
     const importantOrderFields = ['phone','postalCode','leadEmployeeId','notes','client','model','address','startDate','endDate','installDate','processId'];
     const importantAfterFields = ['phone','postalCode','desc','leadEmployeeId','installDate','departTime','visitTime','hours','status','employeeIds'];
+
+    // KRYTYCZNE: Jeśli targetState ma lastModified i jest stosunkowo nowy (np. z ostatnich 24h),
+    // NIE scalaj starych danych - mogły zostać celowo usunięte
+    const targetStateTimestamp = targetState.lastModified || 0;
+    const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+    const skipLegacyMerge = targetStateTimestamp > oneDayAgo;
+    
+    if (skipLegacyMerge) {
+      console.log('[store-migrate] Pomijam scalanie starych danych - aktualny stan jest świeży (lastModified:', new Date(targetStateTimestamp).toLocaleString('pl-PL'), ')');
+      return { mergedOrders: 0, updatedOrders: 0, mergedAfter: 0, updatedAfter: 0 };
+    }
 
     LEGACY_STORE_KEYS.forEach(key => {
       const raw = localStorage.getItem(key);
@@ -396,6 +412,17 @@
     return updated;
   }
   function loadState(){ 
+    console.log('[loadState] Ładowanie stanu aplikacji...');
+    
+    // KRYTYCZNE: Usuń wszystkie stare klucze z localStorage, aby zapobiec przywracaniu starych danych
+    console.log('[store-migrate] Usuwam stare klucze z localStorage...');
+    LEGACY_STORE_KEYS.forEach(key => {
+      if (localStorage.getItem(key)) {
+        console.log('[store-migrate] Usuwam stary klucz:', key);
+        localStorage.removeItem(key);
+      }
+    });
+    
     try{ 
       const raw = localStorage.getItem(storeKey); 
       state = raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(defaultState));
@@ -447,10 +474,15 @@
       console.error('Błąd ładowania stanu:', e);
       state = JSON.parse(JSON.stringify(defaultState)); 
     } 
+    console.log('[loadState] Załadowany stan:', state);
     return state;
   }
   
   function saveState(shouldSaveToDb = false){ 
+    console.log('[saveState] Zapisywanie stanu aplikacji...', state);
+    if (shouldSaveToDb) {
+      console.log('[saveState] Zapis do bazy danych włączony.');
+    }
     try{ 
       // Automatyczna kopia zapasowa przed zapisem (jeśli BackupManager dostępny)
       if (typeof window.BackupManager !== 'undefined' && window.BackupManager.create) {
@@ -470,7 +502,7 @@
       });
     } catch(e){ 
       console.error('Błąd zapisu stanu:', e);
-    };
+    }
     
     if(shouldSaveToDb && state.storage && state.storage.mode === 'firebase'){
       clearTimeout(state._dbSaveTimeout);
@@ -481,17 +513,10 @@
   }
   function getState(){ return state; }
   function setState(s){ state = s || {}; saveState(); }
-  function updateTaskMappings(taskId, processId, orderId) {
-    if (!state.taskProcessMap) state.taskProcessMap = {};
-    if (!state.taskOrderMap) state.taskOrderMap = {};
-
-    state.taskProcessMap[taskId] = processId;
-    state.taskOrderMap[taskId] = orderId;
-    saveState(true); // Zapisz zmiany w Firebase
-  }
-
   function autoSyncTasks() {
+    console.log('[autoSyncTasks] Uruchamianie automatycznej synchronizacji...');
     setInterval(() => {
+      console.log('[autoSyncTasks] Synchronizacja...');
       if (state.storage.mode === 'firebase') {
         saveState(true);
       }
@@ -593,8 +618,19 @@
     // Odśwież UI zamiast strony
     if (typeof renderTasks === 'function') renderTasks();
     if (typeof renderOrderPage === 'function') renderOrderPage();
-    if (typeof renderDash === 'function') renderDash(window.state || state);
+    if (typeof window.renderDash === 'function') {
+      window.renderDash(window.state || state);
+    }
     if (typeof renderGantt === 'function') renderGantt();
+  }
+
+  // Tymczasowe funkcje renderowania
+  function renderTasks() {
+    console.warn('renderTasks is not implemented yet.');
+  }
+
+  function renderGantt() {
+    console.warn('renderGantt is not implemented yet.');
   }
 
   // expose
