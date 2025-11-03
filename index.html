@@ -1781,13 +1781,8 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           console.log('💾 Zapisano po usunięciu');
           
           // Enqueue delete operation to Firebase sync queue
-          if(window.FirebaseSyncQueue && state.storage.mode === 'firebase'){
-            window.FirebaseSyncQueue.enqueue('delete', {
-              collection: 'orders',
-              documentId: id
-            }, 20);
-            window.FirebaseSyncQueue.enqueue('save', { state }, 10);
-          }
+          enqueueSyncOperation('delete', { collection: 'orders', documentId: id }, FIREBASE_SYNC_PRIORITY.DELETE);
+          enqueueSyncOperation('save', { state }, FIREBASE_SYNC_PRIORITY.SAVE);
           
           // Wymuszenie odświeżenia wszystkich widoków (z małym opóźnieniem aby save się zakończył)
           setTimeout(() => {
@@ -1959,9 +1954,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           const id = t.dataset.taskStart; const task = state.tasks.find(x => x.id === id); if (!task) return;
           task.status = 'run'; state._timers[id] = Date.now(); save(); 
           try{ updateOrderProgress(task.orderId); }catch(_){ } 
-          if(window.FirebaseSyncQueue && state.storage.mode === 'firebase'){
-            window.FirebaseSyncQueue.enqueue('update', { collection: 'tasks', documentId: id, updates: { status: 'run', _timers: state._timers } }, 5);
-          }
+          enqueueSyncOperation('update', { collection: 'tasks', documentId: id, updates: { status: 'run', _timers: state._timers } }, FIREBASE_SYNC_PRIORITY.UPDATE);
           renderTasks(); break;
         }
         if(t.dataset.taskPause) {
@@ -1969,9 +1962,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           if (state._timers[id]) { task.elapsedMin = (task.elapsedMin || 0) + (Date.now() - state._timers[id]) / 60000; delete state._timers[id]; }
           task.status = 'todo'; save(); 
           try{ updateOrderProgress(task.orderId); }catch(_){ } 
-          if(window.FirebaseSyncQueue && state.storage.mode === 'firebase'){
-            window.FirebaseSyncQueue.enqueue('update', { collection: 'tasks', documentId: id, updates: { status: 'todo', elapsedMin: task.elapsedMin } }, 5);
-          }
+          enqueueSyncOperation('update', { collection: 'tasks', documentId: id, updates: { status: 'todo', elapsedMin: task.elapsedMin } }, FIREBASE_SYNC_PRIORITY.UPDATE);
           renderTasks(); break;
         }
         if(t.dataset.taskDone) {
@@ -1979,18 +1970,14 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           if (state._timers[id]) { task.elapsedMin = (task.elapsedMin || 0) + (Date.now() - state._timers[id]) / 60000; delete state._timers[id]; }
           task.status = 'done'; save(); 
           try{ updateOrderProgress(task.orderId); }catch(_){ } 
-          if(window.FirebaseSyncQueue && state.storage.mode === 'firebase'){
-            window.FirebaseSyncQueue.enqueue('update', { collection: 'tasks', documentId: id, updates: { status: 'done', elapsedMin: task.elapsedMin } }, 5);
-          }
+          enqueueSyncOperation('update', { collection: 'tasks', documentId: id, updates: { status: 'done', elapsedMin: task.elapsedMin } }, FIREBASE_SYNC_PRIORITY.UPDATE);
           renderTasks(); break;
         }
         if(t.dataset.taskRepeat) {
           const id = t.dataset.taskRepeat; const task = state.tasks.find(x => x.id === id); if (!task) return;
           if (state._timers[id]) delete state._timers[id]; task.status = 'todo'; task.elapsedMin = 0; save(); 
           try{ updateOrderProgress(task.orderId); }catch(_){ } 
-          if(window.FirebaseSyncQueue && state.storage.mode === 'firebase'){
-            window.FirebaseSyncQueue.enqueue('update', { collection: 'tasks', documentId: id, updates: { status: 'todo', elapsedMin: 0 } }, 5);
-          }
+          enqueueSyncOperation('update', { collection: 'tasks', documentId: id, updates: { status: 'todo', elapsedMin: 0 } }, FIREBASE_SYNC_PRIORITY.UPDATE);
           renderTasks(); break;
         }
         if(t.dataset.taskRetry) {
@@ -2829,6 +2816,28 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     state.PROC_TMP=[]; save(); ev.target.reset(); renderProcPage();
   });
 
+  // Firebase sync queue priority constants
+  const FIREBASE_SYNC_PRIORITY = {
+    DELETE: 20,
+    SAVE: 10,
+    UPDATE: 5
+  };
+  
+  // Helper function to enqueue Firebase sync operation
+  function enqueueSyncOperation(type, data, priority) {
+    if(window.FirebaseSyncQueue && state.storage.mode === 'firebase'){
+      window.FirebaseSyncQueue.enqueue(type, data, priority);
+    }
+  }
+  
+  // Helper function to toggle task group visibility
+  window.toggleTaskGroup = function(groupId) {
+    const el = document.getElementById(groupId);
+    if(el) {
+      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+  };
+  
   function renderTasks(){
     const list=qs('#tasks-list'); if(!list) return; list.innerHTML='';
     const selOrd=qs('#tasks-filter-order'); if(selOrd){ selOrd.innerHTML='<option value="">Wszystkie zlecenia</option>'+ (state.orders||[]).map(o=>`<option value="${o.id}">${o.name}</option>`).join(''); }
@@ -2864,11 +2873,21 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     // helper for sync badge
     const syncBadge = (tt)=>{ try{ if(tt._syncPending) return `<span class="task-sync-status pending" title="Czekaj na synchronizację">⏳</span>`; if(tt._syncError) return `<span class="task-sync-status error" title="Błąd synchronizacji">⚠️</span>`; if(tt._lastSync) return `<span class="task-sync-status ok" title="Ostatnia synchronizacja: ${new Date(tt._lastSync).toLocaleString()}">✔️</span>`; return `<span class="task-sync-status unknown" title="Brak synchronizacji">—</span>`; }catch(e){return''} };
     
+    // Helper for Polish pluralization
+    const pluralize = (count, singular, plural2to4, plural5plus) => {
+      if (count === 1) return singular;
+      if (count >= 2 && count <= 4) return plural2to4;
+      return plural5plus;
+    };
+    
+    // Create order lookup Map for O(1) access
+    const orderMap = new Map((state.orders||[]).map(o => [o.id, o]));
+    
     // Group tasks by orderId
     const grouped = {};
     rows.forEach(task => {
       if (!grouped[task.orderId]) {
-        const order = (state.orders||[]).find(o=>o.id===task.orderId);
+        const order = orderMap.get(task.orderId);
         grouped[task.orderId] = {
           orderId: task.orderId,
           orderName: order?.name || 'Bez zlecenia',
@@ -2897,12 +2916,14 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       const doneCount = group.tasks.filter(t => t.status === 'done').length;
       
       const groupId = `task-group-${group.orderId}`;
+      const taskCountText = `${group.tasks.length} ${pluralize(group.tasks.length, 'zadanie', 'zadania', 'zadań')}`;
+      
       groupDiv.innerHTML = `
-        <div class="row" style="justify-content:space-between;cursor:pointer;padding:12px" onclick="document.getElementById('${groupId}').style.display=document.getElementById('${groupId}').style.display==='none'?'block':'none'">
+        <div class="row" style="justify-content:space-between;cursor:pointer;padding:12px" onclick="window.toggleTaskGroup('${groupId}')">
           <div>
             <b style="font-size:16px">📋 ${group.orderName}</b>
             <span style="margin-left:12px;color:#64748b;font-size:14px">
-              ${group.tasks.length} ${group.tasks.length === 1 ? 'zadanie' : 'zadań'}
+              ${taskCountText}
               ${todoCount > 0 ? `• <span style="color:#94a3b8">${todoCount} todo</span>` : ''}
               ${runCount > 0 ? `• <span style="color:#3b82f6;font-weight:600">${runCount} w trakcie</span>` : ''}
               ${doneCount > 0 ? `• <span style="color:#10b981">${doneCount} zakończone</span>` : ''}
