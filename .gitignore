@@ -1,5 +1,6 @@
 # Raporty testów jednostkowych
 state/tests/reports/*.json
+tests/reports/*.json
 
 # Node modules (jeśli będą)
 node_modules/
