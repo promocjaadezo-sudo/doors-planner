@@ -2308,10 +2308,17 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
               if (typeof window.saveToDB === 'function') {
                 window.saveToDB().then(() => {
                   console.log('✅ [DELETE] Zlecenie usunięte z Firebase (bezpośredni zapis)');
+                  if (typeof setInfoText === 'function') {
+                    setInfoText('✅ Zlecenie usunięte', 'success');
+                  }
                 }).catch(err => {
                   console.error('❌ [DELETE] Błąd usuwania z Firebase:', err.message);
-                  // Pokaż użytkownikowi że może być problem z synchronizacją
-                  alert('⚠️ Uwaga: Zlecenie usunięte lokalnie, ale może wystąpić problem z synchronizacją Firebase.\n\nSprawdź połączenie i odśwież stronę aby upewnić się, że zmiany zostały zapisane.');
+                  // Pokaż użytkownikowi że może być problem z synchronizacją (non-blocking notification)
+                  if (typeof setInfoText === 'function') {
+                    setInfoText('⚠️ Zlecenie usunięte lokalnie - sprawdź połączenie Firebase', 'warning');
+                  }
+                  // Fallback do console dla użytkowników bez UI
+                  console.warn('⚠️ Uwaga: Zlecenie usunięte lokalnie, ale wystąpił problem z synchronizacją Firebase. Sprawdź połączenie i odśwież stronę aby upewnić się, że zmiany zostały zapisane.');
                 });
               }
             }

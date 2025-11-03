@@ -311,26 +311,14 @@ test('delete order persists across page reloads', async ({ page }) => {
   const deleteButton = page.locator(`[data-od="${orderId}"]`).first();
   await deleteButton.click();
 
-  // Poczekaj na usunięcie
-  await page.waitForTimeout(500);
-
-  // Sprawdź że zlecenie zniknęło z tabeli
+  // Sprawdź że zlecenie zniknęło z tabeli (bez hard-coded timeout)
   await expect(ordersTable).not.toContainText(orderName);
 
   // Sprawdź że zlecenie zostało usunięte z localStorage
-  await page.waitForFunction((name) => {
-    const key = (window as any).storeKey || 'door_v5627_state';
-    const raw = window.localStorage.getItem(key);
-    if (!raw) return false;
-    try {
-      const parsed = JSON.parse(raw);
-      const order = parsed?.orders?.find((o: any) => o.name === name);
-      return !order; // Oczekujemy że zlecenie nie istnieje
-    } catch (err) {
-      console.warn('Failed to parse store', err);
-      return false;
-    }
-  }, orderName);
+  await page.waitForFunction((id) => {
+    const state = (window as any).state;
+    return !state.orders?.find((o: any) => o.id === id);
+  }, orderId);
 
   const { state: stateAfterDelete } = await getPersistedState(page);
   const orderAfterDelete = stateAfterDelete?.orders?.find((o: any) => o.id === orderId);
