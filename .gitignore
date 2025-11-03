@@ -34,3 +34,10 @@ coverage/
 # Build outputs
 dist/
 build/
+
+# Playwright test results
+test-results/
+playwright-report/
+
+# Node modules executables (auto-generated)
+node_modules/.bin/
