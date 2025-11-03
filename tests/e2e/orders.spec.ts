@@ -272,3 +272,67 @@ test('handover from orders view creates warehouse task and keeps actions read-on
   await expect(checklistModal).toContainText('Zakładka Zlecenia ma charakter informacyjny');
   await expect(checklistModal.getByText('👷 Obsługa magazynu')).toBeVisible();
 });
+
+test('delete order persists across page reloads', async ({ page }) => {
+  const orderName = `Zlecenie do usunięcia ${Date.now()}`;
+  const client = 'Klient Testowy';
+
+  await gotoOrdersPage(page);
+
+  // Utwórz zlecenie
+  await page.fill('#o-name', orderName);
+  await page.fill('#o-client', client);
+  await page.fill('#o-model', 'Model Z');
+  await page.fill('#o-qty', '2');
+  await page.locator('#order-form').getByRole('button', { name: /Zapisz zlecenie/i }).click();
+
+  // Sprawdź czy zlecenie zostało utworzone
+  const ordersTable = page.locator('#ord-tb');
+  await expect(ordersTable).toContainText(orderName);
+  await expect(ordersTable).toContainText(client);
+
+  // Pobierz ID zlecenia
+  const orderId = await page.evaluate((name) => {
+    const state = (window as any).state;
+    const order = state.orders?.find((o: any) => o.name === name);
+    return order?.id;
+  }, orderName);
+
+  expect(orderId).toBeDefined();
+
+  // Sprawdź że zlecenie jest w localStorage
+  const { state: stateBeforeDelete } = await getPersistedState(page);
+  expect(stateBeforeDelete?.orders).toBeDefined();
+  const orderBeforeDelete = stateBeforeDelete.orders.find((o: any) => o.id === orderId);
+  expect(orderBeforeDelete).toBeDefined();
+  expect(orderBeforeDelete.name).toBe(orderName);
+
+  // Usuń zlecenie używając przycisku Usuń w tabeli
+  const deleteButton = page.locator(`[data-od="${orderId}"]`).first();
+  await deleteButton.click();
+
+  // Sprawdź że zlecenie zniknęło z tabeli (bez hard-coded timeout)
+  await expect(ordersTable).not.toContainText(orderName);
+
+  // Sprawdź że zlecenie zostało usunięte z localStorage
+  await page.waitForFunction((id) => {
+    const state = (window as any).state;
+    return !state.orders?.find((o: any) => o.id === id);
+  }, orderId);
+
+  const { state: stateAfterDelete } = await getPersistedState(page);
+  const orderAfterDelete = stateAfterDelete?.orders?.find((o: any) => o.id === orderId);
+  expect(orderAfterDelete).toBeUndefined();
+
+  // KRYTYCZNY TEST: Odśwież stronę i sprawdź czy zlecenie NIE wróciło
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await openOrdersTab(page);
+
+  // Zlecenie nie powinno być widoczne po odświeżeniu
+  await expect(page.locator('#ord-tb')).not.toContainText(orderName);
+
+  // Sprawdź ponownie localStorage po odświeżeniu
+  const { state: stateAfterReload } = await getPersistedState(page);
+  const orderAfterReload = stateAfterReload?.orders?.find((o: any) => o.id === orderId);
+  expect(orderAfterReload).toBeUndefined();
+});
