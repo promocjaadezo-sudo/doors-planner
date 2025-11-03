@@ -249,7 +249,9 @@ runner.describe('Task Grouping - Stan zwinięcia', () => {
 
   runner.it('powinien generować poprawne ID grupy', () => {
     const groupName = 'Zlecenie A';
-    const groupId = 'group-' + groupName.replace(/[^a-z0-9]/gi, '-');
+    // Sanitize group name to create valid ID
+    const sanitized = groupName.replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    const groupId = 'group-' + sanitized;
     
     assertEqual(groupId, 'group-Zlecenie-A', 'ID grupy powinno być "group-Zlecenie-A"');
   });
@@ -317,7 +319,7 @@ runner.describe('Database Synchronization - Firebase Sync Queue', () => {
     
     const delay = baseDelay * Math.pow(2, attempt);
     
-    assertEqual(delay, 4000, 'Opóźnienie dla 3. próby powinno wynosić 4000ms');
+    assertEqual(delay, 4000, 'Opóźnienie dla attempt=2 powinno wynosić 4000ms (1000 * 2^2)');
   });
 });
 

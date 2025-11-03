@@ -35,7 +35,7 @@ async function runTests() {
       fs.mkdirSync(reportDir, { recursive: true });
     }
     
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const timestamp = new Date().toISOString().replace(/[T:.]/g, '-').replace(/Z$/, '');
     const reportFile = path.join(reportDir, `grouping-sync-test-report-${timestamp}.json`);
     
     fs.writeFileSync(reportFile, JSON.stringify(results, null, 2));
