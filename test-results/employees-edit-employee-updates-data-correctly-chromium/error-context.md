@@ -1,0 +1,84 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - button "Strona główna" [ref=e4] [cursor=pointer]
+      - button "Listy" [ref=e5] [cursor=pointer]
+      - button "Zlecenia" [ref=e6] [cursor=pointer]
+      - button "Procesy" [ref=e7] [cursor=pointer]
+      - button "Katalog operacji" [ref=e8] [cursor=pointer]
+      - button "Pracownicy" [active] [ref=e9] [cursor=pointer]
+      - button "Montaż/Reklamacje" [ref=e10] [cursor=pointer]
+      - button "Harmonogram" [ref=e11] [cursor=pointer]
+      - button "Analiza" [ref=e12] [cursor=pointer]
+      - button "Raporty" [ref=e13] [cursor=pointer]
+      - button "Mapy" [ref=e14] [cursor=pointer]
+      - button "Monitoring" [ref=e15] [cursor=pointer]
+      - button "MRP" [ref=e16] [cursor=pointer]
+      - button "Magazyn" [ref=e17] [cursor=pointer]
+      - button "🔄 Sync" [ref=e18] [cursor=pointer]
+      - button "Backup" [ref=e19] [cursor=pointer]
+      - button "Ustawienia" [ref=e20] [cursor=pointer]
+    - generic [ref=e21]:
+      - textbox "Szukaj zamówień, pracowników, zadań..." [ref=e22]
+      - button "🔍 Szukaj" [ref=e23] [cursor=pointer]
+  - generic [ref=e24]:
+    - text: "⚠️ UWAGA:"
+    - generic [ref=e25]:
+      - text: Aplikacja na porcie
+      - strong [ref=e26]: "4173"
+      - text: ma
+      - strong [ref=e27]: osobne dane
+      - text: niż instancja na porcie 5500.
+      - strong [ref=e28]: ⚠️ Brak zleceń — sprawdź, czy to właściwy port lub zaimportuj backup.
+    - button "📊 Pokaż info" [ref=e29] [cursor=pointer]
+    - button "💾 Eksport" [ref=e30] [cursor=pointer]
+    - button "📁 Import" [ref=e31] [cursor=pointer]
+    - button "✕ Zamknij" [ref=e32] [cursor=pointer]
+  - generic [ref=e33]:
+    - heading "Planner Produkcji Drzwi — v5.6.27" [level=1] [ref=e35]
+    - generic [ref=e36]:
+      - generic [ref=e37]:
+        - heading "Pracownicy" [level=3] [ref=e38]
+        - button "Dodaj" [ref=e39] [cursor=pointer]
+      - table [ref=e41]:
+        - rowgroup [ref=e42]:
+          - row "Imię i nazwisko cap% h/d Akcje" [ref=e43]:
+            - cell "Imię i nazwisko" [ref=e44]
+            - cell "cap%" [ref=e45]
+            - cell "h/d" [ref=e46]
+            - cell "Akcje" [ref=e47]
+        - rowgroup [ref=e48]:
+          - row "Jan Kowalski 100 8 Edytuj Usuń" [ref=e49]:
+            - cell "Jan Kowalski" [ref=e50]
+            - cell "100" [ref=e51]
+            - cell "8" [ref=e52]
+            - cell "Edytuj Usuń" [ref=e53]:
+              - button "Edytuj" [ref=e54] [cursor=pointer]
+              - button "Usuń" [ref=e55] [cursor=pointer]
+          - row "Anna Nowak 100 8 Edytuj Usuń" [ref=e56]:
+            - cell "Anna Nowak" [ref=e57]
+            - cell "100" [ref=e58]
+            - cell "8" [ref=e59]
+            - cell "Edytuj Usuń" [ref=e60]:
+              - button "Edytuj" [ref=e61] [cursor=pointer]
+              - button "Usuń" [ref=e62] [cursor=pointer]
+          - row "Piotr Wiśniewski 100 8 Edytuj Usuń" [ref=e63]:
+            - cell "Piotr Wiśniewski" [ref=e64]
+            - cell "100" [ref=e65]
+            - cell "8" [ref=e66]
+            - cell "Edytuj Usuń" [ref=e67]:
+              - button "Edytuj" [ref=e68] [cursor=pointer]
+              - button "Usuń" [ref=e69] [cursor=pointer]
+          - row "Maria Zielińska 100 8 Edytuj Usuń" [ref=e70]:
+            - cell "Maria Zielińska" [ref=e71]
+            - cell "100" [ref=e72]
+            - cell "8" [ref=e73]
+            - cell "Edytuj Usuń" [ref=e74]:
+              - button "Edytuj" [ref=e75] [cursor=pointer]
+              - button "Usuń" [ref=e76] [cursor=pointer]
+  - button "DevLog" [ref=e77] [cursor=pointer]
+  - generic [ref=e79]: Dev log
+```

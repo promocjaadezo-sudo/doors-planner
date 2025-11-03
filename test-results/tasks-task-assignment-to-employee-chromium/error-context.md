@@ -1,0 +1,62 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - button "Strona główna" [ref=e4] [cursor=pointer]
+      - button "Listy" [active] [ref=e5] [cursor=pointer]
+      - button "Zlecenia" [ref=e6] [cursor=pointer]
+      - button "Procesy" [ref=e7] [cursor=pointer]
+      - button "Katalog operacji" [ref=e8] [cursor=pointer]
+      - button "Pracownicy" [ref=e9] [cursor=pointer]
+      - button "Montaż/Reklamacje" [ref=e10] [cursor=pointer]
+      - button "Harmonogram" [ref=e11] [cursor=pointer]
+      - button "Analiza" [ref=e12] [cursor=pointer]
+      - button "Raporty" [ref=e13] [cursor=pointer]
+      - button "Mapy" [ref=e14] [cursor=pointer]
+      - button "Monitoring" [ref=e15] [cursor=pointer]
+      - button "MRP" [ref=e16] [cursor=pointer]
+      - button "Magazyn" [ref=e17] [cursor=pointer]
+      - button "🔄 Sync" [ref=e18] [cursor=pointer]
+      - button "Backup" [ref=e19] [cursor=pointer]
+      - button "Ustawienia" [ref=e20] [cursor=pointer]
+    - generic [ref=e21]:
+      - textbox "Szukaj zamówień, pracowników, zadań..." [ref=e22]
+      - button "🔍 Szukaj" [ref=e23] [cursor=pointer]
+  - generic [ref=e24]:
+    - text: "⚠️ UWAGA:"
+    - generic [ref=e25]:
+      - text: Aplikacja na porcie
+      - strong [ref=e26]: "4173"
+      - text: ma
+      - strong [ref=e27]: osobne dane
+      - text: niż instancja na porcie 5500.
+      - strong [ref=e28]: ⚠️ Brak zleceń — sprawdź, czy to właściwy port lub zaimportuj backup.
+    - button "📊 Pokaż info" [ref=e29] [cursor=pointer]
+    - button "💾 Eksport" [ref=e30] [cursor=pointer]
+    - button "📁 Import" [ref=e31] [cursor=pointer]
+    - button "✕ Zamknij" [ref=e32] [cursor=pointer]
+  - generic [ref=e33]:
+    - heading "Planner Produkcji Drzwi — v5.6.27" [level=1] [ref=e35]
+    - generic [ref=e36]:
+      - generic [ref=e37]:
+        - generic [ref=e38]:
+          - heading "Zadania" [level=3] [ref=e39]
+          - generic [ref=e40]: "Wyświetlane zadania: 0"
+        - generic [ref=e41]:
+          - combobox [ref=e42]:
+            - option "Wszystkie zlecenia" [selected]
+          - combobox [ref=e43]:
+            - option "Wszystkie statusy" [selected]
+            - option "Do zrobienia"
+            - option "W realizacji"
+            - option "Zamknięte"
+          - button "Zbuduj raport" [ref=e44] [cursor=pointer]
+          - button "Eksport CSV" [ref=e45] [cursor=pointer]
+          - button "Pokaż podział" [ref=e46] [cursor=pointer]
+      - generic [ref=e47]: Użyj filtrów, aby zawęzić listę i szybko przygotować raporty dla brygad.
+      - button "Usuń wszystkie wyświetlone zadania (0)" [disabled] [ref=e50] [cursor=pointer]
+  - button "DevLog" [ref=e51] [cursor=pointer]
+  - generic [ref=e53]: Dev log
+```

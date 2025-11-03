@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E2E Tests Runner - Sprint 1</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      padding: 40px;
+      max-width: 800px;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: 32px;
+      color: #2d3748;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .subtitle {
+      color: #718096;
+      font-size: 16px;
+      margin-bottom: 30px;
+    }
+
+    .info-box {
+      background: #edf2f7;
+      border-left: 4px solid #4299e1;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+
+    .info-box h3 {
+      color: #2d3748;
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .info-box p {
+      color: #4a5568;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .button-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      padding: 16px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+
+    .btn-tertiary {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+    }
+
+    .btn-info {
+      background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+      color: white;
+    }
+
+    .btn-icon {
+      font-size: 24px;
+    }
+
+    .btn-label {
+      font-size: 14px;
+    }
+
+    #results {
+      margin-top: 30px;
+      padding: 20px;
+      background: #f7fafc;
+      border-radius: 8px;
+      border: 2px solid #e2e8f0;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    #results:empty {
+      display: none;
+    }
+
+    .test-result {
+      padding: 12px;
+      margin-bottom: 8px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+    }
+
+    .test-passed {
+      background: #c6f6d5;
+      border-left: 4px solid #48bb78;
+    }
+
+    .test-failed {
+      background: #fed7d7;
+      border-left: 4px solid #f56565;
+    }
+
+    .test-skipped {
+      background: #fefcbf;
+      border-left: 4px solid #ecc94b;
+    }
+
+    .summary {
+      background: #2d3748;
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 16px;
+      font-weight: 600;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 16px;
+      margin-top: 12px;
+    }
+
+    .summary-item {
+      text-align: center;
+    }
+
+    .summary-value {
+      font-size: 32px;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .summary-label {
+      font-size: 12px;
+      opacity: 0.8;
+      text-transform: uppercase;
+    }
+
+    .loader {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .loader.active {
+      display: block;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 12px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .instructions {
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .instructions h4 {
+      color: #92400e;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .instructions ol {
+      margin-left: 20px;
+      color: #78350f;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    code {
+      background: #2d3748;
+      color: #68d391;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>
+      <span>🧪</span>
+      E2E Test Runner
+    </h1>
+    <p class="subtitle">Sprint 1 - Automated Testing Suite</p>
+
+    <div class="info-box">
+      <h3>📋 O testach</h3>
+      <p>
+        Ten interfejs uruchamia automatyczne testy end-to-end dla funkcjonalności Sprint 1.
+        Zawiera <strong>15 testów</strong> sprawdzających: Real-time Sync, Detekcję Konfliktów, 
+        oraz Algorytm Auto-assign.
+      </p>
+    </div>
+
+    <div class="instructions">
+      <h4>
+        <span>💡</span>
+        Jak uruchomić testy?
+      </h4>
+      <ol>
+        <li>Wybierz przycisk odpowiadający zestawowi testów</li>
+        <li>Poczekaj na zakończenie (może potrwać kilka sekund)</li>
+        <li>Zobacz wyniki poniżej</li>
+        <li>Sprawdź konsolę przeglądarki (F12) dla szczegółów</li>
+      </ol>
+    </div>
+
+    <div class="button-group">
+      <button class="btn btn-primary" onclick="runAllTests()">
+        <span class="btn-icon">🚀</span>
+        <span>Uruchom wszystkie</span>
+        <span class="btn-label">15 testów</span>
+      </button>
+
+      <button class="btn btn-secondary" onclick="runRealtimeTests()">
+        <span class="btn-icon">🔄</span>
+        <span>Real-time Sync</span>
+        <span class="btn-label">5 testów</span>
+      </button>
+
+      <button class="btn btn-tertiary" onclick="runConflictTests()">
+        <span class="btn-icon">⚠️</span>
+        <span>Konflikty</span>
+        <span class="btn-label">9 testów</span>
+      </button>
+
+      <button class="btn btn-info" onclick="runWorkflowTest()">
+        <span class="btn-icon">🎯</span>
+        <span>Full Workflow</span>
+        <span class="btn-label">1 test E2E</span>
+      </button>
+    </div>
+
+    <div class="loader" id="loader">
+      <div class="spinner"></div>
+      <p>Uruchamianie testów...</p>
+    </div>
+
+    <div id="results"></div>
+  </div>
+
+  <!-- Załaduj główną aplikację (tylko state i podstawowe funkcje) -->
+  <script>
+    // Symulujemy minimalne środowisko aplikacji do testów
+    window.state = {
+      tasks: [],
+      employees: [],
+      orders: [],
+      processes: [],
+      operationsCatalog: [],
+      storage: { mode: 'localStorage' }
+    };
+
+    // Mock funkcji save/load
+    window.save = function() {
+      localStorage.setItem('doors-planner-state', JSON.stringify(state));
+    };
+
+    window.load = function() {
+      const saved = localStorage.getItem('doors-planner-state');
+      if (saved) {
+        Object.assign(state, JSON.parse(saved));
+      }
+    };
+
+    // Załaduj state przy starcie
+    window.load();
+  </script>
+
+  <!-- Załaduj moduły do testowania -->
+  <script src="../js/firebase-realtime-sync.js"></script>
+  <script src="../js/resource-conflict-detector.js"></script>
+  <script src="../js/auto-assign-algorithm.js"></script>
+  <script src="e2e-test-suite.js"></script>
+
+  <script>
+    const resultsDiv = document.getElementById('results');
+    const loader = document.getElementById('loader');
+
+    function showLoader() {
+      loader.classList.add('active');
+      resultsDiv.innerHTML = '';
+    }
+
+    function hideLoader() {
+      loader.classList.remove('active');
+    }
+
+    function displayResults(results) {
+      hideLoader();
+      
+      let html = '';
+      
+      // Test results
+      results.details.forEach(test => {
+        const statusClass = test.status === 'passed' ? 'test-passed' :
+                           test.status === 'failed' ? 'test-failed' : 'test-skipped';
+        const icon = test.status === 'passed' ? '✅' :
+                    test.status === 'failed' ? '❌' : '⚠️';
+        
+        html += `
+          <div class="test-result ${statusClass}">
+            ${icon} ${test.description}
+            ${test.error ? `<br><small style="color:#c53030">${test.error}</small>` : ''}
+          </div>
+        `;
+      });
+
+      // Summary
+      const passRate = results.total > 0 ? 
+        Math.round((results.passed / (results.total - results.skipped)) * 100) : 0;
+      
+      const passRateColor = passRate === 100 ? '#48bb78' :
+                           passRate >= 80 ? '#ecc94b' : '#f56565';
+
+      html += `
+        <div class="summary">
+          <div style="font-size:18px;margin-bottom:12px;text-align:center">
+            📊 Podsumowanie testów
+          </div>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <span class="summary-value">${results.total}</span>
+              <span class="summary-label">Wszystkie</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-value" style="color:#68d391">${results.passed}</span>
+              <span class="summary-label">Passed</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-value" style="color:#fc8181">${results.failed}</span>
+              <span class="summary-label">Failed</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-value" style="color:#f6e05e">${results.skipped}</span>
+              <span class="summary-label">Skipped</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-value" style="color:${passRateColor}">${passRate}%</span>
+              <span class="summary-label">Pass Rate</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      resultsDiv.innerHTML = html;
+
+      // Log to console
+      console.log('🧪 Test Results:', results);
+    }
+
+    async function runAllTests() {
+      showLoader();
+      try {
+        const results = await window.e2eTests.runAllTests();
+        displayResults(results);
+      } catch (error) {
+        hideLoader();
+        resultsDiv.innerHTML = `
+          <div class="test-result test-failed">
+            ❌ Błąd uruchamiania testów: ${error.message}
+          </div>
+        `;
+        console.error('Test error:', error);
+      }
+    }
+
+    async function runRealtimeTests() {
+      showLoader();
+      try {
+        await window.e2eTests.suites.realtimeSync.run();
+        const results = {
+          total: window.e2eTests.suites.realtimeSync.tests.length,
+          passed: window.e2eTests.suites.realtimeSync.tests.filter(t => t.status === 'passed').length,
+          failed: window.e2eTests.suites.realtimeSync.tests.filter(t => t.status === 'failed').length,
+          skipped: window.e2eTests.suites.realtimeSync.tests.filter(t => t.status === 'skipped').length,
+          details: window.e2eTests.suites.realtimeSync.tests.map(t => ({
+            description: t.description,
+            status: t.status,
+            error: t.error
+          }))
+        };
+        displayResults(results);
+      } catch (error) {
+        hideLoader();
+        resultsDiv.innerHTML = `
+          <div class="test-result test-failed">
+            ❌ Błąd: ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    async function runConflictTests() {
+      showLoader();
+      try {
+        await window.e2eTests.suites.conflicts.run();
+        const results = {
+          total: window.e2eTests.suites.conflicts.tests.length,
+          passed: window.e2eTests.suites.conflicts.tests.filter(t => t.status === 'passed').length,
+          failed: window.e2eTests.suites.conflicts.tests.filter(t => t.status === 'failed').length,
+          skipped: window.e2eTests.suites.conflicts.tests.filter(t => t.status === 'skipped').length,
+          details: window.e2eTests.suites.conflicts.tests.map(t => ({
+            description: t.description,
+            status: t.status,
+            error: t.error
+          }))
+        };
+        displayResults(results);
+      } catch (error) {
+        hideLoader();
+        resultsDiv.innerHTML = `
+          <div class="test-result test-failed">
+            ❌ Błąd: ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    async function runWorkflowTest() {
+      showLoader();
+      try {
+        await window.e2eTests.suites.fullWorkflow.run();
+        const results = {
+          total: window.e2eTests.suites.fullWorkflow.tests.length,
+          passed: window.e2eTests.suites.fullWorkflow.tests.filter(t => t.status === 'passed').length,
+          failed: window.e2eTests.suites.fullWorkflow.tests.filter(t => t.status === 'failed').length,
+          skipped: window.e2eTests.suites.fullWorkflow.tests.filter(t => t.status === 'skipped').length,
+          details: window.e2eTests.suites.fullWorkflow.tests.map(t => ({
+            description: t.description,
+            status: t.status,
+            error: t.error
+          }))
+        };
+        displayResults(results);
+      } catch (error) {
+        hideLoader();
+        resultsDiv.innerHTML = `
+          <div class="test-result test-failed">
+            ❌ Błąd: ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    // Informacja o załadowaniu
+    console.log('🧪 E2E Test Runner załadowany');
+    console.log('📦 Dostępne moduły:');
+    console.log('  - Firebase Sync:', !!window.firebaseRealtimeSync);
+    console.log('  - Conflict Detector:', !!window.resourceConflictDetector);
+    console.log('  - Auto-assign:', !!window.autoAssignAlgorithm);
+    console.log('  - E2E Tests:', !!window.e2eTests);
+  </script>
+</body>
+</html>

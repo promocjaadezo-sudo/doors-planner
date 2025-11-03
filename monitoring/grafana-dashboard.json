@@ -1,0 +1,643 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "centralny-magazyn-stanu",
+    "title": "CentralnyMagazynStanu - Monitoring Produkcyjny",
+    "tags": ["javascript", "state-management", "production"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "10s",
+    
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    
+    "timepicker": {
+      "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m"],
+      "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d", "30d"]
+    },
+
+    "templating": {
+      "list": [
+        {
+          "name": "operation_type",
+          "type": "query",
+          "label": "Typ operacji",
+          "query": "label_values(app_operations_total, operation_type)",
+          "multi": true,
+          "includeAll": true,
+          "allValue": ".*"
+        },
+        {
+          "name": "status",
+          "type": "query",
+          "label": "Status",
+          "query": "label_values(app_operations_total, status)",
+          "multi": true,
+          "includeAll": true,
+          "allValue": ".*"
+        }
+      ]
+    },
+
+    "panels": [
+      {
+        "id": 1,
+        "gridPos": {"x": 0, "y": 0, "w": 24, "h": 1},
+        "type": "row",
+        "title": "Przegląd Systemu",
+        "collapsed": false
+      },
+
+      {
+        "id": 2,
+        "gridPos": {"x": 0, "y": 1, "w": 4, "h": 4},
+        "type": "stat",
+        "title": "Całkowita liczba operacji",
+        "targets": [
+          {
+            "expr": "sum(app_operations_total)",
+            "refId": "A",
+            "legendFormat": "Operacje"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value",
+          "orientation": "auto",
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 1000, "color": "yellow"},
+                {"value": 10000, "color": "red"}
+              ]
+            },
+            "unit": "short"
+          }
+        }
+      },
+
+      {
+        "id": 3,
+        "gridPos": {"x": 4, "y": 1, "w": 4, "h": 4},
+        "type": "stat",
+        "title": "Całkowita liczba błędów",
+        "targets": [
+          {
+            "expr": "sum(app_errors_total)",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value",
+          "orientation": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 10, "color": "yellow"},
+                {"value": 50, "color": "red"}
+              ]
+            },
+            "unit": "short"
+          }
+        }
+      },
+
+      {
+        "id": 4,
+        "gridPos": {"x": 8, "y": 1, "w": 4, "h": 4},
+        "type": "stat",
+        "title": "Użycie pamięci",
+        "targets": [
+          {
+            "expr": "app_memory_usage_bytes / 1024 / 1024",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 100, "color": "yellow"},
+                {"value": 200, "color": "red"}
+              ]
+            },
+            "unit": "decmbytes"
+          }
+        }
+      },
+
+      {
+        "id": 5,
+        "gridPos": {"x": 12, "y": 1, "w": 4, "h": 4},
+        "type": "stat",
+        "title": "Rozmiar historii",
+        "targets": [
+          {
+            "expr": "app_history_size",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 800, "color": "yellow"},
+                {"value": 950, "color": "red"}
+              ]
+            },
+            "max": 1000,
+            "unit": "short"
+          }
+        }
+      },
+
+      {
+        "id": 6,
+        "gridPos": {"x": 16, "y": 1, "w": 4, "h": 4},
+        "type": "stat",
+        "title": "Aktywni użytkownicy",
+        "targets": [
+          {
+            "expr": "app_active_users",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "none",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "short"
+          }
+        }
+      },
+
+      {
+        "id": 7,
+        "gridPos": {"x": 20, "y": 1, "w": 4, "h": 4},
+        "type": "stat",
+        "title": "Czas działania",
+        "targets": [
+          {
+            "expr": "app_uptime_seconds / 3600",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "graphMode": "none",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "h",
+            "decimals": 1
+          }
+        }
+      },
+
+      {
+        "id": 10,
+        "gridPos": {"x": 0, "y": 5, "w": 24, "h": 1},
+        "type": "row",
+        "title": "Operacje",
+        "collapsed": false
+      },
+
+      {
+        "id": 11,
+        "gridPos": {"x": 0, "y": 6, "w": 12, "h": 8},
+        "type": "timeseries",
+        "title": "Operacje w czasie (rate)",
+        "targets": [
+          {
+            "expr": "rate(app_operations_total{operation_type=~\"$operation_type\", status=~\"$status\"}[1m])",
+            "refId": "A",
+            "legendFormat": "{{operation_type}} ({{status}})"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10,
+              "showPoints": "never"
+            },
+            "color": {"mode": "palette-classic"},
+            "unit": "ops"
+          }
+        },
+        "options": {
+          "legend": {
+            "displayMode": "table",
+            "placement": "bottom",
+            "calcs": ["mean", "max"]
+          },
+          "tooltip": {"mode": "multi"}
+        }
+      },
+
+      {
+        "id": 12,
+        "gridPos": {"x": 12, "y": 6, "w": 12, "h": 8},
+        "type": "timeseries",
+        "title": "Błędy w czasie (rate)",
+        "targets": [
+          {
+            "expr": "rate(app_errors_total{error_type=~\".*\"}[1m])",
+            "refId": "A",
+            "legendFormat": "{{error_type}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "bars",
+              "fillOpacity": 80
+            },
+            "color": {"mode": "palette-classic"},
+            "unit": "errors/min"
+          },
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "CRITICAL"},
+              "properties": [
+                {"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}}
+              ]
+            }
+          ]
+        }
+      },
+
+      {
+        "id": 20,
+        "gridPos": {"x": 0, "y": 14, "w": 24, "h": 1},
+        "type": "row",
+        "title": "Wydajność",
+        "collapsed": false
+      },
+
+      {
+        "id": 21,
+        "gridPos": {"x": 0, "y": 15, "w": 12, "h": 8},
+        "type": "heatmap",
+        "title": "Histogram czasu operacji",
+        "targets": [
+          {
+            "expr": "rate(app_operation_duration_seconds_bucket[5m])",
+            "refId": "A",
+            "format": "heatmap",
+            "legendFormat": "{{le}}"
+          }
+        ],
+        "options": {
+          "calculate": false,
+          "color": {
+            "mode": "spectrum",
+            "scheme": "Spectral",
+            "exponent": 0.5
+          },
+          "yAxis": {
+            "unit": "s",
+            "decimals": 3
+          }
+        }
+      },
+
+      {
+        "id": 22,
+        "gridPos": {"x": 12, "y": 15, "w": 12, "h": 8},
+        "type": "timeseries",
+        "title": "Percentyle czasu odpowiedzi",
+        "targets": [
+          {
+            "expr": "app_response_time_seconds{quantile=\"0.5\"}",
+            "refId": "A",
+            "legendFormat": "p50 (mediana)"
+          },
+          {
+            "expr": "app_response_time_seconds{quantile=\"0.9\"}",
+            "refId": "B",
+            "legendFormat": "p90"
+          },
+          {
+            "expr": "app_response_time_seconds{quantile=\"0.95\"}",
+            "refId": "C",
+            "legendFormat": "p95"
+          },
+          {
+            "expr": "app_response_time_seconds{quantile=\"0.99\"}",
+            "refId": "D",
+            "legendFormat": "p99"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 0
+            },
+            "color": {"mode": "palette-classic"},
+            "unit": "s"
+          },
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "p99"},
+              "properties": [
+                {"id": "custom.lineWidth", "value": 2}
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "displayMode": "table",
+            "placement": "bottom",
+            "calcs": ["mean", "lastNotNull"]
+          }
+        }
+      },
+
+      {
+        "id": 30,
+        "gridPos": {"x": 0, "y": 23, "w": 24, "h": 1},
+        "type": "row",
+        "title": "Zasoby",
+        "collapsed": false
+      },
+
+      {
+        "id": 31,
+        "gridPos": {"x": 0, "y": 24, "w": 12, "h": 6},
+        "type": "timeseries",
+        "title": "Użycie pamięci w czasie",
+        "targets": [
+          {
+            "expr": "app_memory_usage_bytes / 1024 / 1024",
+            "refId": "A",
+            "legendFormat": "Pamięć użyta (MB)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 20
+            },
+            "color": {"mode": "continuous-BlYlRd"},
+            "unit": "decmbytes",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 100, "color": "yellow"},
+                {"value": 200, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+
+      {
+        "id": 32,
+        "gridPos": {"x": 12, "y": 24, "w": 12, "h": 6},
+        "type": "timeseries",
+        "title": "Rozmiar historii w czasie",
+        "targets": [
+          {
+            "expr": "app_history_size",
+            "refId": "A",
+            "legendFormat": "Wpisy w historii"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 20
+            },
+            "color": {"mode": "continuous-GrYlRd"},
+            "unit": "short",
+            "max": 1000,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 800, "color": "yellow"},
+                {"value": 950, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+
+      {
+        "id": 40,
+        "gridPos": {"x": 0, "y": 30, "w": 24, "h": 1},
+        "type": "row",
+        "title": "Dane Biznesowe",
+        "collapsed": false
+      },
+
+      {
+        "id": 41,
+        "gridPos": {"x": 0, "y": 31, "w": 6, "h": 6},
+        "type": "timeseries",
+        "title": "Zamówienia",
+        "targets": [
+          {
+            "expr": "app_data_counts{entity_type=\"orders\"}",
+            "refId": "A",
+            "legendFormat": "Liczba zamówień"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10
+            },
+            "color": {"mode": "palette-classic"},
+            "unit": "short"
+          }
+        }
+      },
+
+      {
+        "id": 42,
+        "gridPos": {"x": 6, "y": 31, "w": 6, "h": 6},
+        "type": "timeseries",
+        "title": "Zadania",
+        "targets": [
+          {
+            "expr": "app_data_counts{entity_type=\"tasks\"}",
+            "refId": "A",
+            "legendFormat": "Liczba zadań"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10
+            },
+            "color": {"mode": "palette-classic"},
+            "unit": "short"
+          }
+        }
+      },
+
+      {
+        "id": 43,
+        "gridPos": {"x": 12, "y": 31, "w": 6, "h": 6},
+        "type": "timeseries",
+        "title": "Pracownicy",
+        "targets": [
+          {
+            "expr": "app_data_counts{entity_type=\"employees\"}",
+            "refId": "A",
+            "legendFormat": "Liczba pracowników"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10
+            },
+            "color": {"mode": "palette-classic"},
+            "unit": "short"
+          }
+        }
+      },
+
+      {
+        "id": 44,
+        "gridPos": {"x": 18, "y": 31, "w": 6, "h": 6},
+        "type": "stat",
+        "title": "Rate zapisów",
+        "targets": [
+          {
+            "expr": "rate(app_saves_total[5m])",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 0.001, "color": "yellow"},
+                {"value": 0.01, "color": "green"}
+              ]
+            },
+            "unit": "ops",
+            "decimals": 3
+          }
+        },
+        "options": {
+          "graphMode": "area",
+          "colorMode": "background"
+        }
+      },
+
+      {
+        "id": 50,
+        "gridPos": {"x": 0, "y": 37, "w": 24, "h": 1},
+        "type": "row",
+        "title": "Histogram czasu zapisu",
+        "collapsed": false
+      },
+
+      {
+        "id": 51,
+        "gridPos": {"x": 0, "y": 38, "w": 24, "h": 8},
+        "type": "heatmap",
+        "title": "Rozkład czasu operacji zapisu",
+        "targets": [
+          {
+            "expr": "rate(app_save_duration_seconds_bucket[5m])",
+            "refId": "A",
+            "format": "heatmap",
+            "legendFormat": "{{le}}"
+          }
+        ],
+        "options": {
+          "calculate": false,
+          "color": {
+            "mode": "spectrum",
+            "scheme": "Turbo"
+          },
+          "yAxis": {
+            "unit": "s",
+            "decimals": 3
+          },
+          "cellGap": 2,
+          "tooltip": {
+            "show": true,
+            "yHistogram": false
+          }
+        }
+      }
+    ],
+
+    "annotations": {
+      "list": [
+        {
+          "name": "Alerty",
+          "datasource": "Prometheus",
+          "enable": true,
+          "expr": "ALERTS{alertstate=\"firing\"}",
+          "iconColor": "red",
+          "tagKeys": "alertname,severity"
+        },
+        {
+          "name": "Deploymenty",
+          "datasource": "Prometheus",
+          "enable": true,
+          "expr": "changes(app_uptime_seconds[5m]) > 0",
+          "iconColor": "blue"
+        }
+      ]
+    }
+  }
+}

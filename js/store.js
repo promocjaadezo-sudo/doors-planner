@@ -452,6 +452,11 @@
   
   function saveState(shouldSaveToDb = false){ 
     try{ 
+      // Automatyczna kopia zapasowa przed zapisem (jeśli BackupManager dostępny)
+      if (typeof window.BackupManager !== 'undefined' && window.BackupManager.create) {
+        window.BackupManager.create('auto-before-save');
+      }
+      
       // Sprawdź czy kluczowe pola są tablicami
       if (!Array.isArray(state.tasks)) {
         console.error('state.tasks nie jest tablicą przed zapisem!', state.tasks);

@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Walidacji JSON - Centralny Magazyn Stanu</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+      border-radius: 16px;
+      padding: 40px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+    h1 {
+      font-size: 32px;
+      margin-bottom: 24px;
+      background: linear-gradient(135deg, #3b82f6, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .info-box {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid #3b82f6;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+    .info-box strong {
+      color: #3b82f6;
+    }
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #2563eb;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+    }
+    button.success {
+      background: #10b981;
+    }
+    button.success:hover {
+      background: #059669;
+    }
+    button.danger {
+      background: #ef4444;
+    }
+    button.danger:hover {
+      background: #dc2626;
+    }
+    .test-section {
+      background: rgba(15, 23, 42, 0.8);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(51, 65, 85, 0.6);
+    }
+    .test-section h3 {
+      margin-bottom: 12px;
+      color: #e2e8f0;
+      font-size: 18px;
+    }
+    .test-item {
+      padding: 16px;
+      margin: 12px 0;
+      background: rgba(30, 41, 59, 0.6);
+      border-radius: 8px;
+      border-left: 4px solid;
+    }
+    .test-item.pass {
+      border-left-color: #10b981;
+    }
+    .test-item.fail {
+      border-left-color: #ef4444;
+    }
+    .test-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .test-title {
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .test-badge {
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .test-badge.pass {
+      background: #10b981;
+      color: white;
+    }
+    .test-badge.fail {
+      background: #ef4444;
+      color: white;
+    }
+    .test-description {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+    .test-json {
+      background: rgba(15, 23, 42, 0.8);
+      border-radius: 4px;
+      padding: 12px;
+      font-family: 'Consolas', monospace;
+      font-size: 11px;
+      margin-top: 8px;
+      overflow-x: auto;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    .test-result {
+      margin-top: 8px;
+      padding: 8px;
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .summary {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid #10b981;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 24px;
+      text-align: center;
+    }
+    .summary.fail {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: #ef4444;
+    }
+    .summary h3 {
+      color: #10b981;
+      margin-bottom: 12px;
+      font-size: 24px;
+    }
+    .summary.fail h3 {
+      color: #ef4444;
+    }
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .summary-stat {
+      background: rgba(15, 23, 42, 0.6);
+      padding: 12px;
+      border-radius: 6px;
+    }
+    .summary-value {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .summary-label {
+      font-size: 11px;
+      color: #94a3b8;
+      text-transform: uppercase;
+    }
+    textarea {
+      width: 100%;
+      min-height: 200px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 6px;
+      padding: 12px;
+      color: #e2e8f0;
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+      resize: vertical;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>✅ Test Walidacji JSON</h1>
+    
+    <div class="info-box">
+      <strong>Rozszerzona walidacja importujZJSON():</strong><br>
+      • Sprawdza strukturę importowanych danych<br>
+      • Waliduje typy wszystkich pól<br>
+      • Ustawia status 'error' przy błędach<br>
+      • Zapisuje komunikat w ostatniBlad<br>
+      • Obsługuje starą i nową strukturę wiadomości
+    </div>
+
+    <!-- Kontrolki -->
+    <div class="controls">
+      <button onclick="runAllTests()" class="success">🧪 Uruchom Wszystkie Testy</button>
+      <button onclick="testCustomJSON()">📝 Test Własnego JSON</button>
+      <button onclick="resetState()">🔄 Reset Stanu</button>
+      <button onclick="window.location.href='diagnostyka.html'">🔍 Diagnostyka</button>
+    </div>
+
+    <!-- Test własnego JSON -->
+    <div class="test-section" id="customTestSection" style="display: none;">
+      <h3>📝 Testuj Własny JSON</h3>
+      <textarea id="customJSON" placeholder='Wklej swój JSON tutaj, np:\n{\n  "historiaCzatu": [],\n  "statusAI": "idle",\n  "aktywnaSesjaId": null\n}'></textarea>
+      <div style="margin-top: 12px;">
+        <button onclick="importCustomJSON()" class="success">⬆️ Importuj JSON</button>
+        <button onclick="document.getElementById('customTestSection').style.display='none'">❌ Zamknij</button>
+      </div>
+      <div id="customResult" style="margin-top: 12px;"></div>
+    </div>
+
+    <!-- Wyniki testów -->
+    <div class="test-section" id="testResults" style="display: none;">
+      <h3>📊 Wyniki Testów Automatycznych</h3>
+      <div id="testItemsContainer"></div>
+    </div>
+
+    <!-- Podsumowanie -->
+    <div class="summary" id="summary" style="display: none;">
+      <h3 id="summaryTitle">✅ Wszystkie Testy Zaliczone!</h3>
+      <p id="summaryText">Walidacja JSON działa poprawnie.</p>
+      <div class="summary-stats">
+        <div class="summary-stat">
+          <div class="summary-value" style="color: #10b981;" id="passedCount">0</div>
+          <div class="summary-label">Zaliczone</div>
+        </div>
+        <div class="summary-stat">
+          <div class="summary-value" style="color: #ef4444;" id="failedCount">0</div>
+          <div class="summary-label">Niezaliczone</div>
+        </div>
+        <div class="summary-stat">
+          <div class="summary-value" style="color: #3b82f6;" id="totalCount">0</div>
+          <div class="summary-label">Razem</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="CentralnyMagazynStanu.js"></script>
+  <script>
+    const magazyn = CentralnyMagazynStanu.getInstance();
+    const tests = [];
+
+    function resetState() {
+      magazyn.resetujStan();
+      alert('✅ Stan zresetowany');
+    }
+
+    function testCustomJSON() {
+      document.getElementById('customTestSection').style.display = 'block';
+      document.getElementById('customJSON').value = JSON.stringify({
+        historiaCzatu: [
+          { tekst: "Test wiadomości", timestamp: "2025-11-02T12:00:00.000Z" }
+        ],
+        statusAI: "idle",
+        aktywnaSesjaId: "test-123"
+      }, null, 2);
+    }
+
+    function importCustomJSON() {
+      const jsonString = document.getElementById('customJSON').value;
+      const resultDiv = document.getElementById('customResult');
+      
+      try {
+        const success = magazyn.importujZJSON(jsonString);
+        const stan = magazyn.getStan();
+        
+        if (success) {
+          resultDiv.innerHTML = `
+            <div class="test-item pass">
+              <div class="test-header">
+                <div class="test-title">✅ Import Zakończony Sukcesem</div>
+              </div>
+              <div class="test-description">JSON został zaimportowany i zwalidowany poprawnie</div>
+              <div class="test-result">
+                Status: ${stan.statusAI}<br>
+                Wiadomości: ${stan.historiaCzatu.length}<br>
+                Sesja: ${stan.aktywnaSesjaId || 'brak'}
+              </div>
+            </div>
+          `;
+        } else {
+          resultDiv.innerHTML = `
+            <div class="test-item fail">
+              <div class="test-header">
+                <div class="test-title">❌ Import Nieudany</div>
+              </div>
+              <div class="test-description">Walidacja wykryła błędy w strukturze JSON</div>
+              <div class="test-result">
+                Status: ${stan.statusAI}<br>
+                Błąd: ${stan.ostatniBlad || 'Nieznany błąd'}
+              </div>
+            </div>
+          `;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <div class="test-item fail">
+            <div class="test-header">
+              <div class="test-title">❌ Błąd Importu</div>
+            </div>
+            <div class="test-result">
+              ${error.message}
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    async function runAllTests() {
+      tests.length = 0;
+      magazyn.resetujStan();
+      
+      console.log('🧪 Rozpoczynam testy walidacji JSON...');
+
+      // Test 1: Poprawny JSON
+      await testValidJSON();
+
+      // Test 2: historiaCzatu nie jest tablicą
+      await testInvalidHistoriaType();
+
+      // Test 3: statusAI nie jest stringiem
+      await testInvalidStatusType();
+
+      // Test 4: statusAI ma nieprawidłową wartość
+      await testInvalidStatusValue();
+
+      // Test 5: aktywnaSesjaId ma nieprawidłowy typ
+      await testInvalidSessionType();
+
+      // Test 6: historiaCzatu zawiera nieprawidłowe obiekty
+      await testInvalidHistoriaItems();
+
+      // Test 7: Nieprawidłowy JSON (parsing error)
+      await testMalformedJSON();
+
+      // Test 8: Stan nie jest obiektem
+      await testNonObjectState();
+
+      // Test 9: Wsteczna kompatybilność (stare stringi w historii)
+      await testBackwardCompatibility();
+
+      // Test 10: ostatniBlad ma nieprawidłowy typ
+      await testInvalidErrorType();
+
+      displayResults();
+    }
+
+    async function testValidJSON() {
+      const test = {
+        name: 'Test 1: Poprawny JSON',
+        description: 'Import poprawnie sformatowanego JSON powinien się powieść',
+        pass: false,
+        json: null,
+        details: ''
+      };
+
+      const validJSON = JSON.stringify({
+        historiaCzatu: [
+          { tekst: "Wiadomość 1", timestamp: "2025-11-02T10:00:00.000Z" },
+          { tekst: "Wiadomość 2", timestamp: "2025-11-02T10:01:00.000Z" }
+        ],
+        statusAI: "processing",
+        aktywnaSesjaId: "sesja-123"
+      });
+
+      test.json = validJSON;
+      const result = magazyn.importujZJSON(validJSON);
+      const stan = magazyn.getStan();
+
+      test.pass = result === true && stan.statusAI === 'processing';
+      test.details = test.pass 
+        ? `✅ Import zakończony sukcesem` 
+        : `❌ Import nieudany. Status: ${stan.statusAI}, Błąd: ${stan.ostatniBlad}`;
+
+      tests.push(test);
+      magazyn.resetujStan();
+    }
+
+    async function testInvalidHistoriaType() {
+      const test = {
+        name: 'Test 2: historiaCzatu nie jest tablicą',
+        description: 'Import powinien zakończyć się błędem',
+        pass: false,
+        json: null,
+        details: ''
+      };
+
+      const invalidJSON = JSON.stringify({
+        historiaCzatu: "to powinno być tablicą",
+        statusAI: "idle"
+      });
+
+      test.json = invalidJSON;
+      const result = magazyn.importujZJSON(invalidJSON);
+      const stan = magazyn.getStan();
+
+      test.pass = result === false && stan.statusAI === 'error';
+      test.details = test.pass 
+        ? `✅ Poprawnie odrzucono: ${stan.ostatniBlad}` 
+        : `❌ Nie wykryto błędu. Status: ${stan.statusAI}`;
+
+      tests.push(test);
+      magazyn.resetujStan();
+    }
+
+    async function testInvalidStatusType() {
+      const test = {
+        name: 'Test 3: statusAI nie jest stringiem',
+        description: 'Import powinien zakończyć się błędem',
+        pass: false,
+        json: null,
+        details: ''
+      };
+
+      const invalidJSON = JSON.stringify({
+        historiaCzatu: [],
+        statusAI: 123
+      });
+
+      test.json = invalidJSON;
+      const result = magazyn.importujZJSON(invalidJSON);
+      const stan = magazyn.getStan();
+
+      test.pass = result === false && stan.statusAI === 'error';
+      test.details = test.pass 
+        ? `✅ Poprawnie odrzucono: ${stan.ostatniBlad}` 
+        : `❌ Nie wykryto błędu. Status: ${stan.statusAI}`;
+
+      tests.push(test);
+      magazyn.resetujStan();
+    }
+
+    async function testInvalidStatusValue() {
+      const test = {
+        name: 'Test 4: statusAI ma nieprawidłową wartość',
+        description: 'Dozwolone: idle, processing, error',
+        pass: false,
+        json: null,
+        details: ''
+      };
+
+      const invalidJSON = JSON.stringify({
+        historiaCzatu: [],
+        statusAI: "unknown_status"
+      });
+
+      test.json = invalidJSON;
+      const result = magazyn.importujZJSON(invalidJSON);
+      const stan = magazyn.getStan();
+
+      test.pass = result === false && stan.statusAI === 'error';
+      test.details = test.pass 
+        ? `✅ Poprawnie odrzucono: ${stan.ostatniBlad}` 
+        : `❌ Nie wykryto błędu. Status: ${stan.statusAI}`;
+
+      tests.push(test);
+      magazyn.resetujStan();
+    }
+
+    async function testInvalidSessionType() {
+      const test = {
+        name: 'Test 5: aktywnaSesjaId ma nieprawidłowy typ',
+        description: 'Powinno być string lub null',
+        pass: false,
+        json: null,
+        details: ''
+      };
+
+      const invalidJSON = JSON.stringify({
+        historiaCzatu: [],
+        statusAI: "idle",
+        aktywnaSesjaId: 12345
+      });
+
+      test.json = invalidJSON;
+      const result = magazyn.importujZJSON(invalidJSON);
+      const stan = magazyn.getStan();
+
+      test.pass = result === false && stan.statusAI === 'error';
+      test.details = test.pass 
+        ? `✅ Poprawnie odrzucono: ${stan.ostatniBlad}` 
+        : `❌ Nie wykryto błędu. Status: ${stan.statusAI}`;
+
+      tests.push(test);
+      magazyn.resetujStan();
+    }
+
+    async function testInvalidHistoriaItems() {
+      const test = {
+        name: 'Test 6: Nieprawidłowe obiekty w historiaCzatu',
+        description: 'Obiekt bez pola tekst lub timestamp',
+        pass: false,
+        json: null,
+        details: ''
+      };
+
+      const invalidJSON = JSON.stringify({
+        historiaCzatu: [
+          { tekst: "OK", timestamp: "2025-11-02T10:00:00.000Z" },
+          { message: "Źle - brak pola tekst", time: "2025-11-02T10:01:00.000Z" }
+        ],
+        statusAI: "idle"
+      });
+
+      test.json = invalidJSON;
+      const result = magazyn.importujZJSON(invalidJSON);
+      const stan = magazyn.getStan();
+
+      test.pass = result === false && stan.statusAI === 'error';
+      test.details = test.pass 
+        ? `✅ Poprawnie odrzucono: ${stan.ostatniBlad}` 
+        : `❌ Nie wykryto błędu. Status: ${stan.statusAI}`;
+
+      tests.push(test);
+      magazyn.resetujStan();
+    }
+
+    async function testMalformedJSON() {
+      const test = {
+        name: 'Test 7: Nieprawidłowy JSON (syntax error)',
+        description: 'Źle sformatowany JSON powinien być odrzucony',
+        pass: false,
+        json: null,
+        details: ''
+      };
+
+      const malformedJSON = '{ "historiaCzatu": [, "statusAI": "idle" }';
+
+      test.json = malformedJSON;
+      const result = magazyn.importujZJSON(malformedJSON);
+      const stan = magazyn.getStan();
+
+      test.pass = result === false && stan.statusAI === 'error';
+      test.details = test.pass 
+        ? `✅ Poprawnie odrzucono: ${stan.ostatniBlad}` 
+        : `❌ Nie wykryto błędu parsowania`;
+
+      tests.push(test);
+      magazyn.resetujStan();
+    }
+
+    async function testNonObjectState() {
+      const test = {
+        name: 'Test 8: Stan nie jest obiektem',
+        description: 'JSON musi być obiektem, nie tablicą czy prymitywem',
+        pass: false,
+        json: null,
+        details: ''
+      };
+
+      const invalidJSON = JSON.stringify(["to", "jest", "tablica"]);
+
+      test.json = invalidJSON;
+      const result = magazyn.importujZJSON(invalidJSON);
+      const stan = magazyn.getStan();
+
+      test.pass = result === false && stan.statusAI === 'error';
+      test.details = test.pass 
+        ? `✅ Poprawnie odrzucono: ${stan.ostatniBlad}` 
+        : `❌ Nie wykryto błędu. Status: ${stan.statusAI}`;
+
+      tests.push(test);
+      magazyn.resetujStan();
+    }
+
+    async function testBackwardCompatibility() {
+      const test = {
+        name: 'Test 9: Wsteczna kompatybilność',
+        description: 'Stare stringi w historiaCzatu powinny być akceptowane',
+        pass: false,
+        json: null,
+        details: ''
+      };
+
+      const oldFormatJSON = JSON.stringify({
+        historiaCzatu: [
+          "Stara wiadomość 1",
+          "Stara wiadomość 2"
+        ],
+        statusAI: "idle"
+      });
+
+      test.json = oldFormatJSON;
+      const result = magazyn.importujZJSON(oldFormatJSON);
+      const stan = magazyn.getStan();
+
+      test.pass = result === true && stan.historiaCzatu.length === 2;
+      test.details = test.pass 
+        ? `✅ Stary format zaakceptowany` 
+        : `❌ Stary format odrzucony. Status: ${stan.statusAI}, Błąd: ${stan.ostatniBlad}`;
+
+      tests.push(test);
+      magazyn.resetujStan();
+    }
+
+    async function testInvalidErrorType() {
+      const test = {
+        name: 'Test 10: ostatniBlad nieprawidłowy typ',
+        description: 'ostatniBlad musi być string, null lub undefined',
+        pass: false,
+        json: null,
+        details: ''
+      };
+
+      const invalidJSON = JSON.stringify({
+        historiaCzatu: [],
+        statusAI: "error",
+        ostatniBlad: { error: "to powinien być string" }
+      });
+
+      test.json = invalidJSON;
+      const result = magazyn.importujZJSON(invalidJSON);
+      const stan = magazyn.getStan();
+
+      test.pass = result === false && stan.statusAI === 'error';
+      test.details = test.pass 
+        ? `✅ Poprawnie odrzucono: ${stan.ostatniBlad}` 
+        : `❌ Nie wykryto błędu. Status: ${stan.statusAI}`;
+
+      tests.push(test);
+      magazyn.resetujStan();
+    }
+
+    function displayResults() {
+      const resultsDiv = document.getElementById('testResults');
+      const itemsContainer = document.getElementById('testItemsContainer');
+      
+      resultsDiv.style.display = 'block';
+      
+      itemsContainer.innerHTML = tests.map((test, index) => `
+        <div class="test-item ${test.pass ? 'pass' : 'fail'}">
+          <div class="test-header">
+            <div class="test-title">${test.name}</div>
+            <div class="test-badge ${test.pass ? 'pass' : 'fail'}">${test.pass ? 'ZALICZONY' : 'NIEZALICZONY'}</div>
+          </div>
+          <div class="test-description">${test.description}</div>
+          <div class="test-result">${test.details}</div>
+          ${test.json ? `<div class="test-json">${test.json.substring(0, 200)}${test.json.length > 200 ? '...' : ''}</div>` : ''}
+        </div>
+      `).join('');
+
+      // Podsumowanie
+      const passed = tests.filter(t => t.pass).length;
+      const failed = tests.filter(t => !t.pass).length;
+      const total = tests.length;
+      const allPass = failed === 0;
+
+      const summaryDiv = document.getElementById('summary');
+      summaryDiv.className = allPass ? 'summary' : 'summary fail';
+      summaryDiv.style.display = 'block';
+
+      document.getElementById('summaryTitle').textContent = allPass 
+        ? '✅ Wszystkie Testy Zaliczone!' 
+        : '❌ Niektóre Testy Nie Przeszły';
+      
+      document.getElementById('summaryText').textContent = allPass
+        ? 'Walidacja importujZJSON() działa poprawnie!'
+        : 'Wykryto problemy z walidacją JSON.';
+
+      document.getElementById('passedCount').textContent = passed;
+      document.getElementById('failedCount').textContent = failed;
+      document.getElementById('totalCount').textContent = total;
+
+      console.log(`🧪 Testy zakończone: ${passed}/${total} zaliczonych`);
+    }
+
+    // Auto-start
+    window.addEventListener('load', () => {
+      console.log('✅ Test walidacji JSON załadowany');
+      setTimeout(() => {
+        runAllTests();
+      }, 500);
+    });
+  </script>
+</body>
+</html>

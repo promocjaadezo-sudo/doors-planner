@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Immutability - Centralny Magazyn Stanu</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+      border-radius: 16px;
+      padding: 40px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+    h1 {
+      font-size: 32px;
+      margin-bottom: 24px;
+      background: linear-gradient(135deg, #3b82f6, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .info-box {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid #3b82f6;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+    .info-box strong {
+      color: #3b82f6;
+    }
+    .warning-box {
+      background: rgba(234, 179, 8, 0.1);
+      border: 1px solid #eab308;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+    .warning-box strong {
+      color: #eab308;
+    }
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #2563eb;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+    }
+    button.success {
+      background: #10b981;
+    }
+    button.success:hover {
+      background: #059669;
+    }
+    button.warning {
+      background: #eab308;
+      color: #000;
+    }
+    button.warning:hover {
+      background: #ca8a04;
+    }
+    button.danger {
+      background: #ef4444;
+    }
+    button.danger:hover {
+      background: #dc2626;
+    }
+    .test-results {
+      background: rgba(15, 23, 42, 0.8);
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 24px;
+      border: 1px solid rgba(51, 65, 85, 0.6);
+    }
+    .test-item {
+      padding: 16px;
+      margin: 12px 0;
+      background: rgba(30, 41, 59, 0.6);
+      border-radius: 8px;
+      border-left: 4px solid;
+    }
+    .test-item.pass {
+      border-left-color: #10b981;
+    }
+    .test-item.fail {
+      border-left-color: #ef4444;
+    }
+    .test-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .test-title {
+      font-weight: 600;
+      font-size: 16px;
+    }
+    .test-badge {
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .test-badge.pass {
+      background: #10b981;
+      color: white;
+    }
+    .test-badge.fail {
+      background: #ef4444;
+      color: white;
+    }
+    .test-description {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+    .test-code {
+      background: rgba(15, 23, 42, 0.8);
+      border-radius: 4px;
+      padding: 12px;
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+      margin-top: 8px;
+      overflow-x: auto;
+    }
+    .test-result {
+      margin-top: 8px;
+      padding: 8px;
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .summary {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid #10b981;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 24px;
+      text-align: center;
+    }
+    .summary.fail {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: #ef4444;
+    }
+    .summary h3 {
+      color: #10b981;
+      margin-bottom: 12px;
+      font-size: 24px;
+    }
+    .summary.fail h3 {
+      color: #ef4444;
+    }
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .summary-stat {
+      background: rgba(15, 23, 42, 0.6);
+      padding: 12px;
+      border-radius: 6px;
+    }
+    .summary-value {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .summary-label {
+      font-size: 11px;
+      color: #94a3b8;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔒 Test Immutability (Niezmienności)</h1>
+    
+    <div class="info-box">
+      <strong>Cel testu:</strong> Sprawdzenie, czy metoda <code>getStan()</code> zwraca kopię stanu zamiast oryginalnej referencji.<br><br>
+      <strong>Implementacja:</strong> <code>JSON.parse(JSON.stringify(this.stan))</code><br><br>
+      <strong>Ważne:</strong> Zapobiega przypadkowej mutacji wewnętrznego stanu z zewnątrz modułu.
+    </div>
+
+    <div class="warning-box">
+      <strong>⚠️ Przed poprawką:</strong> Zewnętrzny kod mógł modyfikować stan bezpośrednio:<br>
+      <code>const stan = magazyn.getStan(); stan.historiaCzatu = []; // NIEBEZPIECZNE!</code><br><br>
+      <strong>✅ Po poprawce:</strong> Modyfikacje zewnętrzne nie wpływają na wewnętrzny stan.
+    </div>
+
+    <!-- Kontrolki -->
+    <div class="controls">
+      <button onclick="runAllTests()" class="success">🧪 Uruchom Wszystkie Testy</button>
+      <button onclick="resetAndTest()">🔄 Reset i Test</button>
+      <button onclick="window.location.href='diagnostyka.html'">🔍 Diagnostyka</button>
+    </div>
+
+    <!-- Wyniki testów -->
+    <div class="test-results" id="testResults" style="display: none;">
+      <h3 style="margin-bottom: 16px; color: #e2e8f0;">📊 Wyniki Testów</h3>
+      <div id="testItemsContainer"></div>
+    </div>
+
+    <!-- Podsumowanie -->
+    <div class="summary" id="summary" style="display: none;">
+      <h3 id="summaryTitle">✅ Wszystkie Testy Zaliczone!</h3>
+      <p id="summaryText">Metoda getStan() poprawnie zwraca kopię stanu.</p>
+      <div class="summary-stats">
+        <div class="summary-stat">
+          <div class="summary-value" style="color: #10b981;" id="passedCount">0</div>
+          <div class="summary-label">Zaliczone</div>
+        </div>
+        <div class="summary-stat">
+          <div class="summary-value" style="color: #ef4444;" id="failedCount">0</div>
+          <div class="summary-label">Niezaliczone</div>
+        </div>
+        <div class="summary-stat">
+          <div class="summary-value" style="color: #3b82f6;" id="totalCount">0</div>
+          <div class="summary-label">Razem</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="CentralnyMagazynStanu.js"></script>
+  <script>
+    const magazyn = CentralnyMagazynStanu.getInstance();
+    const tests = [];
+
+    function resetAndTest() {
+      magazyn.resetujStan();
+      runAllTests();
+    }
+
+    async function runAllTests() {
+      tests.length = 0; // Wyczyść poprzednie wyniki
+      
+      // Przygotuj dane testowe
+      magazyn.resetujStan();
+      magazyn.ustawSesje('test-session-123');
+      magazyn.dodajDoHistorii('Wiadomość testowa 1');
+      magazyn.dodajDoHistorii('Wiadomość testowa 2');
+      magazyn.ustawStatus('processing');
+
+      console.log('🧪 Rozpoczynam testy immutability...');
+
+      // Test 1: Modyfikacja pola statusAI
+      await runTest1();
+
+      // Test 2: Modyfikacja tablicy historiaCzatu (push)
+      await runTest2();
+
+      // Test 3: Modyfikacja tablicy historiaCzatu (clear)
+      await runTest3();
+
+      // Test 4: Modyfikacja pola aktywnaSesjaId
+      await runTest4();
+
+      // Test 5: Modyfikacja zagnieżdżonego obiektu
+      await runTest5();
+
+      // Test 6: Sprawdzenie, czy zwracane kopie są różnymi obiektami
+      await runTest6();
+
+      // Wyświetl wyniki
+      displayResults();
+    }
+
+    async function runTest1() {
+      const test = {
+        name: 'Test 1: Modyfikacja statusAI',
+        description: 'Próba zmiany statusAI na zwróconej kopii nie powinna wpłynąć na oryginalny stan',
+        pass: false,
+        details: ''
+      };
+
+      try {
+        const statusBefore = magazyn.getStan().statusAI;
+        const kopiaStanu = magazyn.getStan();
+        kopiaStanu.statusAI = 'ZMIENIONY_Z_ZEWNATRZ';
+        const statusAfter = magazyn.getStan().statusAI;
+
+        test.pass = (statusBefore === statusAfter && statusAfter !== 'ZMIENIONY_Z_ZEWNATRZ');
+        test.details = test.pass 
+          ? `✅ Status niezmieniony: "${statusAfter}"` 
+          : `❌ Status zmieniony z "${statusBefore}" na "${statusAfter}"`;
+        
+        test.code = `const kopia = magazyn.getStan();\nkopia.statusAI = 'ZMIENIONY';\n// Stan oryginalny: ${statusAfter}`;
+      } catch (error) {
+        test.pass = false;
+        test.details = `❌ Błąd: ${error.message}`;
+      }
+
+      tests.push(test);
+    }
+
+    async function runTest2() {
+      const test = {
+        name: 'Test 2: Push do tablicy historiaCzatu',
+        description: 'Dodanie elementu do tablicy na kopii nie powinno wpłynąć na oryginalną tablicę',
+        pass: false,
+        details: ''
+      };
+
+      try {
+        const lengthBefore = magazyn.getStan().historiaCzatu.length;
+        const kopiaStanu = magazyn.getStan();
+        kopiaStanu.historiaCzatu.push({ tekst: 'NIELEGALNA WIADOMOŚĆ', timestamp: new Date().toISOString() });
+        const lengthAfter = magazyn.getStan().historiaCzatu.length;
+
+        test.pass = (lengthBefore === lengthAfter);
+        test.details = test.pass 
+          ? `✅ Długość niezmieniona: ${lengthAfter} elementów` 
+          : `❌ Długość zmieniona z ${lengthBefore} na ${lengthAfter}`;
+        
+        test.code = `const kopia = magazyn.getStan();\nkopia.historiaCzatu.push({...});\n// Długość oryginału: ${lengthAfter}`;
+      } catch (error) {
+        test.pass = false;
+        test.details = `❌ Błąd: ${error.message}`;
+      }
+
+      tests.push(test);
+    }
+
+    async function runTest3() {
+      const test = {
+        name: 'Test 3: Wyczyszczenie tablicy historiaCzatu',
+        description: 'Wyczyszczenie tablicy na kopii nie powinno wpłynąć na oryginalną tablicę',
+        pass: false,
+        details: ''
+      };
+
+      try {
+        const lengthBefore = magazyn.getStan().historiaCzatu.length;
+        const kopiaStanu = magazyn.getStan();
+        kopiaStanu.historiaCzatu = [];
+        const lengthAfter = magazyn.getStan().historiaCzatu.length;
+
+        test.pass = (lengthBefore === lengthAfter && lengthAfter > 0);
+        test.details = test.pass 
+          ? `✅ Tablica niezmieniona: ${lengthAfter} elementów` 
+          : `❌ Tablica zmieniona z ${lengthBefore} na ${lengthAfter} elementów`;
+        
+        test.code = `const kopia = magazyn.getStan();\nkopia.historiaCzatu = [];\n// Długość oryginału: ${lengthAfter}`;
+      } catch (error) {
+        test.pass = false;
+        test.details = `❌ Błąd: ${error.message}`;
+      }
+
+      tests.push(test);
+    }
+
+    async function runTest4() {
+      const test = {
+        name: 'Test 4: Modyfikacja aktywnaSesjaId',
+        description: 'Zmiana ID sesji na kopii nie powinna wpłynąć na oryginalny stan',
+        pass: false,
+        details: ''
+      };
+
+      try {
+        const sessionBefore = magazyn.getStan().aktywnaSesjaId;
+        const kopiaStanu = magazyn.getStan();
+        kopiaStanu.aktywnaSesjaId = 'HACKED_SESSION';
+        const sessionAfter = magazyn.getStan().aktywnaSesjaId;
+
+        test.pass = (sessionBefore === sessionAfter && sessionAfter !== 'HACKED_SESSION');
+        test.details = test.pass 
+          ? `✅ Sesja niezmieniona: "${sessionAfter}"` 
+          : `❌ Sesja zmieniona z "${sessionBefore}" na "${sessionAfter}"`;
+        
+        test.code = `const kopia = magazyn.getStan();\nkopia.aktywnaSesjaId = 'HACKED';\n// Oryginał: "${sessionAfter}"`;
+      } catch (error) {
+        test.pass = false;
+        test.details = `❌ Błąd: ${error.message}`;
+      }
+
+      tests.push(test);
+    }
+
+    async function runTest5() {
+      const test = {
+        name: 'Test 5: Modyfikacja obiektu w tablicy',
+        description: 'Zmiana zagnieżdżonego obiektu nie powinna wpłynąć na oryginalny stan',
+        pass: false,
+        details: ''
+      };
+
+      try {
+        const stan1 = magazyn.getStan();
+        const firstMessageBefore = stan1.historiaCzatu[0]?.tekst;
+        
+        const kopiaStanu = magazyn.getStan();
+        if (kopiaStanu.historiaCzatu.length > 0) {
+          kopiaStanu.historiaCzatu[0].tekst = 'ZMODYFIKOWANY TEKST';
+        }
+        
+        const stan2 = magazyn.getStan();
+        const firstMessageAfter = stan2.historiaCzatu[0]?.tekst;
+
+        test.pass = (firstMessageBefore === firstMessageAfter && firstMessageAfter !== 'ZMODYFIKOWANY TEKST');
+        test.details = test.pass 
+          ? `✅ Wiadomość niezmieniona: "${firstMessageAfter}"` 
+          : `❌ Wiadomość zmieniona z "${firstMessageBefore}" na "${firstMessageAfter}"`;
+        
+        test.code = `const kopia = magazyn.getStan();\nkopia.historiaCzatu[0].tekst = 'ZMIANA';\n// Oryginał: "${firstMessageAfter}"`;
+      } catch (error) {
+        test.pass = false;
+        test.details = `❌ Błąd: ${error.message}`;
+      }
+
+      tests.push(test);
+    }
+
+    async function runTest6() {
+      const test = {
+        name: 'Test 6: Różne referencje obiektów',
+        description: 'Każde wywołanie getStan() powinno zwracać nowy obiekt (różne referencje)',
+        pass: false,
+        details: ''
+      };
+
+      try {
+        const kopia1 = magazyn.getStan();
+        const kopia2 = magazyn.getStan();
+
+        test.pass = (kopia1 !== kopia2);
+        test.details = test.pass 
+          ? `✅ Każde wywołanie zwraca nową kopię` 
+          : `❌ Zwracane są te same referencje`;
+        
+        test.code = `const kopia1 = magazyn.getStan();\nconst kopia2 = magazyn.getStan();\nkopia1 !== kopia2 // ${test.pass}`;
+      } catch (error) {
+        test.pass = false;
+        test.details = `❌ Błąd: ${error.message}`;
+      }
+
+      tests.push(test);
+    }
+
+    function displayResults() {
+      const resultsDiv = document.getElementById('testResults');
+      const itemsContainer = document.getElementById('testItemsContainer');
+      
+      resultsDiv.style.display = 'block';
+      
+      itemsContainer.innerHTML = tests.map((test, index) => `
+        <div class="test-item ${test.pass ? 'pass' : 'fail'}">
+          <div class="test-header">
+            <div class="test-title">${test.name}</div>
+            <div class="test-badge ${test.pass ? 'pass' : 'fail'}">${test.pass ? 'ZALICZONY' : 'NIEZALICZONY'}</div>
+          </div>
+          <div class="test-description">${test.description}</div>
+          <div class="test-result">${test.details}</div>
+          ${test.code ? `<div class="test-code">${test.code}</div>` : ''}
+        </div>
+      `).join('');
+
+      // Podsumowanie
+      const passed = tests.filter(t => t.pass).length;
+      const failed = tests.filter(t => !t.pass).length;
+      const total = tests.length;
+      const allPass = failed === 0;
+
+      const summaryDiv = document.getElementById('summary');
+      summaryDiv.className = allPass ? 'summary' : 'summary fail';
+      summaryDiv.style.display = 'block';
+
+      document.getElementById('summaryTitle').textContent = allPass 
+        ? '✅ Wszystkie Testy Zaliczone!' 
+        : '❌ Niektóre Testy Nie Przeszły';
+      
+      document.getElementById('summaryText').textContent = allPass
+        ? 'Metoda getStan() poprawnie zwraca kopię stanu. Immutability działa prawidłowo!'
+        : 'Wykryto problemy z immutability. Stan może być modyfikowany z zewnątrz.';
+
+      document.getElementById('passedCount').textContent = passed;
+      document.getElementById('failedCount').textContent = failed;
+      document.getElementById('totalCount').textContent = total;
+
+      console.log(`🧪 Testy zakończone: ${passed}/${total} zaliczonych`);
+    }
+
+    // Auto-start
+    window.addEventListener('load', () => {
+      console.log('✅ Test immutability załadowany');
+      setTimeout(() => {
+        runAllTests();
+      }, 500);
+    });
+  </script>
+</body>
+</html>

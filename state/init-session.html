@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inicjalizacja Sesji AI</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      padding: 40px;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      max-width: 600px;
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #3b82f6, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
+    }
+    .subtitle {
+      text-align: center;
+      color: #94a3b8;
+      margin-bottom: 32px;
+      font-size: 14px;
+    }
+    .status-box {
+      background: rgba(15, 23, 42, 0.8);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    }
+    .status-item:last-child {
+      border-bottom: none;
+    }
+    .status-label {
+      font-weight: 600;
+      color: #94a3b8;
+    }
+    .status-value {
+      font-family: 'Courier New', monospace;
+      color: #3b82f6;
+      font-weight: 600;
+    }
+    .status-value.processing {
+      color: #06b6d4;
+      animation: pulse 2s infinite;
+    }
+    .status-value.success {
+      color: #10b981;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .log-box {
+      background: #000;
+      color: #0f0;
+      font-family: 'Courier New', monospace;
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.8;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 20px;
+    }
+    .log-entry {
+      margin-bottom: 4px;
+    }
+    .log-entry.success { color: #10b981; }
+    .log-entry.info { color: #06b6d4; }
+    .log-entry.warning { color: #f59e0b; }
+    .log-entry.error { color: #ef4444; }
+    .ready-banner {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      text-align: center;
+      padding: 20px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 24px;
+      box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+      animation: slideIn 0.5s ease-out;
+    }
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .icon {
+      font-size: 48px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .timestamp {
+      text-align: center;
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 16px;
+    }
+    button {
+      width: 100%;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 16px;
+      margin-top: 20px;
+      transition: all 0.2s;
+    }
+    button:hover {
+      background: #2563eb;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">🤖</div>
+    <h1>Inicjalizacja Sesji AI</h1>
+    <div class="subtitle">Centralny Magazyn Stanu</div>
+
+    <div class="status-box">
+      <div class="status-item">
+        <span class="status-label">ID Sesji:</span>
+        <span class="status-value" id="session-id">-</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Status AI:</span>
+        <span class="status-value processing" id="ai-status">-</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Status Magazynu:</span>
+        <span class="status-value" id="store-status">-</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Czas inicjalizacji:</span>
+        <span class="status-value" id="init-time">-</span>
+      </div>
+    </div>
+
+    <div class="log-box" id="log-box"></div>
+
+    <div id="ready-banner" style="display: none;" class="ready-banner">
+      ✅ System gotowy do przyjmowania poleceń!
+    </div>
+
+    <button onclick="openDiagnostics()">📊 Otwórz Diagnostykę</button>
+
+    <div class="timestamp" id="timestamp"></div>
+  </div>
+
+  <script src="CentralnyMagazynStanu.js"></script>
+  <script>
+    const logs = [];
+
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString('pl-PL');
+      const entry = `[${timestamp}] ${message}`;
+      logs.push({ message: entry, type });
+      
+      const logBox = document.getElementById('log-box');
+      const logEntry = document.createElement('div');
+      logEntry.className = `log-entry ${type}`;
+      logEntry.textContent = entry;
+      logBox.appendChild(logEntry);
+      logBox.scrollTop = logBox.scrollHeight;
+      
+      console.log(`[${type.toUpperCase()}]`, message);
+    }
+
+    async function initializeSession() {
+      try {
+        log('🚀 Rozpoczynam inicjalizację sesji AI...', 'info');
+        
+        // 1. Pobierz instancję magazynu
+        log('📦 Pobieranie instancji Centralnego Magazynu Stanu...', 'info');
+        const magazyn = CentralnyMagazynStanu.getInstance();
+        
+        if (!magazyn) {
+          throw new Error('Nie udało się pobrać instancji magazynu');
+        }
+        log('✅ Magazyn załadowany pomyślnie', 'success');
+        
+        // Małe opóźnienie dla efektu wizualnego
+        await sleep(500);
+        
+        // 2. Ustaw ID sesji na "sesja_1"
+        log('🔗 Ustawiam ID sesji na "sesja_1"...', 'info');
+        magazyn.ustawSesje('sesja_1');
+        document.getElementById('session-id').textContent = 'sesja_1';
+        document.getElementById('session-id').className = 'status-value success';
+        log('✅ ID sesji ustawione: sesja_1', 'success');
+        
+        await sleep(500);
+        
+        // 3. Ustaw status AI na 'processing'
+        log('⚙️ Ustawiam status AI na "processing"...', 'info');
+        magazyn.ustawStatus('processing');
+        document.getElementById('ai-status').textContent = 'processing';
+        log('✅ Status AI zmieniony na: processing', 'success');
+        
+        await sleep(500);
+        
+        // 4. Dodaj wpis do historii
+        log('💬 Dodaję wpis do historii komunikacji...', 'info');
+        magazyn.dodajDoHistorii('Sesja AI "sesja_1" zainicjalizowana pomyślnie');
+        magazyn.dodajDoHistorii(`Czas inicjalizacji: ${new Date().toLocaleString('pl-PL')}`);
+        log('✅ Historia zaktualizowana', 'success');
+        
+        await sleep(500);
+        
+        // 5. Weryfikacja stanu
+        log('🔍 Weryfikuję stan magazynu...', 'info');
+        const stan = magazyn.getStan();
+        
+        if (stan.aktywnaSesjaId !== 'sesja_1') {
+          throw new Error('Błąd weryfikacji: nieprawidłowe ID sesji');
+        }
+        if (stan.statusAI !== 'processing') {
+          throw new Error('Błąd weryfikacji: nieprawidłowy status AI');
+        }
+        
+        log('✅ Weryfikacja zakończona pomyślnie', 'success');
+        log('📊 Stan magazynu:', 'info');
+        log(JSON.stringify(stan, null, 2), 'info');
+        
+        await sleep(500);
+        
+        // 6. Aktualizacja UI
+        document.getElementById('store-status').textContent = 'Aktywny';
+        document.getElementById('store-status').className = 'status-value success';
+        document.getElementById('init-time').textContent = new Date().toLocaleTimeString('pl-PL');
+        document.getElementById('init-time').className = 'status-value success';
+        
+        // 7. Pokaż banner gotowości
+        log('', 'info');
+        log('═══════════════════════════════════════', 'success');
+        log('✅ INICJALIZACJA ZAKOŃCZONA POMYŚLNIE', 'success');
+        log('═══════════════════════════════════════', 'success');
+        log('', 'info');
+        log('🎯 System jest gotowy do przyjmowania poleceń', 'success');
+        log('📍 ID Sesji: sesja_1', 'success');
+        log('⚙️ Status AI: processing', 'success');
+        log('💾 Magazyn stanu: Aktywny', 'success');
+        
+        document.getElementById('ready-banner').style.display = 'block';
+        
+        // Dodaj timestamp
+        document.getElementById('timestamp').textContent = 
+          `Sesja zainicjalizowana: ${new Date().toLocaleString('pl-PL')}`;
+        
+        // Zapisz do window dla łatwego dostępu
+        window.currentSession = {
+          id: 'sesja_1',
+          startTime: Date.now(),
+          magazyn: magazyn
+        };
+        
+        log('', 'info');
+        log('💡 TIP: Użyj window.currentSession aby uzyskać dostęp do sesji', 'info');
+        log('💡 TIP: Otwórz diagnostykę aby monitorować stan w czasie rzeczywistym', 'info');
+        
+      } catch (error) {
+        log(`❌ BŁĄD: ${error.message}`, 'error');
+        console.error('Błąd inicjalizacji:', error);
+        document.getElementById('store-status').textContent = 'Błąd';
+        document.getElementById('store-status').className = 'status-value error';
+      }
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function openDiagnostics() {
+      window.open('diagnostyka.html', '_blank');
+    }
+
+    // Auto-start przy załadowaniu
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(initializeSession, 500);
+      });
+    } else {
+      setTimeout(initializeSession, 500);
+    }
+  </script>
+</body>
+</html>
