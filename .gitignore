@@ -33,3 +33,7 @@ coverage/
 # Build outputs
 dist/
 build/
+
+# Test results
+test-results/
+playwright-report/
