@@ -903,6 +903,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
 <script src="js/schedule.js?v=20251005-1500"></script>
 <script src="js/app-helpers.js?v=20251005-1400"></script>
 <script src="js/map.js?v=20251019-01"></script>
+<script src="js/firebase-sync-queue.js?v=20251103-0100"></script>
 <script>
 // === MAGAZYN - NAJWYŻSZY PRIORYTET ===
 // System magazynowy zostanie zainicjalizowany później w kodzie
@@ -1779,6 +1780,15 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           save();
           console.log('💾 Zapisano po usunięciu');
           
+          // Enqueue delete operation to Firebase sync queue
+          if(window.FirebaseSyncQueue && state.storage.mode === 'firebase'){
+            window.FirebaseSyncQueue.enqueue('delete', {
+              collection: 'orders',
+              documentId: id
+            }, 20);
+            window.FirebaseSyncQueue.enqueue('save', { state }, 10);
+          }
+          
           // Wymuszenie odświeżenia wszystkich widoków (z małym opóźnieniem aby save się zakończył)
           setTimeout(() => {
             console.log('🔄 Odświeżam widoki po usunięciu zlecenia...');
@@ -1947,21 +1957,41 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         if(t.dataset.pdel2) { state.processes = state.processes.filter(x => x.id !== t.dataset.pdel2); save(); renderProcList(); break; }
         if(t.dataset.taskStart) {
           const id = t.dataset.taskStart; const task = state.tasks.find(x => x.id === id); if (!task) return;
-          task.status = 'run'; state._timers[id] = Date.now(); save(); try{ updateOrderProgress(task.orderId); }catch(_){ } renderTasks(); break;
+          task.status = 'run'; state._timers[id] = Date.now(); save(); 
+          try{ updateOrderProgress(task.orderId); }catch(_){ } 
+          if(window.FirebaseSyncQueue && state.storage.mode === 'firebase'){
+            window.FirebaseSyncQueue.enqueue('update', { collection: 'tasks', documentId: id, updates: { status: 'run', _timers: state._timers } }, 5);
+          }
+          renderTasks(); break;
         }
         if(t.dataset.taskPause) {
           const id = t.dataset.taskPause; const task = state.tasks.find(x => x.id === id); if (!task) return;
           if (state._timers[id]) { task.elapsedMin = (task.elapsedMin || 0) + (Date.now() - state._timers[id]) / 60000; delete state._timers[id]; }
-          task.status = 'todo'; save(); try{ updateOrderProgress(task.orderId); }catch(_){ } renderTasks(); break;
+          task.status = 'todo'; save(); 
+          try{ updateOrderProgress(task.orderId); }catch(_){ } 
+          if(window.FirebaseSyncQueue && state.storage.mode === 'firebase'){
+            window.FirebaseSyncQueue.enqueue('update', { collection: 'tasks', documentId: id, updates: { status: 'todo', elapsedMin: task.elapsedMin } }, 5);
+          }
+          renderTasks(); break;
         }
         if(t.dataset.taskDone) {
           const id = t.dataset.taskDone; const task = state.tasks.find(x => x.id === id); if (!task) return;
           if (state._timers[id]) { task.elapsedMin = (task.elapsedMin || 0) + (Date.now() - state._timers[id]) / 60000; delete state._timers[id]; }
-          task.status = 'done'; save(); try{ updateOrderProgress(task.orderId); }catch(_){ } renderTasks(); break;
+          task.status = 'done'; save(); 
+          try{ updateOrderProgress(task.orderId); }catch(_){ } 
+          if(window.FirebaseSyncQueue && state.storage.mode === 'firebase'){
+            window.FirebaseSyncQueue.enqueue('update', { collection: 'tasks', documentId: id, updates: { status: 'done', elapsedMin: task.elapsedMin } }, 5);
+          }
+          renderTasks(); break;
         }
         if(t.dataset.taskRepeat) {
           const id = t.dataset.taskRepeat; const task = state.tasks.find(x => x.id === id); if (!task) return;
-          if (state._timers[id]) delete state._timers[id]; task.status = 'todo'; task.elapsedMin = 0; save(); try{ updateOrderProgress(task.orderId); }catch(_){ } renderTasks(); break;
+          if (state._timers[id]) delete state._timers[id]; task.status = 'todo'; task.elapsedMin = 0; save(); 
+          try{ updateOrderProgress(task.orderId); }catch(_){ } 
+          if(window.FirebaseSyncQueue && state.storage.mode === 'firebase'){
+            window.FirebaseSyncQueue.enqueue('update', { collection: 'tasks', documentId: id, updates: { status: 'todo', elapsedMin: 0 } }, 5);
+          }
+          renderTasks(); break;
         }
         if(t.dataset.taskRetry) {
           const id = t.dataset.taskRetry; const task = state.tasks.find(x => x.id === id); if (!task) return;
@@ -2833,31 +2863,89 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     }
     // helper for sync badge
     const syncBadge = (tt)=>{ try{ if(tt._syncPending) return `<span class="task-sync-status pending" title="Czekaj na synchronizację">⏳</span>`; if(tt._syncError) return `<span class="task-sync-status error" title="Błąd synchronizacji">⚠️</span>`; if(tt._lastSync) return `<span class="task-sync-status ok" title="Ostatnia synchronizacja: ${new Date(tt._lastSync).toLocaleString()}">✔️</span>`; return `<span class="task-sync-status unknown" title="Brak synchronizacji">—</span>`; }catch(e){return''} };
-    rows.forEach(t=>{
-      const d=document.createElement('div'); d.className='card';
-      const sb = syncBadge(t);
-      const startP = t.startPlanned ? new Date(t.startPlanned).toLocaleString() : '-';
-      const endP = t.endPlanned ? new Date(t.endPlanned).toLocaleString() : '-';
-      const plannedDur = (t.startPlanned && t.endPlanned) ? Math.round((t.endPlanned - t.startPlanned)/60000)+'m' : '-';
-      d.innerHTML=`<div class="row" style="justify-content:space-between">
-        <div>
-          <b>${t.opName||t.name||'(zadanie)'} ${sb}</b> 
-          <span class="muted">
-            ${(state.orders||[]).find(o=>o.id===t.orderId)?.name||'-'}
-            ${t.processName ? ` • Proces: ${t.processName} (${t.opIndex + 1}/${(state.processes.find(p=>p.id===t.processId)?.operations||[]).length})` : ''}
-          </span>
-          <div class="muted">Status: ${t.status||'todo'} • Plan: ${plannedDur} • Real: ${Math.round(t.elapsedMin||0)}m ${typeof t.slackMs==='number'?('• Slack: '+Math.round(t.slackMs/60000)+'m'):''} ${t.critical?'• CRITICAL':''}</div>
-        <div class="muted">StartP: ${startP} • EndP: ${endP}</div>
-        <div class="muted">${t.startedBy?('Rozpoczął: '+t.startedBy):''} ${t.closedBy?('Zamknął: '+t.closedBy):''} ${t.startedAt?(' • start: '+(new Date(t.startedAt)).toLocaleTimeString()):''}</div></div>
-        <div class="row">
-          ${/* start button green when running */''}
-          <button class="${t.status==='run'?'btn green':'btn gray'}" data-task-start="${t.id}" ${t.status==='run'?'disabled':''}>Start</button>
-          <button class="btn" data-task-pause="${t.id}" ${t.status!=='run'?'disabled':''}>Pauza</button>
-          <button class="btn amber" data-task-repeat="${t.id}">Powtórz</button>
-          <button class="${t.status==='done'?'btn green':'btn gray'}" data-task-done="${t.id}" ${t.status==='done'?'disabled':''}>Zamknij</button>
-          ${t._syncError?`<button class="btn amber" data-task-retry="${t.id}" title="Ponów synchronizację">Retry</button>`:''}
-        </div></div>`;
-      list.appendChild(d);
+    
+    // Group tasks by orderId
+    const grouped = {};
+    rows.forEach(task => {
+      if (!grouped[task.orderId]) {
+        const order = (state.orders||[]).find(o=>o.id===task.orderId);
+        grouped[task.orderId] = {
+          orderId: task.orderId,
+          orderName: order?.name || 'Bez zlecenia',
+          tasks: []
+        };
+      }
+      grouped[task.orderId].tasks.push(task);
+    });
+    
+    // Sort groups and render
+    const orderGroups = Object.values(grouped).sort((a, b) => {
+      // Sort by order name
+      return a.orderName.localeCompare(b.orderName);
+    });
+    
+    orderGroups.forEach(group => {
+      // Create collapsible group header
+      const groupDiv = document.createElement('div');
+      groupDiv.className = 'card';
+      groupDiv.style.marginBottom = '12px';
+      groupDiv.style.background = '#f8fafc';
+      groupDiv.style.borderLeft = '4px solid #3b82f6';
+      
+      const todoCount = group.tasks.filter(t => t.status === 'todo').length;
+      const runCount = group.tasks.filter(t => t.status === 'run').length;
+      const doneCount = group.tasks.filter(t => t.status === 'done').length;
+      
+      const groupId = `task-group-${group.orderId}`;
+      groupDiv.innerHTML = `
+        <div class="row" style="justify-content:space-between;cursor:pointer;padding:12px" onclick="document.getElementById('${groupId}').style.display=document.getElementById('${groupId}').style.display==='none'?'block':'none'">
+          <div>
+            <b style="font-size:16px">📋 ${group.orderName}</b>
+            <span style="margin-left:12px;color:#64748b;font-size:14px">
+              ${group.tasks.length} ${group.tasks.length === 1 ? 'zadanie' : 'zadań'}
+              ${todoCount > 0 ? `• <span style="color:#94a3b8">${todoCount} todo</span>` : ''}
+              ${runCount > 0 ? `• <span style="color:#3b82f6;font-weight:600">${runCount} w trakcie</span>` : ''}
+              ${doneCount > 0 ? `• <span style="color:#10b981">${doneCount} zakończone</span>` : ''}
+            </span>
+          </div>
+          <div>
+            <span style="color:#94a3b8">▼</span>
+          </div>
+        </div>
+        <div id="${groupId}" style="display:block;margin-top:8px"></div>
+      `;
+      list.appendChild(groupDiv);
+      
+      // Render tasks in the group
+      const tasksContainer = document.getElementById(groupId);
+      group.tasks.forEach(t=>{
+        const d=document.createElement('div'); d.className='card';
+        d.style.marginLeft = '20px';
+        d.style.marginBottom = '8px';
+        d.style.background = '#ffffff';
+        const sb = syncBadge(t);
+        const startP = t.startPlanned ? new Date(t.startPlanned).toLocaleString() : '-';
+        const endP = t.endPlanned ? new Date(t.endPlanned).toLocaleString() : '-';
+        const plannedDur = (t.startPlanned && t.endPlanned) ? Math.round((t.endPlanned - t.startPlanned)/60000)+'m' : '-';
+        d.innerHTML=`<div class="row" style="justify-content:space-between">
+          <div>
+            <b>${t.opName||t.name||'(zadanie)'} ${sb}</b> 
+            <span class="muted">
+              ${t.processName ? ` • Proces: ${t.processName} (${t.opIndex + 1}/${(state.processes.find(p=>p.id===t.processId)?.operations||[]).length})` : ''}
+            </span>
+            <div class="muted">Status: ${t.status||'todo'} • Plan: ${plannedDur} • Real: ${Math.round(t.elapsedMin||0)}m ${typeof t.slackMs==='number'?('• Slack: '+Math.round(t.slackMs/60000)+'m'):''} ${t.critical?'• CRITICAL':''}</div>
+          <div class="muted">StartP: ${startP} • EndP: ${endP}</div>
+          <div class="muted">${t.startedBy?('Rozpoczął: '+t.startedBy):''} ${t.closedBy?('Zamknął: '+t.closedBy):''} ${t.startedAt?(' • start: '+(new Date(t.startedAt)).toLocaleTimeString()):''}</div></div>
+          <div class="row">
+            ${/* start button green when running */''}
+            <button class="${t.status==='run'?'btn green':'btn gray'}" data-task-start="${t.id}" ${t.status==='run'?'disabled':''}>Start</button>
+            <button class="btn" data-task-pause="${t.id}" ${t.status!=='run'?'disabled':''}>Pauza</button>
+            <button class="btn amber" data-task-repeat="${t.id}">Powtórz</button>
+            <button class="${t.status==='done'?'btn green':'btn gray'}" data-task-done="${t.id}" ${t.status==='done'?'disabled':''}>Zamknij</button>
+            ${t._syncError?`<button class="btn amber" data-task-retry="${t.id}" title="Ponów synchronizację">Retry</button>`:''}
+          </div></div>`;
+        tasksContainer.appendChild(d);
+      });
     });
     const byW = qs('#tasks-by-worker'); if(byW) byW.innerHTML = '';
     // small HTML escape helper for safe insertion into innerHTML - delegate to appHelpers when available
@@ -5615,6 +5703,13 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       await loadScript('https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js');
       await loadScript('https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js');
       if(!firebase.apps.length){firebase.initializeApp(cfg);}
+      
+      // Enable Firebase sync queue after initialization
+      if(window.FirebaseSyncQueue && typeof window.FirebaseSyncQueue.enable === 'function'){
+        window.FirebaseSyncQueue.enable();
+        console.log('✅ FirebaseSyncQueue enabled');
+      }
+      
       return true;
     }catch(e){
       console.warn('Firebase load/init error:',e.message);
