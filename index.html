@@ -872,8 +872,9 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
     </div>
     
     <!-- Zakładki magazynu -->
-    <div class="row" style="gap:8px;margin-bottom:16px;border-bottom:1px solid var(--b);padding-bottom:8px">
+    <div class="row" style="gap:8px;margin-bottom:16px;border-bottom:1px solid var(--b);padding-bottom:8px;flex-wrap:wrap">
       <button class="btn" id="wh-tab-items" onclick="switchWarehouseTab('items')">📋 Pozycje</button>
+      <button class="btn" id="wh-tab-orders" onclick="switchWarehouseTab('orders')">📦 Zlecenia do realizacji</button>
       <button class="btn" id="wh-tab-transactions" onclick="switchWarehouseTab('transactions')">📝 Przychód/Rozchód</button>
       <button class="btn" id="wh-tab-reservations" onclick="switchWarehouseTab('reservations')">🔒 Rezerwacje</button>
       <button class="btn" id="wh-tab-tasks" onclick="switchWarehouseTab('tasks')" style="position:relative">
@@ -895,6 +896,21 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
       <div class="list" id="wh-list">
         <div style="text-align:center;padding:40px;color:#999">Brak pozycji w magazynie. Kliknij "Dodaj pozycję".</div>
       </div>
+    </div>
+    
+    <!-- Widok: Zlecenia do realizacji (MAGAZYNIER) -->
+    <div id="wh-view-orders" class="hidden">
+      <div style="margin-bottom:16px;padding:12px;background:#dbeafe;border-left:4px solid #3b82f6;border-radius:4px">
+        <div style="font-weight:600;font-size:16px;color:#1e40af;margin-bottom:4px">📦 Zlecenia do przygotowania</div>
+        <div style="font-size:14px;color:#64748b">Sprawdź materiały, obciąż magazyn i wydaj na produkcję</div>
+      </div>
+      <div class="row" style="gap:8px;margin-bottom:16px">
+        <button class="btn" onclick="filterWarehouseOrders('all')">Wszystkie</button>
+        <button class="btn amber" onclick="filterWarehouseOrders('pending')">🟡 Oczekujące</button>
+        <button class="btn blue" onclick="filterWarehouseOrders('prepared')">🔵 Przygotowane</button>
+        <button class="btn green" onclick="filterWarehouseOrders('issued')">✅ Wydane</button>
+      </div>
+      <div class="list" id="wh-orders-list"></div>
     </div>
     
     <!-- Widok: Przychód/Rozchód -->
@@ -3031,11 +3047,11 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       }
   const genBtn = o.tasksGenerated ? '' : `<button class=\"btn\" data-ogen=\"${o.id}\">Gen. zadania</button>`;
   const replanOneBtn = `<button class=\"btn amber\" data-replan-order=\"${o.id}\" title=\"Resetuj i przelicz tylko zadania tego zlecenia\">Replan</button>`;
-  const checklistBtn = o.processId ? `<button class=\"btn blue\" data-checklist=\"${o.id}\" title=\"Pokaż checklistę materiałów\">📋 Checklist</button>` : '';
+  // UKRYTO: Handlowiec nie zarządza materiałami - przycisk Checklist przeniesiony do Magazynu
+  // const checklistBtn = o.processId ? `<button class=\"btn blue\" data-checklist=\"${o.id}\" title=\"Pokaż checklistę materiałów\">📋 Checklist</button>` : '';
   
-  // Oblicz status materiałów dla zlecenia
+  // Status materiałów - tylko informacyjnie (bez przycisku zarządzania)
   let materialsStatus = '-';
-  let materialsBtn = '';
   if (o.materialChecklist && o.materialChecklist.length > 0) {
     const warehouseItems = window.warehouseItems || [];
     const reservations = window.warehouseReservations || [];
@@ -3067,15 +3083,16 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     } else {
       materialsStatus = '⚠️ Braki';
     }
-    materialsBtn = `<button class=\"btn blue\" onclick=\"window.showOrderMaterials('${o.id}')\" title=\"Pokaż materiały i wydaj z magazynu\">📦 Materiały</button>`;
+    // UKRYTO: Przycisk "Materiały" - zarządzanie przeniesione do zakładki Magazyn
+    // materialsBtn = `<button class=\"btn blue\" onclick=\"window.showOrderMaterials('${o.id}')\" title=\"Pokaż materiały i wydaj z magazynu\">📦 Materiały</button>`;
   }
   
   tr.innerHTML=`<td>${o.name||'-'}</td><td>${o.client||'-'}</td><td>${o.model||'-'}</td><td>${o.quantity||'-'}</td>
                     <td>${o.startDate||'-'}</td><td>${o.endDate||'-'}</td><td>${o.installDate||'-'}</td><td>${place||'-'}</td>
                     <td>${bar} <div class="muted" style="font-size:12px;margin-top:4px">${pct}% (${pr.done}/${pr.total})</div></td>
                     <td>${leadH}</td>
-                    <td>${materialsStatus}<br>${materialsBtn}</td>
-  <td><div class="row"><button class="btn" data-oed="${o.id}">Edytuj</button>${genBtn}${checklistBtn}${replanOneBtn}<button class="btn red" data-od="${o.id}">Usuń</button></div></td>`;
+                    <td>${materialsStatus}</td>
+  <td><div class="row"><button class="btn" data-oed="${o.id}">Edytuj</button>${genBtn}${replanOneBtn}<button class="btn red" data-od="${o.id}">Usuń</button></div></td>`;
       host.appendChild(tr);
     });
   }
@@ -8574,7 +8591,7 @@ function updateShoppingListBadge() {
 // Przełączanie zakładek magazynu
 function switchWarehouseTab(tab) {
   // Ukryj wszystkie widoki
-  const views = ['items', 'transactions', 'reservations', 'tasks', 'templates'];
+  const views = ['items', 'orders', 'transactions', 'reservations', 'tasks', 'templates'];
   views.forEach(v => {
     const viewEl = document.getElementById(`wh-view-${v}`);
     const tabBtn = document.getElementById(`wh-tab-${v}`);
@@ -8591,6 +8608,8 @@ function switchWarehouseTab(tab) {
   // Renderuj odpowiednią zawartość
   if (tab === 'items') {
     renderWarehouse();
+  } else if (tab === 'orders') {
+    renderWarehouseOrders();
   } else if (tab === 'transactions') {
     renderTransactions();
   } else if (tab === 'reservations') {
@@ -9876,6 +9895,465 @@ window.generateWarehouseTasksForOrder = function(order) {
   // Zapisz zadania
   localStorage.setItem('warehouseTasks', JSON.stringify(window.warehouseTasks));
   console.log('[generateWarehouseTasksForOrder] Saved to localStorage, total tasks:', window.warehouseTasks.length);
+};
+
+// ============ SYSTEM ZLECEŃ DO REALIZACJI (MAGAZYNIER) ============
+
+// Globalny filtr zleceń magazynowych
+window._warehouseOrdersFilter = window._warehouseOrdersFilter || 'all';
+
+// Filtrowanie zleceń
+window.filterWarehouseOrders = function(status) {
+  window._warehouseOrdersFilter = status;
+  renderWarehouseOrders();
+};
+
+// Renderuj zlecenia do realizacji
+window.renderWarehouseOrders = function() {
+  console.log('[renderWarehouseOrders] Function called');
+  
+  const list = document.getElementById('wh-orders-list');
+  if (!list) {
+    console.log('[renderWarehouseOrders] List element not found!');
+    return;
+  }
+  
+  const orders = (window.state.orders || []).filter(o => o.processId); // Tylko zlecenia z procesem
+  
+  if (orders.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:#999">Brak zleceń z przypisanymi procesami</div>';
+    return;
+  }
+  
+  // Filtruj według statusu
+  const filter = window._warehouseOrdersFilter;
+  let filteredOrders = orders;
+  
+  if (filter === 'pending') {
+    filteredOrders = orders.filter(o => !o.materialsPrepared && !o.materialsIssued);
+  } else if (filter === 'prepared') {
+    filteredOrders = orders.filter(o => o.materialsPrepared && !o.materialsIssued);
+  } else if (filter === 'issued') {
+    filteredOrders = orders.filter(o => o.materialsIssued);
+  }
+  
+  if (filteredOrders.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:#999">Brak zleceń dla wybranego filtru</div>';
+    return;
+  }
+  
+  // Renderuj każde zlecenie
+  list.innerHTML = filteredOrders.map(order => renderWarehouseOrderCard(order)).join('');
+};
+
+// Renderuj kartę pojedynczego zlecenia
+function renderWarehouseOrderCard(order) {
+  // Oblicz termin dla magazyniera (3 dni przed startem produkcji)
+  const startDate = order.startDate ? new Date(order.startDate) : null;
+  const deadline = startDate ? new Date(startDate) : new Date();
+  deadline.setDate(deadline.getDate() - 3); // 3 dni wcześniej
+  
+  const now = new Date();
+  const daysUntilDeadline = startDate ? Math.ceil((deadline - now) / (1000 * 60 * 60 * 24)) : 0;
+  
+  // Status czasowy
+  let timeStatus = '';
+  let timeClass = '';
+  if (order.materialsIssued) {
+    timeStatus = '✅ Wydano';
+    timeClass = 'green';
+  } else if (daysUntilDeadline < 0) {
+    timeStatus = `🔴 Opóźnienie ${Math.abs(daysUntilDeadline)} dni`;
+    timeClass = 'red';
+  } else if (daysUntilDeadline <= 1) {
+    timeStatus = `🟡 Zostało ${daysUntilDeadline} dni`;
+    timeClass = 'amber';
+  } else {
+    timeStatus = `🟢 Zostało ${daysUntilDeadline} dni`;
+    timeClass = 'green';
+  }
+  
+  // Pobierz proces i szablon
+  const process = (window.state.processes || []).find(p => p.id === order.processId);
+  const template = process && process.materialTemplateId ? 
+    (window.materialTemplates || []).find(t => t.id === process.materialTemplateId) : null;
+  
+  if (!template) {
+    return `
+      <div class="card" style="background:#fee;border-left:4px solid #dc2626">
+        <div style="font-weight:600;font-size:16px;color:#dc2626">⚠️ ${order.name}</div>
+        <div style="font-size:14px;color:#7f1d1d;margin-top:8px">Proces nie ma przypisanego szablonu materiałowego</div>
+      </div>
+    `;
+  }
+  
+  return `
+    <div class="card" style="border-left:4px solid #3b82f6">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div>
+          <div style="font-weight:600;font-size:18px;color:#ffffff">${order.name}</div>
+          <div style="font-size:13px;color:#94a3b8;margin-top:4px">
+            Klient: ${order.client || '-'} | Model: ${order.model || '-'} | Ilość: ${order.quantity || 1}
+          </div>
+        </div>
+        <div class="pill ${timeClass}" style="font-size:13px">${timeStatus}</div>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;font-size:13px">
+        <div>
+          <div style="color:#94a3b8">Start produkcji:</div>
+          <div style="font-weight:600">${order.startDate || '-'}</div>
+        </div>
+        <div>
+          <div style="color:#94a3b8">Termin magazynier:</div>
+          <div style="font-weight:600">${deadline.toLocaleDateString('pl-PL')}</div>
+        </div>
+        <div>
+          <div style="color:#94a3b8">Szablon:</div>
+          <div style="font-weight:600">${template.name}</div>
+        </div>
+      </div>
+      
+      <div class="row" style="gap:8px">
+        <button class="btn blue" onclick="showOrderMaterialsPreparation('${order.id}')">📋 Checklist materiałów</button>
+        ${order.materialsPrepared && !order.materialsIssued ? 
+          `<button class="btn green" onclick="issueOrderMaterials('${order.id}')">📤 Wydaj na produkcję</button>` : ''}
+        ${order.materialsIssued ? 
+          `<div class="pill green">✅ Wydano ${order.materialsIssuedAt ? new Date(order.materialsIssuedAt).toLocaleDateString('pl-PL') : ''}</div>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+// Pokaż przygotowanie materiałów dla zlecenia
+window.showOrderMaterialsPreparation = function(orderId) {
+  const order = (window.state.orders || []).find(o => o.id === orderId);
+  if (!order) {
+    alert('Nie znaleziono zlecenia');
+    return;
+  }
+  
+  const process = (window.state.processes || []).find(p => p.id === order.processId);
+  if (!process || !process.materialTemplateId) {
+    alert('Proces nie ma przypisanego szablonu materiałowego');
+    return;
+  }
+  
+  const template = (window.materialTemplates || []).find(t => t.id === process.materialTemplateId);
+  if (!template) {
+    alert('Nie znaleziono szablonu materiałowego');
+    return;
+  }
+  
+  // Inicjalizuj checklistę w zleceniu jeśli nie istnieje
+  if (!order.warehouseMaterialChecklist) {
+    order.warehouseMaterialChecklist = (template.materials || []).map((m, idx) => ({
+      itemId: m.itemId,
+      itemName: m.itemName,
+      quantity: m.quantity,
+      unit: m.unit,
+      checked: true, // Domyślnie wszystkie zaznaczone
+      checkedAt: null,
+      checkedBy: null
+    }));
+    save();
+  }
+  
+  // Pobierz materiały z checklisty zlecenia
+  const materials = order.warehouseMaterialChecklist || [];
+  const warehouseItems = window.warehouseItems || [];
+  
+  // Tworzenie interaktywnej checklisty z checkboxami
+  const checklistHtml = materials.map((material, idx) => {
+    const isChecked = material.checked !== false; // Domyślnie zaznaczone
+    const whItem = warehouseItems.find(w => w.id === material.itemId);
+    const inStock = whItem ? whItem.quantity : 0;
+    const needed = material.quantity * (order.quantity || 1); // Przemnóż przez ilość w zleceniu
+    const available = inStock >= needed;
+    const shortage = Math.max(0, needed - inStock);
+    
+    const statusColor = available ? '#16a34a' : (inStock > 0 ? '#f59e0b' : '#dc2626');
+    const statusIcon = available ? '✅' : (inStock > 0 ? '⚠️' : '❌');
+    const statusText = available ? 'Dostępne' : (inStock > 0 ? `Brak ${shortage} ${material.unit}` : 'Brak w magazynie');
+    
+    const checkboxStyle = isChecked 
+      ? 'background:#16a34a;border:2px solid #16a34a;color:white' 
+      : 'background:#374151;border:2px solid #6b7280;color:transparent';
+    
+    const rowOpacity = isChecked ? '1' : '0.5';
+    const rowStyle = available ? '#0f172a' : '#1f1f2e';
+    
+    return `
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;border-bottom:1px solid #334155;background:${rowStyle};opacity:${rowOpacity};transition:all 0.2s" 
+           onclick="toggleWarehouseMaterialItem('${orderId}', ${idx})">
+        <div style="width:28px;height:28px;min-width:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;cursor:pointer;transition:all 0.2s;${checkboxStyle}">
+          ${isChecked ? '✓' : ''}
+        </div>
+        <div style="font-size:20px;width:32px;text-align:center">${statusIcon}</div>
+        <div style="flex:1;cursor:pointer">
+          <div style="font-weight:600;font-size:15px;color:#ffffff;${!isChecked ? 'text-decoration:line-through' : ''}">${material.itemName}</div>
+          <div style="font-size:13px;color:#94a3b8;margin-top:2px">
+            Potrzebne: <strong>${needed} ${material.unit}</strong> | 
+            W magazynie: <strong style="color:${statusColor}">${inStock} ${material.unit}</strong>
+          </div>
+        </div>
+        <div style="padding:4px 12px;background:${statusColor};color:white;border-radius:16px;font-size:12px;font-weight:600">
+          ${statusText}
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  const checkedMaterials = materials.filter(m => m.checked !== false);
+  const allAvailable = checkedMaterials.every(m => {
+    const whItem = warehouseItems.find(w => w.id === m.itemId);
+    const inStock = whItem ? whItem.quantity : 0;
+    const needed = m.quantity * (order.quantity || 1);
+    return inStock >= needed;
+  });
+  
+  const content = `
+    <div style="margin-bottom:16px;padding:12px;background:#dbeafe;border-left:4px solid #3b82f6;border-radius:4px;color:#1e40af">
+      <div style="font-weight:600;margin-bottom:4px">Zlecenie: ${order.name}</div>
+      <div style="font-size:13px">Szablon: ${template.name} | Ilość: ${order.quantity || 1} szt.</div>
+      <div style="font-size:13px;margin-top:6px;font-weight:600">
+        ✓ Zaznaczone: ${checkedMaterials.length} / ${materials.length} pozycji
+      </div>
+    </div>
+    
+    <div style="padding:8px 12px;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:4px;margin-bottom:12px;color:#92400e">
+      <div style="font-weight:600;font-size:13px">💡 Kliknij na wiersz aby zaznaczyć/odznaczyć materiał</div>
+      <div style="font-size:12px;margin-top:2px">Tylko zaznaczone materiały zostaną obciążone i zarezerwowane</div>
+    </div>
+    
+    <div style="max-height:400px;overflow-y:auto;border:1px solid #334155;border-radius:8px;margin-bottom:16px">
+      ${checklistHtml}
+    </div>
+    
+    <div style="padding:12px;background:${allAvailable ? '#dcfce7' : '#fef3c7'};border-radius:8px;border:1px solid ${allAvailable ? '#86efac' : '#fcd34d'}">
+      <div style="font-weight:600;color:${allAvailable ? '#15803d' : '#92400e'}">
+        ${allAvailable ? '✅ Wszystkie zaznaczone materiały dostępne' : '⚠️ Niektóre zaznaczone materiały niedostępne'}
+      </div>
+      <div style="font-size:13px;color:${allAvailable ? '#166534' : '#78350f'};margin-top:4px">
+        ${allAvailable ? 
+          'Możesz obciążyć magazyn i przygotować zaznaczone materiały do wydania' : 
+          'Brakujące materiały zostaną zamówione automatycznie. Magazyn zostanie obciążony (stan ujemny na czerwono).'}
+      </div>
+    </div>
+  `;
+  
+  const buttons = [
+    {
+      text: order.materialsPrepared ? '✅ Materiały już przygotowane' : `📦 Obciąż magazyn (${checkedMaterials.length} poz.)`,
+      disabled: order.materialsPrepared || checkedMaterials.length === 0,
+      action: () => {
+        if (checkedMaterials.length === 0) {
+          alert('⚠️ Zaznacz przynajmniej jeden materiał!');
+          return;
+        }
+        if (confirm(`Czy na pewno obciążyć magazyn dla zlecenia "${order.name}"?\n\nZaznaczone materiały: ${checkedMaterials.length} / ${materials.length}\n\nOperacja:\n- Zmniejszy stany magazynowe\n- Utworzy rezerwacje\n- Oznaczy zlecenie jako przygotowane\n\nBrakujące materiały: automatyczne zamówienie`)) {
+          prepareOrderMaterials(orderId);
+          window.dialogInstance.close();
+        }
+      }
+    },
+    { text: 'Anuluj', action: () => window.dialogInstance.close() }
+  ];
+  
+  showModal(`📋 Materiały - ${order.name}`, content, buttons);
+};
+
+// Toggle zaznaczenia materiału w checkliście magazynowej
+window.toggleWarehouseMaterialItem = function(orderId, itemIdx) {
+  const order = (window.state.orders || []).find(o => o.id === orderId);
+  if (!order || !order.warehouseMaterialChecklist) return;
+  
+  const item = order.warehouseMaterialChecklist[itemIdx];
+  if (!item) return;
+  
+  // Przełącz zaznaczenie
+  item.checked = !item.checked;
+  item.checkedAt = new Date().toISOString();
+  item.checkedBy = window.getOrCreateWarehouseManager();
+  
+  save();
+  
+  // Odśwież modal
+  showOrderMaterialsPreparation(orderId);
+};
+
+// Przygotuj materiały - obciąż magazyn (tylko zaznaczone)
+function prepareOrderMaterials(orderId) {
+  const order = (window.state.orders || []).find(o => o.id === orderId);
+  if (!order) return;
+  
+  if (!order.warehouseMaterialChecklist) {
+    alert('Brak checklisty materiałów dla tego zlecenia');
+    return;
+  }
+  
+  // TYLKO ZAZNACZONE MATERIAŁY
+  const materials = order.warehouseMaterialChecklist.filter(m => m.checked !== false);
+  
+  if (materials.length === 0) {
+    alert('⚠️ Nie zaznaczono żadnych materiałów!');
+    return;
+  }
+  
+  const warehouseItems = window.warehouseItems || [];
+  window.warehouseReservations = window.warehouseReservations || [];
+  window.warehouseTasks = window.warehouseTasks || [];
+  
+  let reservedCount = 0;
+  let orderedCount = 0;
+  
+  materials.forEach(material => {
+    const whItem = warehouseItems.find(w => w.id === material.itemId);
+    const needed = material.quantity * (order.quantity || 1);
+    
+    if (!whItem) {
+      // Materiał nie istnieje - dodaj do magazynu z zerem
+      const newItem = {
+        id: material.itemId,
+        name: material.itemName,
+        unit: material.unit,
+        quantity: 0,
+        minStock: 0
+      };
+      warehouseItems.push(newItem);
+      window.warehouseItems = warehouseItems;
+    }
+    
+    const item = warehouseItems.find(w => w.id === material.itemId);
+    const inStock = item.quantity;
+    
+    // Utwórz rezerwację (nawet jeśli stan ujemny)
+    const reservation = {
+      id: `res-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      itemId: material.itemId,
+      itemName: material.itemName,
+      quantity: needed,
+      unit: material.unit,
+      orderId: order.id,
+      orderName: order.name,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      createdBy: 'System'
+    };
+    window.warehouseReservations.push(reservation);
+    reservedCount++;
+    
+    // Zmniejsz stan magazynowy (może być ujemny)
+    item.quantity -= needed;
+    
+    // Jeśli brak - utwórz zadanie zamówienia
+    if (inStock < needed) {
+      const shortage = needed - inStock;
+      const task = {
+        id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        type: 'order_material',
+        orderId: order.id,
+        orderName: order.name,
+        itemId: material.itemId,
+        itemName: material.itemName,
+        unit: material.unit,
+        quantityNeeded: needed,
+        quantityInStock: inStock,
+        quantityToOrder: shortage,
+        status: 'pending',
+        priority: 'urgent',
+        dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // +5 dni
+        createdAt: new Date().toISOString(),
+        createdBy: 'System',
+        assignedToId: window.getOrCreateWarehouseManager()
+      };
+      window.warehouseTasks.push(task);
+      orderedCount++;
+    }
+  });
+  
+  // Oznacz zlecenie jako przygotowane
+  order.materialsPrepared = true;
+  order.materialsPreparedAt = new Date().toISOString();
+  order.materialsPreparedBy = window.getOrCreateWarehouseManager();
+  
+  // Zapisz
+  save();
+  localStorage.setItem('warehouseReservations', JSON.stringify(window.warehouseReservations));
+  localStorage.setItem('warehouseTasks', JSON.stringify(window.warehouseTasks));
+  
+  // Odśwież widoki
+  renderWarehouseOrders();
+  renderWarehouse();
+  updateTasksBadge();
+  
+  alert(`✅ Magazyn obciążony!\n\n📦 Zarezerwowano: ${reservedCount} pozycji\n🛒 Utworzono zamówienia: ${orderedCount} pozycji\n\nSprawdź stany magazynowe w zakładce "Pozycje"`);
+}
+
+// Wydaj materiały na produkcję
+window.issueOrderMaterials = function(orderId) {
+  const order = (window.state.orders || []).find(o => o.id === orderId);
+  if (!order) {
+    alert('Nie znaleziono zlecenia');
+    return;
+  }
+  
+  if (!order.materialsPrepared) {
+    alert('⚠️ Materiały nie zostały jeszcze przygotowane!\n\nNajpierw obciąż magazyn.');
+    return;
+  }
+  
+  if (order.materialsIssued) {
+    alert('⚠️ Materiały dla tego zlecenia zostały już wydane!');
+    return;
+  }
+  
+  const confirmMsg = `Czy na pewno wydać materiały na produkcję dla zlecenia "${order.name}"?\n\nOperacja:\n- Utworzy dokument WZ\n- Oznacz zlecenie jako gotowe do produkcji\n- Zwolni rezerwacje`;
+  
+  if (!confirm(confirmMsg)) return;
+  
+  // Znajdź rezerwacje dla tego zlecenia
+  const reservations = (window.warehouseReservations || []).filter(r => r.orderId === orderId && r.status === 'active');
+  
+  // Zmień status rezerwacji na "used"
+  reservations.forEach(r => r.status = 'used');
+  
+  // Utwórz dokument WZ
+  const transaction = {
+    id: `wz-${Date.now()}`,
+    type: 'out',
+    documentNumber: `WZ/${new Date().getFullYear()}/${Date.now()}`,
+    date: new Date().toISOString(),
+    orderId: order.id,
+    orderName: order.name,
+    items: reservations.map(r => ({
+      itemId: r.itemId,
+      itemName: r.itemName,
+      quantity: r.quantity,
+      unit: r.unit
+    })),
+    notes: `Wydanie materiałów na produkcję - ${order.name}`,
+    createdBy: 'System'
+  };
+  
+  window.warehouseTransactions = window.warehouseTransactions || [];
+  window.warehouseTransactions.push(transaction);
+  
+  // Oznacz zlecenie jako wydane
+  order.materialsIssued = true;
+  order.materialsIssuedAt = new Date().toISOString();
+  order.materialsIssuedBy = window.getOrCreateWarehouseManager();
+  
+  // Zapisz
+  save();
+  localStorage.setItem('warehouseReservations', JSON.stringify(window.warehouseReservations));
+  localStorage.setItem('warehouseTransactions', JSON.stringify(window.warehouseTransactions));
+  
+  // Odśwież widoki
+  renderWarehouseOrders();
+  renderTransactions();
+  
+  alert(`✅ Materiały wydane na produkcję!\n\nDokument WZ: ${transaction.documentNumber}\nPozycji: ${reservations.length}\n\nZlecenie gotowe do rozpoczęcia produkcji.`);
 };
 
 // Renderuj zadania magazyniera - NOWA WERSJA z grupowaniem po zleceniach
@@ -12356,8 +12834,9 @@ function renderWarehouse() {
       </thead>
       <tbody>
         ${filteredItems.map((item, index) => {
-          const isLowStock = item.minStock && item.quantity <= item.minStock;
-          const rowStyle = isLowStock ? 'background:#c0392b' : (index % 2 === 0 ? 'background:#34495e' : 'background:#2c3e50');
+          const isNegative = item.quantity < 0;
+          const isLowStock = !isNegative && item.minStock && item.quantity <= item.minStock;
+          const rowStyle = isNegative ? 'background:#7f1d1d' : (isLowStock ? 'background:#c0392b' : (index % 2 === 0 ? 'background:#34495e' : 'background:#2c3e50'));
           
           // Lokalizacja
           let locationStr = '-';
@@ -12369,13 +12848,17 @@ function renderWarehouse() {
             locationStr = parts.join(' • ');
           }
           
+          const quantityColor = isNegative ? '#fca5a5' : (isLowStock ? '#ffeb3b' : '#ffffff');
+          const statusLabel = isNegative ? '<div style="font-size:12px;color:#fca5a5 !important;font-weight:700;margin-top:2px">🔴 STAN UJEMNY - ZAMÓW</div>' : 
+                             (isLowStock ? '<div style="font-size:12px;color:#ffeb3b !important;font-weight:700;margin-top:2px">⚠️ DO ZAMÓWIENIA</div>' : '');
+          
           return `
             <tr style="${rowStyle};border-bottom:1px solid #1a252f">
               <td style="padding:12px">
                 <div style="font-weight:600;font-size:15px;color:#ffffff !important">${item.name}</div>
-                ${isLowStock ? '<div style="font-size:12px;color:#ffeb3b !important;font-weight:700;margin-top:2px">⚠️ DO ZAMÓWIENIA</div>' : ''}
+                ${statusLabel}
               </td>
-              <td style="padding:12px;text-align:center;font-weight:700;font-size:15px;color:${isLowStock ? '#ffeb3b' : '#ffffff'} !important">${item.quantity}</td>
+              <td style="padding:12px;text-align:center;font-weight:700;font-size:15px;color:${quantityColor} !important">${item.quantity}</td>
               <td style="padding:12px;text-align:center;font-size:14px;color:#ffffff !important">${item.unit}</td>
               <td style="padding:12px;text-align:right;font-weight:600;font-size:14px;color:#ffffff !important">${item.price.toFixed(2)}</td>
               <td style="padding:12px;text-align:center;font-size:14px;color:#ffffff !important">${item.minStock || '-'}</td>
