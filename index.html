@@ -7004,9 +7004,14 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     const r = fbRoot();
     const employees = state.employees || [];
     
+    console.log('🔍 DEBUG: fbRoot path:', r.path);
+    console.log('🔍 DEBUG: employees count:', employees.length);
+    
     employees.forEach(emp => {
       if (emp && emp.id) {
         const payload = JSON.parse(JSON.stringify(emp));
+        const docPath = r.collection('employees').doc(emp.id).path;
+        console.log('📝 Saving employee to:', docPath);
         batch.set(r.collection('employees').doc(emp.id), payload, { merge: true });
       }
     });
