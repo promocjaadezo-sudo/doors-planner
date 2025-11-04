@@ -2237,12 +2237,12 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           return false;
         }
         
-        console.log('📦 INIT: Firebase SDK załadowany i uwierzytelniony');
+        console.log('📦 INIT: Firebase SDK załadowany');
         
-        // 3. Sprawdź status uwierzytelnienia
+        // 3. Sprawdź status uwierzytelnienia (ensureFirebase już je zapewniło)
         const auth = firebase.auth();
         const uid = auth.currentUser ? auth.currentUser.uid : 'unknown';
-        console.log('✅ INIT: Połączono z Firebase! UID:', uid);
+        console.log('✅ INIT: Połączono z Firebase i uwierzytelniono! UID:', uid);
         
         // 4. Zaktualizuj status połączenia
         if (typeof updateConnectionStatus === 'function') {
@@ -6704,7 +6704,9 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       if(!auth.currentUser){
         try{
           await auth.signInAnonymously();
-          console.log('✅ Zalogowano anonimowo (reconnect):', auth.currentUser.uid);
+          if(auth.currentUser && auth.currentUser.uid){
+            console.log('✅ Zalogowano anonimowo (reconnect):', auth.currentUser.uid);
+          }
         }catch(e){
           console.warn('⚠️ Błąd logowania anonimowego:', e.message);
           return false;
@@ -6731,7 +6733,9 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       const auth = firebase.auth();
       if(!auth.currentUser){
         await auth.signInAnonymously();
-        console.log('✅ Zalogowano anonimowo (nowe połączenie):', auth.currentUser.uid);
+        if(auth.currentUser && auth.currentUser.uid){
+          console.log('✅ Zalogowano anonimowo (nowe połączenie):', auth.currentUser.uid);
+        }
       }
       
       return true;
