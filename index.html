@@ -13420,9 +13420,26 @@ let syncStats = {
 
 // Funkcja: Włącz synchronizację real-time
 function startRealtimeSync() {
-  if (!window.db) {
-    alert('❌ Firebase nie jest połączony\n\nPrzełącz tryb na Firebase w ustawieniach.');
-    return;
+  // Sprawdź czy Firebase jest w pełni zainicjalizowany
+  if (!window.db || !window.firebaseLoaded) {
+    // Jeśli tryb Firebase aktywny, czekamy na inicjalizację
+    if (window.currentMode === 'firebase') {
+      addSyncLog('⏳ Oczekiwanie na połączenie Firebase...', 'info');
+      
+      // Spróbuj ponownie po 2 sekundach
+      setTimeout(() => {
+        if (window.db && window.firebaseLoaded) {
+          addSyncLog('✅ Firebase gotowy - uruchamiam sync', 'success');
+          startRealtimeSync();
+        } else {
+          alert('❌ Firebase nie jest połączony\n\nPrzełącz tryb na Firebase w ustawieniach.');
+        }
+      }, 2000);
+      return;
+    } else {
+      alert('❌ Firebase nie jest połączony\n\nPrzełącz tryb na Firebase w ustawieniach.');
+      return;
+    }
   }
 
   if (realtimeSyncEnabled) {
