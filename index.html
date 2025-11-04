@@ -1040,32 +1040,72 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
 
   <div class="card hidden" id="p-sync">
     <div class="row" style="justify-content:space-between;margin-bottom:16px">
-      <h3>🔄 Synchronizacja z pracownikami</h3>
+      <h3>🔄 Synchronizacja Firebase Real-time</h3>
     </div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-      <div class="card" style="text-align: center;">
-        <h4>📤 Eksport zadań</h4>
-        <p style="color: #94a3b8; font-size: 14px; margin: 8px 0;">
-          Wyeksportuj zadania produkcyjne dla aplikacji pracowników
-        </p>
-        <button class="btn green" onclick="exportTasksForWorkers()">📤 Eksportuj zadania</button>
-      </div>
-      <div class="card" style="text-align: center;">
-        <h4>📥 Import potwierdzeń</h4>
-        <p style="color: #94a3b8; font-size: 14px; margin: 8px 0;">
-          Zaimportuj potwierdzenia wykonania zadań od pracowników
-        </p>
-        <button class="btn blue" onclick="importWorkerConfirmations()">📥 Importuj potwierdzenia</button>
+
+    <!-- Status synchronizacji -->
+    <div class="card" style="background: rgba(37, 99, 235, 0.1); margin-bottom: 16px;">
+      <h4>📡 Status połączenia</h4>
+      <div style="display: flex; align-items: center; gap: 12px; margin: 8px 0;">
+        <span id="sync-indicator" style="font-size: 24px;">🔴</span>
+        <div>
+          <div id="sync-text" style="font-weight: 600; color: #ffffff;">Rozłączono</div>
+          <div style="font-size: 12px; color: #94a3b8;">
+            Ostatnia synchronizacja: <span id="last-sync-time">Nigdy</span>
+          </div>
+        </div>
       </div>
     </div>
-    <div style="margin-top: 16px; padding: 12px; background: rgba(37, 99, 235, 0.1); border-radius: 8px; border-left: 4px solid #2563eb;">
-      <h4 style="margin: 0 0 8px 0; color: #2563eb;">📱 Instrukcja użycia:</h4>
-      <ol style="margin: 0; padding-left: 20px; color: #94a3b8; font-size: 14px;">
-        <li>Otwórz aplikację <code>worker-app.html</code> na urządzeniu pracownika</li>
-        <li>Wyeksportuj zadania i prześlij plik na urządzenie</li>
-        <li>Pracownik potwierdza wykonanie zadań w aplikacji</li>
-        <li>Zaimportuj potwierdzenia z powrotem do systemu głównego</li>
-      </ol>
+
+    <!-- Statystyki synchronizacji -->
+    <div class="grid3" style="margin-bottom: 16px;">
+      <div class="card" style="text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 4px;">📤</div>
+        <div id="sync-uploaded" style="font-size: 24px; font-weight: 700; color: var(--acc);">0</div>
+        <div style="font-size: 12px; color: #94a3b8;">Wysłano do Firebase</div>
+      </div>
+      <div class="card" style="text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 4px;">📥</div>
+        <div id="sync-downloaded" style="font-size: 24px; font-weight: 700; color: var(--ok);">0</div>
+        <div style="font-size: 12px; color: #94a3b8;">Pobrano z Firebase</div>
+      </div>
+      <div class="card" style="text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 4px;">⚡</div>
+        <div id="sync-pending" style="font-size: 24px; font-weight: 700; color: var(--warn);">0</div>
+        <div style="font-size: 12px; color: #94a3b8;">Oczekujących zmian</div>
+      </div>
+    </div>
+
+    <!-- Przyciski kontrolne -->
+    <div class="row" style="gap: 8px; margin-bottom: 16px;">
+      <button class="btn green" onclick="startRealtimeSync()" id="btn-start-sync">
+        ▶️ Włącz auto-sync
+      </button>
+      <button class="btn amber" onclick="stopRealtimeSync()" id="btn-stop-sync" disabled>
+        ⏸️ Wstrzymaj
+      </button>
+      <button class="btn blue" onclick="forceSyncNow()">
+        � Synchronizuj teraz
+      </button>
+    </div>
+
+    <!-- Instrukcje -->
+    <div style="padding: 12px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border-left: 4px solid #10b981;">
+      <h4 style="margin: 0 0 8px 0; color: #10b981;">✅ Jak to działa:</h4>
+      <ul style="margin: 0; padding-left: 20px; color: #94a3b8; font-size: 14px; line-height: 1.8;">
+        <li><strong>Auto-sync:</strong> Wszystkie zmiany synchronizują się automatycznie z Firebase</li>
+        <li><strong>Worker-app:</strong> Pracownicy widzą zadania i aktualizacje w czasie rzeczywistym</li>
+        <li><strong>Dwukierunkowy:</strong> Zmiany od pracowników trafiają do Planera natychmiast</li>
+        <li><strong>Offline:</strong> Zmiany synchronizują się gdy internet będzie dostępny</li>
+      </ul>
+    </div>
+
+    <!-- Logi synchronizacji -->
+    <div style="margin-top: 16px;">
+      <h4>📋 Ostatnie zdarzenia:</h4>
+      <div id="sync-logs" style="max-height: 200px; overflow-y: auto; background: #111827; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px;">
+        <div style="color: #94a3b8;">Brak zdarzeń...</div>
+      </div>
     </div>
   </div>
 
@@ -13365,119 +13405,303 @@ if (document.readyState === 'loading') {
 }
 
 // Funkcje synchronizacji z aplikacją pracowników
-function exportTasksForWorkers() {
-  // Przykładowe zadania - w rzeczywistości należy zebrać z systemu MRP
-  const sampleTasks = [
-    {
-      id: 1,
-      title: "Cięcie drzwi #1234",
-      model: "DREWNO-001",
-      quantity: 5,
-      unit: "szt",
-      deadline: "14:00",
-      status: "pending",
-      estimatedTime: 120,
-      priority: "high",
-      assignedTo: "Jan Kowalski"
-    },
-    {
-      id: 2,
-      title: "Montaż okuć #1235",
-      model: "DREWNO-002",
-      quantity: 3,
-      unit: "szt",
-      deadline: "16:00",
-      status: "pending",
-      estimatedTime: 90,
-      priority: "medium",
-      assignedTo: "Anna Nowak"
-    },
-    {
-      id: 3,
-      title: "Lakierowanie #1236",
-      model: "DREWNO-003",
-      quantity: 8,
-      unit: "szt",
-      deadline: "12:00",
-      status: "pending",
-      estimatedTime: 180,
-      priority: "high",
-      assignedTo: "Piotr Wiśniewski"
-    }
-  ];
+// ============================================
+// FIREBASE REAL-TIME SYNCHRONIZATION MODULE
+// ============================================
 
-  const exportData = {
-    exportDate: new Date().toISOString(),
-    tasks: sampleTasks,
-    version: "1.0",
-    system: "Doors Planner Admin"
-  };
+// Globalne zmienne dla real-time sync
+let realtimeSyncEnabled = false;
+let firebaseListeners = [];
+let syncStats = {
+  uploaded: 0,
+  downloaded: 0,
+  pending: 0
+};
 
-  const jsonContent = JSON.stringify(exportData, null, 2);
-  const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', 'tasks-export.json');
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+// Funkcja: Włącz synchronizację real-time
+function startRealtimeSync() {
+  if (!window.db) {
+    alert('❌ Firebase nie jest połączony\n\nPrzełącz tryb na Firebase w ustawieniach.');
+    return;
+  }
 
-  alert('📤 Plik tasks-export.json został pobrany.\n\nPrzenieś go na urządzenie pracownika i zaimportuj w aplikacji Worker App.');
+  if (realtimeSyncEnabled) {
+    alert('ℹ️ Synchronizacja real-time jest już włączona');
+    return;
+  }
+
+  realtimeSyncEnabled = true;
+  addSyncLog('🚀 Włączanie synchronizacji real-time...', 'info');
+
+  try {
+    // Listener dla zadań (tasks)
+    const tasksListener = window.db.collection('tasks')
+      .onSnapshot((snapshot) => {
+        let changes = 0;
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            addTaskFromFirebase(change.doc.data());
+            changes++;
+            addSyncLog(`📥 Nowe zadanie: ${change.doc.data().name || change.doc.id}`, 'success');
+          }
+          if (change.type === 'modified') {
+            updateTaskFromFirebase(change.doc.data());
+            changes++;
+            addSyncLog(`🔄 Zaktualizowano: ${change.doc.data().name || change.doc.id}`, 'info');
+          }
+          if (change.type === 'removed') {
+            removeTaskFromFirebase(change.doc.id);
+            changes++;
+            addSyncLog(`🗑️ Usunięto zadanie: ${change.doc.id}`, 'warning');
+          }
+        });
+        
+        if (changes > 0) {
+          syncStats.downloaded += changes;
+          updateSyncStats();
+          updateLastSyncTime();
+        }
+      }, (error) => {
+        addSyncLog(`❌ Błąd listenera zadań: ${error.message}`, 'error');
+        console.error('Tasks listener error:', error);
+      });
+
+    firebaseListeners.push(tasksListener);
+
+    // Listener dla pracowników (employees)
+    const employeesListener = window.db.collection('employees')
+      .onSnapshot((snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added' || change.type === 'modified') {
+            addSyncLog(`👥 Zaktualizowano pracownika: ${change.doc.data().name}`, 'info');
+          }
+        });
+        updateLastSyncTime();
+      });
+
+    firebaseListeners.push(employeesListener);
+
+    // Listener dla zamówień (orders)
+    const ordersListener = window.db.collection('orders')
+      .onSnapshot((snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added' || change.type === 'modified') {
+            addSyncLog(`📦 Zaktualizowano zamówienie: ${change.doc.data().client || change.doc.id}`, 'info');
+          }
+        });
+        updateLastSyncTime();
+      });
+
+    firebaseListeners.push(ordersListener);
+
+    // Aktualizacja UI
+    document.getElementById('sync-indicator').textContent = '🟢';
+    document.getElementById('sync-text').textContent = 'Połączono - Auto-sync aktywny';
+    document.getElementById('btn-start-sync').disabled = true;
+    document.getElementById('btn-stop-sync').disabled = false;
+    
+    addSyncLog('✅ Synchronizacja real-time włączona pomyślnie', 'success');
+    
+    // Pierwsza pełna synchronizacja
+    forceSyncNow();
+
+  } catch (error) {
+    addSyncLog(`❌ Błąd podczas włączania sync: ${error.message}`, 'error');
+    console.error('Start sync error:', error);
+    realtimeSyncEnabled = false;
+  }
 }
 
-function importWorkerConfirmations() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
+// Funkcja: Wyłącz synchronizację real-time
+function stopRealtimeSync() {
+  if (!realtimeSyncEnabled) {
+    alert('ℹ️ Synchronizacja real-time nie jest włączona');
+    return;
+  }
 
-  input.onchange = function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+  realtimeSyncEnabled = false;
+  
+  // Zatrzymanie wszystkich listenerów
+  firebaseListeners.forEach(unsubscribe => {
+    try {
+      unsubscribe();
+    } catch (e) {
+      console.error('Error unsubscribing:', e);
+    }
+  });
+  firebaseListeners = [];
+  
+  // Aktualizacja UI
+  document.getElementById('sync-indicator').textContent = '🟡';
+  document.getElementById('sync-text').textContent = 'Wstrzymano';
+  document.getElementById('btn-start-sync').disabled = false;
+  document.getElementById('btn-stop-sync').disabled = true;
+  
+  addSyncLog('⏸️ Synchronizacja real-time wstrzymana', 'warning');
+}
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      try {
-        const data = JSON.parse(e.target.result);
+// Funkcja: Wymuś synchronizację teraz
+function forceSyncNow() {
+  if (!window.db) {
+    alert('❌ Firebase nie jest połączony');
+    return;
+  }
 
-        if (data.confirmations && Array.isArray(data.confirmations)) {
-          let importedCount = 0;
-          let completedCount = 0;
+  addSyncLog('🔄 Wymuszanie pełnej synchronizacji...', 'info');
+  
+  const promises = [];
+  
+  // Synchronizacja zadań
+  if (window.tasks && window.tasks.length > 0) {
+    promises.push(
+      saveTasksToFirebase().then(() => {
+        syncStats.uploaded += window.tasks.length;
+        addSyncLog(`📤 Wysłano ${window.tasks.length} zadań`, 'success');
+      })
+    );
+  }
+  
+  // Synchronizacja pracowników
+  if (window.employees && window.employees.length > 0) {
+    promises.push(
+      saveEmployeesToFirebase().then(() => {
+        addSyncLog(`📤 Wysłano ${window.employees.length} pracowników`, 'success');
+      })
+    );
+  }
+  
+  // Synchronizacja zamówień
+  if (window.orders && window.orders.length > 0) {
+    promises.push(
+      saveOrdersToFirebase().then(() => {
+        addSyncLog(`📤 Wysłano ${window.orders.length} zamówień`, 'success');
+      })
+    );
+  }
 
-          data.confirmations.forEach(confirmation => {
-            console.log('Import potwierdzenia:', confirmation);
-            importedCount++;
+  Promise.all(promises)
+    .then(() => {
+      updateSyncStats();
+      updateLastSyncTime();
+      addSyncLog('✅ Pełna synchronizacja zakończona pomyślnie', 'success');
+    })
+    .catch(error => {
+      addSyncLog(`❌ Błąd synchronizacji: ${error.message}`, 'error');
+      console.error('Force sync error:', error);
+    });
+}
 
-            if (confirmation.status === 'completed') {
-              completedCount++;
-            }
+// Funkcja: Dodaj zadanie z Firebase
+function addTaskFromFirebase(taskData) {
+  if (!window.tasks) window.tasks = [];
+  
+  const exists = window.tasks.find(t => t.id === taskData.id);
+  if (!exists) {
+    window.tasks.push(taskData);
+    save();
+    if (typeof renderTasks === 'function') {
+      renderTasks();
+    }
+  }
+}
 
-            // Tutaj należy zaktualizować zadania w głównym systemie
-            // Na razie tylko logujemy
-          });
+// Funkcja: Zaktualizuj zadanie z Firebase
+function updateTaskFromFirebase(taskData) {
+  if (!window.tasks) window.tasks = [];
+  
+  const index = window.tasks.findIndex(t => t.id === taskData.id);
+  if (index !== -1) {
+    window.tasks[index] = { ...window.tasks[index], ...taskData };
+    save();
+    if (typeof renderTasks === 'function') {
+      renderTasks();
+    }
+  }
+}
 
-          alert(`✅ Zaimportowano ${importedCount} potwierdzeń zadań\n` +
-                `📊 Ukończonych zadań: ${completedCount}\n\n` +
-                `Szczegóły w konsoli przeglądarki.`);
+// Funkcja: Usuń zadanie z Firebase
+function removeTaskFromFirebase(taskId) {
+  if (!window.tasks) return;
+  
+  window.tasks = window.tasks.filter(t => t.id !== taskId);
+  save();
+  if (typeof renderTasks === 'function') {
+    renderTasks();
+  }
+}
 
-        } else if (data.tasks && Array.isArray(data.tasks)) {
-          // To może być plik eksportu zadań zamiast potwierdzeń
-          alert('To wygląda na plik eksportu zadań, a nie potwierdzeń.\n\n' +
-                'Użyj funkcji "Importuj zadania" w aplikacji Worker App.');
-        } else {
-          alert('❌ Nieprawidłowy format pliku.\n\n' +
-                'Oczekiwany format: {"confirmations": [...]}');
-        }
-      } catch (error) {
-        alert('❌ Błąd podczas parsowania pliku:\n' + error.message);
-      }
-    };
+// Funkcja: Aktualizuj statystyki synchronizacji
+function updateSyncStats() {
+  document.getElementById('sync-uploaded').textContent = syncStats.uploaded;
+  document.getElementById('sync-downloaded').textContent = syncStats.downloaded;
+  document.getElementById('sync-pending').textContent = syncStats.pending;
+}
 
-    reader.readAsText(file);
+// Funkcja: Aktualizuj czas ostatniej synchronizacji
+function updateLastSyncTime() {
+  const now = new Date().toLocaleString('pl-PL', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+  document.getElementById('last-sync-time').textContent = now;
+}
+
+// Funkcja: Dodaj log synchronizacji
+function addSyncLog(message, type = 'info') {
+  const logsContainer = document.getElementById('sync-logs');
+  if (!logsContainer) return;
+  
+  const timestamp = new Date().toLocaleTimeString('pl-PL');
+  const colors = {
+    info: '#3b82f6',
+    success: '#10b981',
+    warning: '#f59e0b',
+    error: '#ef4444'
   };
+  
+  const logEntry = document.createElement('div');
+  logEntry.style.color = colors[type] || colors.info;
+  logEntry.style.marginBottom = '4px';
+  logEntry.textContent = `[${timestamp}] ${message}`;
+  
+  // Dodaj na początku
+  if (logsContainer.firstChild && logsContainer.firstChild.textContent === 'Brak zdarzeń...') {
+    logsContainer.innerHTML = '';
+  }
+  
+  logsContainer.insertBefore(logEntry, logsContainer.firstChild);
+  
+  // Ogranicz do 50 wpisów
+  while (logsContainer.children.length > 50) {
+    logsContainer.removeChild(logsContainer.lastChild);
+  }
+}
 
-  input.click();
+// Hook: Auto-sync przy każdym zapisie
+const originalSave = window.save;
+if (originalSave && typeof originalSave === 'function') {
+  window.save = function(...args) {
+    // Wywołaj oryginalny save
+    const result = originalSave.apply(this, args);
+    
+    // Jeśli real-time sync włączony i Firebase aktywny
+    if (realtimeSyncEnabled && window.currentMode === 'firebase' && window.db) {
+      // Synchronizuj w tle (nie blokuj UI)
+      setTimeout(() => {
+        if (typeof saveTasksToFirebase === 'function') {
+          saveTasksToFirebase().catch(err => {
+            console.error('Auto-sync error:', err);
+          });
+        }
+      }, 100);
+    }
+    
+    return result;
+  };
 }
 
 function exportWarehouseToCSV() {
