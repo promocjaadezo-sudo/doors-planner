@@ -687,10 +687,12 @@
             try {
                 // Pobierz appId i userId z localStorage planera
                 let appId = localStorage.getItem('planner-app-id');
-                let userId = null;
+                let userId = localStorage.getItem('planner-user-id');
+                
+                console.log('🔍 loadEmployeesFromFirebase - appId:', appId, 'userId:', userId);
                 
                 // Jeśli nie ma, użyj domyślnych wartości
-                if (!appId) {
+                if (!appId || !userId) {
                     // Sprawdź w różnych kluczach localStorage
                     const keys = Object.keys(localStorage);
                     for (const key of keys) {
