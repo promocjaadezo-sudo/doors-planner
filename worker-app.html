@@ -1000,8 +1000,12 @@
                 updateNotificationUI();
             }
 
-            // Ustawienie nazwy użytkownika w tytule
-            document.title = `Worker App - ${currentUser.name}`;
+            // Ustawienie nazwy użytkownika w tytule (tylko jeśli currentUser istnieje)
+            if (currentUser && currentUser.name) {
+                document.title = `Worker App - ${currentUser.name}`;
+            } else {
+                document.title = 'Worker App';
+            }
             
             // Uruchomienie przypomnień dla aktywnych zadań
             startRemindersForActiveTasks();

@@ -7253,6 +7253,12 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   qs('#set-test').addEventListener('click',async()=>{
     try{
   state.storage.mode=qs('#set-mode').value; state.storage.appId=qs('#set-appid').value.trim(); state.storage.userId=qs('#set-userid').value.trim();
+  
+  // Export appId and userId to localStorage for Worker-app access
+  localStorage.setItem('planner-app-id', state.storage.appId);
+  localStorage.setItem('planner-user-id', state.storage.userId);
+  console.log('📤 Exported to localStorage for Worker-app:', { appId: state.storage.appId, userId: state.storage.userId });
+  
   if(typeof updateScheduleConfigFromUI === 'function'){ updateScheduleConfigFromUI(); }
   try{ if(window.scheduleCore){ window.scheduleCore.generateSchedule(state); } }catch(e){ console.warn('regen schedule', e.message); }
   renderGantt();
