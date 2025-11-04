@@ -626,33 +626,37 @@
         // Inicjalizacja Firebase
         async function initializeFirebase() {
             try {
-                // Dynamiczne ładowanie Firebase SDK
-                const script1 = document.createElement('script');
-                script1.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js';
-                document.head.appendChild(script1);
-
-                const script2 = document.createElement('script');
-                script2.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js';
-                document.head.appendChild(script2);
-
-                const script3 = document.createElement('script');
-                script3.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js';
-                document.head.appendChild(script3);
-
-                // Czekaj na załadowanie wszystkich skryptów
-                await new Promise(resolve => {
-                    script3.onload = resolve;
+                // Dynamiczne ładowanie Firebase SDK - czekaj na wszystkie skrypty
+                await new Promise((resolve, reject) => {
+                    let loaded = 0;
+                    const scripts = [
+                        'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
+                        'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js',
+                        'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js'
+                    ];
+                    
+                    scripts.forEach((src, index) => {
+                        const script = document.createElement('script');
+                        script.src = src;
+                        script.onload = () => {
+                            loaded++;
+                            console.log(`✅ Loaded ${index + 1}/${scripts.length}: ${src.split('/').pop()}`);
+                            if (loaded === scripts.length) resolve();
+                        };
+                        script.onerror = () => reject(new Error(`Failed to load ${src}`));
+                        document.head.appendChild(script);
+                    });
                 });
 
                 // Czekaj aż firebase będzie dostępny globalnie
                 let attempts = 0;
-                while (typeof firebase === 'undefined' && attempts < 50) {
+                while ((typeof firebase === 'undefined' || typeof firebase.firestore !== 'function') && attempts < 50) {
                     await new Promise(r => setTimeout(r, 100));
                     attempts++;
                 }
 
-                if (typeof firebase === 'undefined') {
-                    throw new Error('Firebase SDK nie załadował się');
+                if (typeof firebase === 'undefined' || typeof firebase.firestore !== 'function') {
+                    throw new Error('Firebase SDK nie załadował się poprawnie');
                 }
 
                 console.log('🔥 Firebase SDK załadowany, inicjalizacja...');
