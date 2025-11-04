@@ -639,10 +639,23 @@
                 script3.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js';
                 document.head.appendChild(script3);
 
-                // Czekaj na załadowanie
+                // Czekaj na załadowanie wszystkich skryptów
                 await new Promise(resolve => {
                     script3.onload = resolve;
                 });
+
+                // Czekaj aż firebase będzie dostępny globalnie
+                let attempts = 0;
+                while (typeof firebase === 'undefined' && attempts < 50) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase SDK nie załadował się');
+                }
+
+                console.log('🔥 Firebase SDK załadowany, inicjalizacja...');
 
                 // Inicjalizuj Firebase
                 firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
