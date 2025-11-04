@@ -2237,13 +2237,11 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           return false;
         }
         
-        console.log('📦 INIT: Firebase SDK załadowany');
+        console.log('📦 INIT: Firebase SDK załadowany i uwierzytelniony');
         
-        // 3. Zaloguj się anonimowo
-        console.log('🔐 INIT: Loguję się anonimowo...');
-        const cred = await firebase.auth().signInAnonymously();
-        const uid = cred.user && cred.user.uid;
-        
+        // 3. Sprawdź status uwierzytelnienia
+        const auth = firebase.auth();
+        const uid = auth.currentUser ? auth.currentUser.uid : 'unknown';
         console.log('✅ INIT: Połączono z Firebase! UID:', uid);
         
         // 4. Zaktualizuj status połączenia
@@ -6699,7 +6697,21 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     });
   }
   async function ensureFirebase(){
-    if(window.firebase&&firebase.apps&&firebase.apps.length){return true;}
+    // Jeśli Firebase już załadowany i zainicjalizowany, sprawdź tylko autentykację
+    if(window.firebase&&firebase.apps&&firebase.apps.length){
+      // Upewnij się, że użytkownik jest zalogowany
+      const auth = firebase.auth();
+      if(!auth.currentUser){
+        try{
+          await auth.signInAnonymously();
+          console.log('✅ Zalogowano anonimowo (reconnect):', auth.currentUser.uid);
+        }catch(e){
+          console.warn('⚠️ Błąd logowania anonimowego:', e.message);
+          return false;
+        }
+      }
+      return true;
+    }
     try{
       const cfg=state.storage.fbConfig||{}; if(!cfg.apiKey) throw new Error('Brak config');
       
@@ -6714,6 +6726,14 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       await loadScript('https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js');
       await loadScript('https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js');
       if(!firebase.apps.length){firebase.initializeApp(cfg);}
+      
+      // Zaloguj użytkownika anonimowo po inicjalizacji
+      const auth = firebase.auth();
+      if(!auth.currentUser){
+        await auth.signInAnonymously();
+        console.log('✅ Zalogowano anonimowo (nowe połączenie):', auth.currentUser.uid);
+      }
+      
       return true;
     }catch(e){
       console.warn('Firebase load/init error:',e.message);
@@ -7021,7 +7041,8 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       try{state.storage.fbConfig=JSON.parse(qs('#set-fb').value||'{}');}catch(e){qs('#set-info').textContent='Błędny JSON';return;}
       save(); updateConnectionStatus(); if(state.storage.mode!=='firebase'){qs('#set-info').textContent='Tryb localStorage (offline)';return;}
       const ok=await ensureFirebase(); if(!ok) throw new Error('Firebase init failed');
-      const cred=await firebase.auth().signInAnonymously(); qs('#set-info').textContent='✅ Połączono. UID: '+(cred.user&&cred.user.uid);
+      const auth=firebase.auth();
+      qs('#set-info').textContent='✅ Połączono. UID: '+(auth.currentUser ? auth.currentUser.uid : 'unknown');
     }catch(e){qs('#set-info').textContent='❌ Błąd: '+e.message;}
   });
   qs('#set-save').addEventListener('click',saveToDB);
