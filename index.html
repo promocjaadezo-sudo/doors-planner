@@ -6889,6 +6889,8 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     }
   }
   function fbRoot(){return firebase.firestore().collection('planner').doc(state.storage.appId).collection('users').doc(state.storage.userId);}
+  window.fbRoot = fbRoot; // Export globally for helper functions
+  
   async function saveToDB(customState){
     if(state.storage.mode!=='firebase'){qs('#set-info').textContent='Tryb localStorage (offline)';return;}
     const ok=await ensureFirebase(); if(!ok){return;}
