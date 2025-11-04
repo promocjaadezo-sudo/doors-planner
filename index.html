@@ -6988,6 +6988,74 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   
   // Export saveToDB globally for use in other functions
   window.saveToDB = saveToDB;
+  
+  // ============================================
+  // HELPER FUNCTIONS FOR REAL-TIME SYNC
+  // ============================================
+  
+  // Save employees to Firebase
+  async function saveEmployeesToFirebase() {
+    const ok = await ensureFirebase();
+    if (!ok) throw new Error('Firebase not ready');
+    
+    const batch = firebase.firestore().batch();
+    const r = fbRoot();
+    const employees = state.employees || [];
+    
+    employees.forEach(emp => {
+      if (emp && emp.id) {
+        const payload = JSON.parse(JSON.stringify(emp));
+        batch.set(r.collection('employees').doc(emp.id), payload, { merge: true });
+      }
+    });
+    
+    await batch.commit();
+    console.log(`✅ Zapisano ${employees.length} pracowników do Firebase`);
+  }
+  window.saveEmployeesToFirebase = saveEmployeesToFirebase;
+  
+  // Save tasks to Firebase
+  async function saveTasksToFirebase() {
+    const ok = await ensureFirebase();
+    if (!ok) throw new Error('Firebase not ready');
+    
+    const batch = firebase.firestore().batch();
+    const r = fbRoot();
+    const tasks = state.tasks || [];
+    
+    tasks.forEach(task => {
+      if (task && task.id) {
+        const payload = JSON.parse(JSON.stringify(task));
+        batch.set(r.collection('tasks').doc(task.id), payload, { merge: true });
+      }
+    });
+    
+    await batch.commit();
+    console.log(`✅ Zapisano ${tasks.length} zadań do Firebase`);
+  }
+  window.saveTasksToFirebase = saveTasksToFirebase;
+  
+  // Save orders to Firebase
+  async function saveOrdersToFirebase() {
+    const ok = await ensureFirebase();
+    if (!ok) throw new Error('Firebase not ready');
+    
+    const batch = firebase.firestore().batch();
+    const r = fbRoot();
+    const orders = state.orders || [];
+    
+    orders.forEach(order => {
+      if (order && order.id) {
+        const payload = JSON.parse(JSON.stringify(order));
+        batch.set(r.collection('orders').doc(order.id), payload, { merge: true });
+      }
+    });
+    
+    await batch.commit();
+    console.log(`✅ Zapisano ${orders.length} zamówień do Firebase`);
+  }
+  window.saveOrdersToFirebase = saveOrdersToFirebase;
+  
   // Save single task document to Firestore (merge)
   async function _saveTaskToDB_once(taskId){
     const ok = await ensureFirebase(); if(!ok) throw new Error('Firebase not ready');
