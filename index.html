@@ -875,6 +875,10 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
     <div class="row" style="gap:8px;margin-bottom:16px;border-bottom:1px solid var(--b);padding-bottom:8px;flex-wrap:wrap">
       <button class="btn" id="wh-tab-items" onclick="switchWarehouseTab('items')">📋 Pozycje</button>
       <button class="btn" id="wh-tab-orders" onclick="switchWarehouseTab('orders')">📦 Zlecenia do realizacji</button>
+      <button class="btn" id="wh-tab-monitoring" onclick="switchWarehouseTab('monitoring')" style="position:relative">
+        📊 Monitoring wykonania
+        <span id="monitoring-badge" style="display:none;position:absolute;top:-8px;right:-8px;background:#dc2626;color:white;border-radius:12px;padding:2px 8px;font-size:12px;font-weight:bold;min-width:20px;text-align:center"></span>
+      </button>
       <button class="btn" id="wh-tab-transactions" onclick="switchWarehouseTab('transactions')">📝 Przychód/Rozchód</button>
       <button class="btn" id="wh-tab-reservations" onclick="switchWarehouseTab('reservations')">🔒 Rezerwacje</button>
       <button class="btn" id="wh-tab-tasks" onclick="switchWarehouseTab('tasks')" style="position:relative">
@@ -882,6 +886,10 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
         <span id="tasks-badge" style="display:none;position:absolute;top:-8px;right:-8px;background:#dc2626;color:white;border-radius:12px;padding:2px 8px;font-size:12px;font-weight:bold;min-width:20px;text-align:center"></span>
       </button>
       <button class="btn" id="wh-tab-templates" onclick="switchWarehouseTab('templates')">📑 Szablony materiałowe</button>
+      <button class="btn" id="wh-tab-mrp" onclick="switchWarehouseTab('mrp')" style="position:relative">
+        🛒 MRP / Zakupy
+        <span id="mrp-badge" style="display:none;position:absolute;top:-8px;right:-8px;background:#dc2626;color:white;border-radius:12px;padding:2px 8px;font-size:12px;font-weight:bold;min-width:20px;text-align:center"></span>
+      </button>
       <button class="btn primary" id="shopping-list-btn" onclick="window.showShoppingList()" style="background:#f59e0b;margin-left:auto;position:relative">
         🛒 Lista zakupów
         <span id="shopping-badge" style="display:none;position:absolute;top:-8px;right:-8px;background:#dc2626;color:white;border-radius:12px;padding:2px 8px;font-size:12px;font-weight:bold;min-width:20px;text-align:center"></span>
@@ -911,6 +919,15 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
         <button class="btn green" onclick="filterWarehouseOrders('issued')">✅ Wydane</button>
       </div>
       <div class="list" id="wh-orders-list"></div>
+    </div>
+    
+    <!-- Widok: Monitoring wykonania (ANALIZA) -->
+    <div id="wh-view-monitoring" class="hidden">
+      <div style="margin-bottom:16px;padding:12px;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:4px">
+        <div style="font-weight:600;font-size:16px;color:#92400e;margin-bottom:4px">📊 Monitoring wykonania zadań magazynowych</div>
+        <div style="font-size:14px;color:#78350f">Analiza terminowości wykonania zadań przez magazyniera</div>
+      </div>
+      <div id="wh-monitoring-content"></div>
     </div>
     
     <!-- Widok: Przychód/Rozchód -->
@@ -966,6 +983,58 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
         <button class="btn" onclick="diagnoseShablon()">🔍 Diagnoza szablonów</button>
       </div>
       <div class="list" id="wh-templates-list"></div>
+    </div>
+    
+    <!-- Widok: MRP / Zakupy -->
+    <div id="wh-view-mrp" class="hidden">
+      <div style="margin-bottom:16px;padding:12px;background:#dbeafe;border-left:4px solid #3b82f6;border-radius:4px">
+        <div style="font-weight:600;font-size:16px;color:#1e40af;margin-bottom:4px">🛒 Planowanie Potrzeb Materiałowych (MRP)</div>
+        <div style="font-size:14px;color:#64748b">Zarządzaj zamówieniami zakupowymi — druk, e-mail, SMS do kierowcy</div>
+      </div>
+      
+      <!-- Przyciski akcji -->
+      <div class="row" style="gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        <button class="btn green" onclick="showPurchaseOrderModal()">➕ Nowe zamówienie</button>
+        <button class="btn blue" onclick="scanForPurchaseNeeds()">🔍 Analiza MRP (auto)</button>
+        <button class="btn orange" onclick="exportPurchaseOrdersToCSV()">📊 Eksportuj CSV</button>
+        <select id="po-status-filter" onchange="renderPurchaseOrders()" style="margin-left:auto;min-width:150px">
+          <option value="">Wszystkie statusy</option>
+          <option value="draft">Szkice</option>
+          <option value="sent">Wysłane</option>
+          <option value="confirmed">Potwierdzone</option>
+          <option value="received">Odebrane</option>
+        </select>
+        <select id="po-type-filter" onchange="renderPurchaseOrders()" style="min-width:150px">
+          <option value="">Wszystkie typy</option>
+          <option value="standard">Standardowe</option>
+          <option value="small">Drobne zakupy</option>
+        </select>
+      </div>
+      
+      <!-- Dashboard MRP (kafelki statusowe) -->
+      <div class="grid3" style="margin-bottom:16px">
+        <div class="card" style="text-align:center;background:#fef3c7;border-left:4px solid #f59e0b">
+          <div style="font-size:28px;font-weight:bold;color:#92400e" id="mrp-low-stock-count">0</div>
+          <div style="font-size:14px;color:#78350f">🔴 Poniżej progu</div>
+        </div>
+        <div class="card" style="text-align:center;background:#dbeafe;border-left:4px solid #3b82f6">
+          <div style="font-size:28px;font-weight:bold;color:#1e40af" id="mrp-pending-orders">0</div>
+          <div style="font-size:14px;color:#1e40af">📦 Zamówienia oczekujące</div>
+        </div>
+        <div class="card" style="text-align:center;background:#dcfce7;border-left:4px solid #16a34a">
+          <div style="font-size:28px;font-weight:bold;color:#166534" id="mrp-deliveries-week">0</div>
+          <div style="font-size:14px;color:#166534">🚚 Dostawy w tym tygodniu</div>
+        </div>
+      </div>
+      
+      <!-- Lista zamówień zakupowych -->
+      <div class="list" id="purchase-orders-list">
+        <div style="text-align:center;padding:40px;color:#94a3b8">
+          <div style="font-size:48px;margin-bottom:12px">📦</div>
+          <div style="font-size:18px;font-weight:600;margin-bottom:8px">Brak zamówień zakupowych</div>
+          <div style="font-size:14px">Kliknij "Nowe zamówienie" aby utworzyć pierwsze zamówienie</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1203,6 +1272,30 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
       <div style="grid-column:1/4;margin-top:8px">
         <label style="display:block;font-size:13px;margin-bottom:4px">Święta / dodatkowe dni wolne (YYYY-MM-DD, po przecinku)</label>
         <textarea id="sched-holidays" rows="2" placeholder="2025-11-01,2025-12-25" style="width:100%;resize:vertical"></textarea>
+      </div>
+      <div style="grid-column:1/4;margin-top:16px">
+        <fieldset style="border:1px solid #334155;padding:12px;border-radius:4px">
+          <legend style="padding:0 6px;font-size:14px;font-weight:600">⏱️Czas przygotowania materiałów</legend>
+          <div style="font-size:12px;color:#64748b;margin-bottom:12px">
+            Materiały główne to podstawowe surowce (np. płyty, profile). Podzespoły to komponenty (np. klamki, zawiasy) - mogą być przygotowane bliżej startu produkcji.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <label style="display:block;font-size:13px;margin-bottom:4px;font-weight:500">
+                📦 Materiały główne (dni przed START_DATE)
+              </label>
+              <input type="number" id="set-main-materials-days" min="1" max="14" value="3" style="width:100%">
+              <div style="font-size:11px;color:#64748b;margin-top:4px">Domyślnie: 3 dni robocze przed rozpoczęciem produkcji</div>
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;margin-bottom:4px;font-weight:500">
+                🔩 Podzespoły (dni przed START_DATE)
+              </label>
+              <input type="number" id="set-component-materials-days" min="0" max="14" value="1" style="width:100%">
+              <div style="font-size:11px;color:#64748b;margin-top:4px">Domyślnie: 1 dzień roboczy przed rozpoczęciem produkcji</div>
+            </div>
+          </div>
+        </fieldset>
       </div>
     </div>
   <div class="list" style="margin-top:8px">
@@ -2209,6 +2302,9 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   // ensure settings object exists and default autoCleanup = true
   state.settings = state.settings || {};
   if (typeof state.settings.autoCleanup === 'undefined') state.settings.autoCleanup = true;
+  // ensure warehouse material preparation time settings exist
+  if (typeof state.settings.mainMaterialsDays === 'undefined') state.settings.mainMaterialsDays = 3;
+  if (typeof state.settings.componentMaterialsDays === 'undefined') state.settings.componentMaterialsDays = 1;
   // expose state for debugging and console access
   try{ window.state = state; }catch(e){console.warn('unable to expose state', e);}
 
@@ -2902,6 +2998,9 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   try{ const ac = qs('#set-auto-cleanup'); if(ac) ac.checked = (state.settings && state.settings.autoCleanup !== false); }catch(e){}
   // sync spellcheck enforce checkbox UI with state on load
   try{ const sc = qs('#set-spellcheck-enforce'); if(sc) sc.checked = !!state.storage.spellcheckEnforce; }catch(e){}
+  // sync warehouse material preparation time settings UI with state on load
+  try{ const mm = qs('#set-main-materials-days'); if(mm) mm.value = state.settings.mainMaterialsDays || 3; }catch(e){}
+  try{ const cm = qs('#set-component-materials-days'); if(cm) cm.value = state.settings.componentMaterialsDays || 1; }catch(e){}
 
   // persist autosave checkbox changes
   const autosaveEl = qs('#set-autosave-assign'); if(autosaveEl){ autosaveEl.addEventListener('change', (ev)=>{ state.storage.autoSaveAssign = !!ev.target.checked; save(); }); }
@@ -2915,6 +3014,9 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   const autoCleanupEl = qs('#set-auto-cleanup'); if(autoCleanupEl){ autoCleanupEl.addEventListener('change', (ev)=>{ state.settings.autoCleanup = !!ev.target.checked; save(); }); }
   // persist spellcheck enforce changes
   const spellEl = qs('#set-spellcheck-enforce'); if(spellEl){ spellEl.addEventListener('change', (ev)=>{ state.storage.spellcheckEnforce = !!ev.target.checked; save(); if(ev.target.checked) enableSpellAndLang(); else disableSpellAndLang(); }); }
+  // persist warehouse material preparation time changes
+  const mainMatEl = qs('#set-main-materials-days'); if(mainMatEl){ mainMatEl.addEventListener('change', (ev)=>{ const v = parseInt(ev.target.value||'3',10) || 3; state.settings.mainMaterialsDays = Math.max(1, Math.min(14, v)); save(); console.log('⚙️ Materiały główne: deadline ' + v + ' dni przed START'); }); }
+  const compMatEl = qs('#set-component-materials-days'); if(compMatEl){ compMatEl.addEventListener('change', (ev)=>{ const v = parseInt(ev.target.value||'1',10) || 1; state.settings.componentMaterialsDays = Math.max(0, Math.min(14, v)); save(); console.log('⚙️ Podzespoły: deadline ' + v + ' dni przed START'); }); }
 
   // in-page confirmation modal (promise-based)
   function confirmModal(message){
@@ -8079,6 +8181,17 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     document.body.appendChild(modal);
   }
 
+  // Helper function to close modal
+  function closeModal() {
+    const modal = document.getElementById('custom-modal');
+    if (modal) {
+      modal.remove();
+    }
+  }
+
+  // Make closeModal available globally
+  window.closeModal = closeModal;
+
   // Enable/disable browser spellcheck and set language (pl) for user-editable fields
   (function(){
   try{
@@ -8274,17 +8387,17 @@ function initWarehouse(){
   if(section) section.classList.remove('hidden');
   // konfiguracja przycisków
   try { setupWarehouseButtons(); } catch(e){ console.warn('[warehouse] setup buttons error', e); }
-  // pierwsze renderowanie
-  if(window.simpleWarehouse){
-    try { window.simpleWarehouse.render(); } catch(e){ console.warn('[warehouse] first render error', e); }
-  } else {
-    console.warn('[warehouse] simpleWarehouse not yet ready, retry in 500ms');
-    setTimeout(()=>{
-      if(window.simpleWarehouse){
-        try { window.simpleWarehouse.render(); } catch(e){ console.warn('[warehouse] delayed render error', e); }
-      }
-    },500);
-  }
+  
+  // Ustaw domyślną zakładkę na 'items' i renderuj
+  setTimeout(() => {
+    try {
+      switchWarehouseTab('items');
+      console.log('[warehouse] default tab (items) activated');
+    } catch(e) {
+      console.warn('[warehouse] failed to activate default tab', e);
+    }
+  }, 100);
+  
   __warehouseInitialized = true;
   console.log('[warehouse] initialized');
 }
@@ -8337,6 +8450,22 @@ function loadWarehouseFromStorage() {
     window.materialTemplates = JSON.parse(templates);
   } else {
     window.materialTemplates = [];
+  }
+  
+  // Zamówienia zakupowe (MRP)
+  const purchaseOrders = localStorage.getItem('purchaseOrders');
+  if (purchaseOrders) {
+    window.purchaseOrders = JSON.parse(purchaseOrders);
+  } else {
+    window.purchaseOrders = [];
+  }
+  
+  // Dostawcy (suppliers)
+  const suppliers = localStorage.getItem('suppliers');
+  if (suppliers) {
+    window.suppliers = JSON.parse(suppliers);
+  } else {
+    window.suppliers = [];
   }
   
   // Lista zakupów
@@ -8591,7 +8720,7 @@ function updateShoppingListBadge() {
 // Przełączanie zakładek magazynu
 function switchWarehouseTab(tab) {
   // Ukryj wszystkie widoki
-  const views = ['items', 'orders', 'transactions', 'reservations', 'tasks', 'templates'];
+  const views = ['items', 'orders', 'monitoring', 'transactions', 'reservations', 'tasks', 'templates', 'mrp'];
   views.forEach(v => {
     const viewEl = document.getElementById(`wh-view-${v}`);
     const tabBtn = document.getElementById(`wh-tab-${v}`);
@@ -8610,6 +8739,8 @@ function switchWarehouseTab(tab) {
     renderWarehouse();
   } else if (tab === 'orders') {
     renderWarehouseOrders();
+  } else if (tab === 'monitoring') {
+    renderWarehouseMonitoring();
   } else if (tab === 'transactions') {
     renderTransactions();
   } else if (tab === 'reservations') {
@@ -8618,6 +8749,9 @@ function switchWarehouseTab(tab) {
     renderWarehouseTasks();
   } else if (tab === 'templates') {
     renderTemplates();
+  } else if (tab === 'mrp') {
+    renderPurchaseOrders();
+    updateMrpDashboard();
   }
 }
 
@@ -9948,10 +10082,19 @@ window.renderWarehouseOrders = function() {
 
 // Renderuj kartę pojedynczego zlecenia
 function renderWarehouseOrderCard(order) {
-  // Oblicz termin dla magazyniera (3 dni przed startem produkcji)
+  // Pobierz ustawienia deadline z Settings
+  const mainMaterialsDays = (window.state && window.state.settings && window.state.settings.mainMaterialsDays) || 3;
+  const componentMaterialsDays = (window.state && window.state.settings && window.state.settings.componentMaterialsDays) || 1;
+  
+  // Oblicz termin dla magazyniera na podstawie typu materiałów
   const startDate = order.startDate ? new Date(order.startDate) : null;
+  const checklist = order.warehouseMaterialChecklist || [];
+  const hasMainMaterials = checklist.some(item => item.materialType === 'main' || !item.materialType);
+  
+  // Użyj najwcześniejszego deadline (główne materiały mają priorytet)
+  const daysToSubtract = hasMainMaterials ? mainMaterialsDays : componentMaterialsDays;
   const deadline = startDate ? new Date(startDate) : new Date();
-  deadline.setDate(deadline.getDate() - 3); // 3 dni wcześniej
+  deadline.setDate(deadline.getDate() - daysToSubtract);
   
   const now = new Date();
   const daysUntilDeadline = startDate ? Math.ceil((deadline - now) / (1000 * 60 * 60 * 24)) : 0;
@@ -10052,6 +10195,7 @@ window.showOrderMaterialsPreparation = function(orderId) {
       itemName: m.itemName,
       quantity: m.quantity,
       unit: m.unit,
+      materialType: m.materialType || 'main', // Kopiuj typ materiału z szablonu
       checked: true, // Domyślnie wszystkie zaznaczone
       checkedAt: null,
       checkedBy: null
@@ -10083,6 +10227,9 @@ window.showOrderMaterialsPreparation = function(orderId) {
     const rowOpacity = isChecked ? '1' : '0.5';
     const rowStyle = available ? '#0f172a' : '#1f1f2e';
     
+    const materialTypeLabel = material.materialType === 'component' ? '🔩 Podzespół' : '📦 Główny';
+    const materialTypeColor = material.materialType === 'component' ? '#6366f1' : '#f59e0b';
+    
     return `
       <div style="display:flex;align-items:center;gap:12px;padding:12px;border-bottom:1px solid #334155;background:${rowStyle};opacity:${rowOpacity};transition:all 0.2s" 
            onclick="toggleWarehouseMaterialItem('${orderId}', ${idx})">
@@ -10091,7 +10238,10 @@ window.showOrderMaterialsPreparation = function(orderId) {
         </div>
         <div style="font-size:20px;width:32px;text-align:center">${statusIcon}</div>
         <div style="flex:1;cursor:pointer">
-          <div style="font-weight:600;font-size:15px;color:#ffffff;${!isChecked ? 'text-decoration:line-through' : ''}">${material.itemName}</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="font-weight:600;font-size:15px;color:#ffffff;${!isChecked ? 'text-decoration:line-through' : ''}">${material.itemName}</div>
+            <span style="padding:2px 8px;background:${materialTypeColor};color:white;border-radius:12px;font-size:11px;font-weight:600">${materialTypeLabel}</span>
+          </div>
           <div style="font-size:13px;color:#94a3b8;margin-top:2px">
             Potrzebne: <strong>${needed} ${material.unit}</strong> | 
             W magazynie: <strong style="color:${statusColor}">${inStock} ${material.unit}</strong>
@@ -10354,6 +10504,563 @@ window.issueOrderMaterials = function(orderId) {
   renderTransactions();
   
   alert(`✅ Materiały wydane na produkcję!\n\nDokument WZ: ${transaction.documentNumber}\nPozycji: ${reservations.length}\n\nZlecenie gotowe do rozpoczęcia produkcji.`);
+};
+
+// Drukuj/wyślij dokument WZ (DUŻA CZCIONKA DLA MAGAZYNIERKI)
+window.printIssuanceDocument = function(orderId) {
+  const order = (window.state.orders || []).find(o => o.id === orderId);
+  if (!order || !order.materialsIssued) {
+    alert('Nie znaleziono dokumentu wydania dla tego zlecenia');
+    return;
+  }
+  
+  // Znajdź transakcję WZ dla tego zlecenia
+  const transaction = (window.warehouseTransactions || []).find(t => t.orderId === orderId && t.type === 'out');
+  if (!transaction) {
+    alert('Nie znaleziono dokumentu WZ dla tego zlecenia');
+    return;
+  }
+  
+  // Znajdź rezerwacje/materiały
+  const materials = transaction.items || [];
+  
+  // Tworzenie dokumentu HTML do druku (DUŻA CZCIONKA)
+  const printWindow = window.open('', '_blank');
+  const doc = printWindow.document;
+  
+  const now = new Date().toLocaleString('pl-PL');
+  const issuedDate = new Date(order.materialsIssuedAt).toLocaleString('pl-PL');
+  const issuedBy = order.materialsIssuedBy || 'Magazynier';
+  
+  doc.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Dokument WZ - ${transaction.documentNumber}</title>
+      <style>
+        @media print {
+          @page { margin: 2cm; }
+          body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+        }
+        body {
+          font-family: Arial, sans-serif;
+          padding: 40px;
+          line-height: 1.6;
+          background: white;
+          color: #000;
+        }
+        .header {
+          text-align: center;
+          margin-bottom: 40px;
+          border-bottom: 4px solid #000;
+          padding-bottom: 30px;
+        }
+        .header h1 {
+          font-size: 42px;
+          font-weight: 900;
+          margin: 0 0 15px 0;
+          letter-spacing: 2px;
+        }
+        .header .doc-number {
+          font-size: 32px;
+          font-weight: 700;
+          color: #2563eb;
+          margin: 10px 0;
+        }
+        .info-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 25px;
+          margin-bottom: 40px;
+          font-size: 20px;
+        }
+        .info-item {
+          padding: 20px;
+          background: #f3f4f6;
+          border-left: 6px solid #2563eb;
+          border-radius: 8px;
+        }
+        .info-label {
+          font-weight: 700;
+          font-size: 18px;
+          color: #374151;
+          margin-bottom: 8px;
+        }
+        .info-value {
+          font-size: 24px;
+          font-weight: 900;
+          color: #000;
+        }
+        .materials-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 30px 0;
+          font-size: 20px;
+        }
+        .materials-table th {
+          background: #1f2937;
+          color: white;
+          padding: 20px;
+          text-align: left;
+          font-size: 22px;
+          font-weight: 800;
+          border: 2px solid #000;
+        }
+        .materials-table td {
+          padding: 18px 20px;
+          border: 2px solid #d1d5db;
+          font-size: 20px;
+          font-weight: 600;
+        }
+        .materials-table tbody tr:nth-child(even) {
+          background: #f9fafb;
+        }
+        .materials-table tbody tr:hover {
+          background: #e5e7eb;
+        }
+        .summary {
+          margin-top: 40px;
+          padding: 25px;
+          background: #dbeafe;
+          border: 3px solid #2563eb;
+          border-radius: 10px;
+          font-size: 22px;
+        }
+        .summary-label {
+          font-weight: 700;
+          font-size: 20px;
+        }
+        .summary-value {
+          font-weight: 900;
+          font-size: 26px;
+          color: #1e40af;
+        }
+        .signatures {
+          margin-top: 60px;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 60px;
+          font-size: 20px;
+        }
+        .signature-box {
+          border-top: 3px solid #000;
+          padding-top: 15px;
+          text-align: center;
+        }
+        .signature-label {
+          font-weight: 700;
+          font-size: 22px;
+          margin-top: 10px;
+        }
+        .footer {
+          margin-top: 60px;
+          text-align: center;
+          font-size: 18px;
+          color: #6b7280;
+          border-top: 2px solid #d1d5db;
+          padding-top: 25px;
+        }
+        .print-btn {
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          padding: 15px 30px;
+          font-size: 20px;
+          font-weight: 700;
+          background: #2563eb;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .print-btn:hover {
+          background: #1d4ed8;
+        }
+        @media print {
+          .print-btn { display: none; }
+        }
+      </style>
+    </head>
+    <body>
+      <button class="print-btn" onclick="window.print()">🖨️ DRUKUJ</button>
+      
+      <div class="header">
+        <h1>📦 DOKUMENT WYDANIA MATERIAŁÓW</h1>
+        <div class="doc-number">WZ: ${transaction.documentNumber}</div>
+        <div style="font-size:20px;color:#6b7280;margin-top:15px">Wygenerowano: ${now}</div>
+      </div>
+      
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-label">ZLECENIE PRODUKCYJNE</div>
+          <div class="info-value">${order.name}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">DATA WYDANIA</div>
+          <div class="info-value">${issuedDate}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">WYDAŁ</div>
+          <div class="info-value">${issuedBy}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">START PRODUKCJI</div>
+          <div class="info-value">${order.START_DATE ? new Date(order.START_DATE).toLocaleDateString('pl-PL') : '-'}</div>
+        </div>
+      </div>
+      
+      <h2 style="font-size:28px;font-weight:800;margin:40px 0 20px 0;border-bottom:3px solid #000;padding-bottom:15px">
+        📋 LISTA WYDANYCH MATERIAŁÓW
+      </h2>
+      
+      <table class="materials-table">
+        <thead>
+          <tr>
+            <th style="width:60px">LP.</th>
+            <th>NAZWA MATERIAŁU</th>
+            <th style="width:180px;text-align:center">ILOŚĆ</th>
+            <th style="width:120px;text-align:center">JEDNOSTKA</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${materials.map((mat, idx) => `
+            <tr>
+              <td style="text-align:center;font-weight:800">${idx + 1}</td>
+              <td style="font-weight:700">${mat.itemName}</td>
+              <td style="text-align:center;font-weight:900;font-size:24px">${mat.quantity}</td>
+              <td style="text-align:center;font-weight:700">${mat.unit}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      
+      <div class="summary">
+        <span class="summary-label">Łączna liczba pozycji:</span>
+        <span class="summary-value">${materials.length} pozycji</span>
+      </div>
+      
+      <div class="signatures">
+        <div class="signature-box">
+          <div style="height:80px"></div>
+          <div class="signature-label">Podpis wydającego<br>(Magazynier)</div>
+        </div>
+        <div class="signature-box">
+          <div style="height:80px"></div>
+          <div class="signature-label">Podpis odbierającego<br>(Produkcja)</div>
+        </div>
+      </div>
+      
+      <div class="footer">
+        Dokument wygenerowany automatycznie przez system planowania produkcji<br>
+        ${order.notes || ''}
+      </div>
+    </body>
+    </html>
+  `);
+  
+  doc.close();
+  
+  // Auto-print po załadowaniu
+  printWindow.onload = function() {
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+    }, 500);
+  };
+};
+
+// Monitoring wykonania zadań magazynowych + zleceń produkcyjnych
+window.renderWarehouseMonitoring = function() {
+  console.log('[renderWarehouseMonitoring] Function called');
+  
+  const container = document.getElementById('wh-monitoring-content');
+  if (!container) {
+    console.log('[renderWarehouseMonitoring] Container not found!');
+    return;
+  }
+  
+  const tasks = window.warehouseTasks || [];
+  const orders = (window.state && window.state.orders) || [];
+  const now = Date.now();
+  
+  // Pobierz ustawienia deadline z Settings
+  const mainMaterialsDays = (window.state && window.state.settings && window.state.settings.mainMaterialsDays) || 3;
+  const componentMaterialsDays = (window.state && window.state.settings && window.state.settings.componentMaterialsDays) || 1;
+  
+  // Grupuj zlecenia według statusu przygotowania materiałów
+  const ordersOverdue = [];   // Przeterminowane zlecenia (deadline < now && !materialsPrepared)
+  const ordersToday = [];     // Na dziś (deadline = dzisiaj && !materialsPrepared)
+  const ordersUpcoming = [];  // Nadchodzące (!materialsPrepared)
+  const ordersPrepared = [];  // Przygotowane (materialsPrepared && !materialsIssued)
+  const ordersIssued = [];    // Wydane (materialsIssued)
+  
+  orders.forEach(order => {
+    if (!order.START_DATE) return; // Pomijamy zlecenia bez daty startu
+    
+    const startDate = new Date(order.START_DATE);
+    const checklist = order.warehouseMaterialChecklist || [];
+    const hasMainMaterials = checklist.some(item => item.materialType === 'main' || !item.materialType);
+    const daysToSubtract = hasMainMaterials ? mainMaterialsDays : componentMaterialsDays;
+    
+    const deadline = new Date(startDate);
+    deadline.setDate(deadline.getDate() - daysToSubtract);
+    const deadlineDay = new Date(deadline).setHours(0, 0, 0, 0);
+    const todayDay = new Date(now).setHours(0, 0, 0, 0);
+    
+    if (order.materialsIssued) {
+      ordersIssued.push(order);
+    } else if (order.materialsPrepared) {
+      ordersPrepared.push(order);
+    } else {
+      // Nie przygotowane - grupuj po deadline
+      if (deadline.getTime() < now) {
+        ordersOverdue.push(order);
+      } else if (deadlineDay === todayDay) {
+        ordersToday.push(order);
+      } else {
+        ordersUpcoming.push(order);
+      }
+    }
+  });
+  
+  // Grupuj zadania według statusu i deadline
+  const overdue = [];  // Przeterminowane (deadline < now && !completed)
+  const today = [];    // Na dziś (deadline dzisiaj && !completed)
+  const upcoming = []; // Nadchodzące (deadline > dziś && !completed)
+  const completed = []; // Wykonane (completed)
+  
+  tasks.forEach(task => {
+    if (task.completed) {
+      completed.push(task);
+    } else {
+      const deadline = new Date(task.deadline);
+      const deadlineDay = new Date(deadline).setHours(0, 0, 0, 0);
+      const todayDay = new Date(now).setHours(0, 0, 0, 0);
+      
+      if (deadline.getTime() < now) {
+        overdue.push(task);
+      } else if (deadlineDay === todayDay) {
+        today.push(task);
+      } else {
+        upcoming.push(task);
+      }
+    }
+  });
+  
+  // Aktualizuj badge z liczbą przeterminowanych (zadania + zlecenia)
+  const badge = document.getElementById('monitoring-badge');
+  if (badge) {
+    const totalOverdue = overdue.length + ordersOverdue.length;
+    if (totalOverdue > 0) {
+      badge.textContent = totalOverdue;
+      badge.style.display = 'block';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+  
+  // Funkcja renderująca kartę zadania (ZWIĘKSZONE FONTY DLA MAGAZYNIERKI) - TEKST BIAŁY
+  function renderTaskCard(task, statusColor) {
+    const deadline = new Date(task.deadline);
+    const employee = window.state.employees.find(e => e.id === task.assignedToId);
+    const employeeName = employee ? employee.name : 'Nieprzypisany';
+    
+    // Completed info - tekst biały dla czytelności
+    const completedInfo = task.completed 
+      ? `<div style="font-size:16px;color:#ffffff;margin-top:6px;font-weight:600">✅ Wykonane: ${new Date(task.completedAt).toLocaleString('pl-PL')}</div>
+         <div style="font-size:15px;color:#ffffff;font-weight:500">przez: ${task.completedBy || employeeName}</div>`
+      : '';
+    
+    // Late info - zachowujemy czerwony akcent dla spóźnień
+    const lateInfo = task.completed && task.completedAt > task.deadline
+      ? `<div style="font-size:15px;color:#ff6b6b;margin-top:4px;font-weight:700">⚠️ Spóźnione o ${Math.round((task.completedAt - task.deadline) / (1000 * 60 * 60))}h</div>`
+      : task.completed
+      ? `<div style="font-size:15px;color:#a7f3d0;margin-top:4px;font-weight:600">✓ Na czas</div>`
+      : '';
+    
+    return `
+      <div class="card" style="border-left:6px solid ${statusColor};padding:20px;background:#091024;color:#ffffff;border-radius:10px">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:20px;color:#ffffff;line-height:1.3">${task.description}</div>
+            <div style="font-size:16px;color:#e6eef8;margin-top:8px;font-weight:500">⏰ Termin: ${isNaN(deadline.getTime()) ? 'Brak daty' : deadline.toLocaleString('pl-PL')}</div>
+            <div style="font-size:16px;color:#e6eef8;margin-top:4px;font-weight:500">👤 Przypisany: ${employeeName}</div>
+            ${completedInfo}
+            ${lateInfo}
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:700;font-size:18px;color:${statusColor}">${task.type === 'order' ? '📦 Zamówienie' : '📋 Zadanie'}</div>
+            ${task.quantity ? `<div style="font-size:16px;color:#e6eef8;margin-top:6px;font-weight:600">${task.quantity} ${task.unit || 'szt'}</div>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }
+  
+  // Funkcja renderująca kartę zlecenia produkcyjnego z materiałami (ZWIĘKSZONE FONTY)
+  function renderOrderCard(order, statusColor, statusLabel) {
+    const process = window.state.processes.find(p => p.id === order.processId);
+    const processName = process ? process.name : 'Nieznany proces';
+    const template = (window.warehouseTemplates || []).find(t => t.id === order.templateId);
+    
+    // Oblicz deadline na podstawie START_DATE i typu materiałów
+    const startDate = order.START_DATE ? new Date(order.START_DATE) : null;
+    let deadlineInfo = '';
+    
+    if (startDate) {
+      // Sprawdź czy są materiały główne vs podzespoły w checkliście
+      const checklist = order.warehouseMaterialChecklist || [];
+      const hasMainMaterials = checklist.some(item => item.materialType === 'main' || !item.materialType);
+      const hasComponents = checklist.some(item => item.materialType === 'component');
+      
+      // Użyj najwcześniejszego deadline (główne materiały mają priorytet)
+      const daysToSubtract = hasMainMaterials ? mainMaterialsDays : componentMaterialsDays;
+      const deadline = new Date(startDate);
+      deadline.setDate(deadline.getDate() - daysToSubtract);
+      
+      const daysUntil = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
+      const deadlineColor = daysUntil < 0 ? '#dc2626' : (daysUntil <= 1 ? '#f59e0b' : '#10b981');
+      deadlineInfo = `<div style="font-size:17px;color:${deadlineColor};margin-top:8px;font-weight:700">⏱️ Deadline: ${deadline.toLocaleDateString('pl-PL')} (${daysUntil > 0 ? `za ${daysUntil}d` : `${Math.abs(daysUntil)}d temu`})</div>`;
+    }
+    
+    const materialsInfo = order.warehouseMaterialChecklist 
+      ? `<div style="font-size:16px;color:#374151;margin-top:6px;font-weight:600">📋 Materiały: ${order.warehouseMaterialChecklist.filter(m => m.checked !== false).length} poz.</div>`
+      : '';
+    
+    const preparedInfo = order.materialsPrepared 
+      ? `<div style="font-size:16px;color:#3b82f6;margin-top:6px;font-weight:600">🔵 Obciążono magazyn: ${new Date(order.materialsPreparedAt || Date.now()).toLocaleDateString('pl-PL')}</div>`
+      : '';
+    
+    const issuedInfo = order.materialsIssued
+      ? `<div style="font-size:17px;color:#059669;margin-top:8px;font-weight:700">✅ Wydano na produkcję: ${new Date(order.materialsIssuedAt || Date.now()).toLocaleDateString('pl-PL')}</div>`
+      : '';
+    
+    // Przycisk drukowania (tylko dla wydanych)
+    const printBtn = order.materialsIssued
+      ? `<button class="btn green" onclick="printIssuanceDocument('${order.id}')" style="margin-top:12px;font-size:16px;padding:12px 20px;font-weight:600">🖨️ Drukuj dokument WZ</button>`
+      : '';
+    
+    return `
+      <div class="card" style="border-left:6px solid ${statusColor};padding:20px">
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:22px;color:#0f172a;line-height:1.3">🏭 ${order.name}</div>
+            <div style="font-size:17px;color:#475569;margin-top:6px;font-weight:600">${processName}</div>
+            <div style="font-size:17px;color:#475569;margin-top:4px;font-weight:600">🚀 START produkcji: ${startDate ? startDate.toLocaleDateString('pl-PL') : 'Nie ustawiono'}</div>
+            ${deadlineInfo}
+            ${materialsInfo}
+            ${preparedInfo}
+            ${issuedInfo}
+            ${printBtn}
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:700;font-size:19px;color:${statusColor};padding:8px 16px;background:${statusColor}22;border-radius:8px">${statusLabel}</div>
+            ${template ? `<div style="font-size:15px;color:#64748b;margin-top:8px;font-weight:500">📝 ${template.name}</div>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }
+  
+  // Buduj HTML
+  let html = '';
+  
+  // Sekcja: Przeterminowane (WIĘKSZE NAGŁÓWKI)
+  const totalOverdueCount = ordersOverdue.length + overdue.length;
+  if (totalOverdueCount > 0) {
+    html += `
+      <div style="margin-bottom:32px">
+        <div style="font-weight:800;font-size:24px;color:#dc2626;margin-bottom:16px;display:flex;align-items:center;gap:12px;padding:16px;background:#fee2e2;border-radius:12px;border-left:8px solid #dc2626">
+          🔴 PRZETERMINOWANE
+          <span style="background:#dc2626;color:white;padding:8px 16px;border-radius:16px;font-size:20px;font-weight:700">${totalOverdueCount}</span>
+        </div>
+        <div class="list" style="gap:12px">
+          ${ordersOverdue.map(o => renderOrderCard(o, '#dc2626', '🔴 Przeterminowane')).join('')}
+          ${overdue.map(t => renderTaskCard(t, '#dc2626')).join('')}
+        </div>
+      </div>`;
+  }
+  
+  // Sekcja: Na dziś (WIĘKSZE NAGŁÓWKI)
+  const totalTodayCount = ordersToday.length + today.length;
+  if (totalTodayCount > 0) {
+    html += `
+      <div style="margin-bottom:32px">
+        <div style="font-weight:800;font-size:24px;color:#f59e0b;margin-bottom:16px;display:flex;align-items:center;gap:12px;padding:16px;background:#fef3c7;border-radius:12px;border-left:8px solid #f59e0b">
+          🟡 NA DZIŚ
+          <span style="background:#f59e0b;color:white;padding:8px 16px;border-radius:16px;font-size:20px;font-weight:700">${totalTodayCount}</span>
+        </div>
+        <div class="list" style="gap:12px">
+          ${ordersToday.map(o => renderOrderCard(o, '#f59e0b', '🟡 Na dziś')).join('')}
+          ${today.map(t => renderTaskCard(t, '#f59e0b')).join('')}
+        </div>
+      </div>`;
+  }
+  
+  // Sekcja: Nadchodzące (WIĘKSZE NAGŁÓWKI)
+  const totalUpcomingCount = ordersUpcoming.length + upcoming.length;
+  if (totalUpcomingCount > 0) {
+    html += `
+      <div style="margin-bottom:32px">
+        <div style="font-weight:800;font-size:24px;color:#10b981;margin-bottom:16px;display:flex;align-items:center;gap:12px;padding:16px;background:#d1fae5;border-radius:12px;border-left:8px solid #10b981">
+          🟢 NADCHODZĄCE
+          <span style="background:#10b981;color:white;padding:8px 16px;border-radius:16px;font-size:20px;font-weight:700">${totalUpcomingCount}</span>
+        </div>
+        <div class="list" style="gap:12px">
+          ${ordersUpcoming.map(o => renderOrderCard(o, '#10b981', '🟢 Do przygotowania')).join('')}
+          ${upcoming.map(t => renderTaskCard(t, '#10b981')).join('')}
+        </div>
+      </div>`;
+  }
+  
+  // Sekcja: W trakcie przygotowania (WIĘKSZE NAGŁÓWKI)
+  if (ordersPrepared.length > 0) {
+    html += `
+      <div style="margin-bottom:32px">
+        <div style="font-weight:800;font-size:24px;color:#3b82f6;margin-bottom:16px;display:flex;align-items:center;gap:12px;padding:16px;background:#dbeafe;border-radius:12px;border-left:8px solid #3b82f6">
+          🔵 PRZYGOTOWANE - DO WYDANIA
+          <span style="background:#3b82f6;color:white;padding:8px 16px;border-radius:16px;font-size:20px;font-weight:700">${ordersPrepared.length}</span>
+        </div>
+        <div class="list" style="gap:12px">
+          ${ordersPrepared.map(o => renderOrderCard(o, '#3b82f6', '🔵 Do wydania')).join('')}
+        </div>
+      </div>`;
+  }
+  
+  // Sekcja: Wykonane (WIĘKSZE NAGŁÓWKI)
+  const totalCompletedCount = ordersIssued.length + completed.length;
+  if (totalCompletedCount > 0) {
+    const onTime = completed.filter(t => t.completedAt <= t.deadline).length;
+    const late = completed.filter(t => t.completedAt > t.deadline).length;
+    
+    html += `
+      <div style="margin-bottom:32px">
+        <div style="font-weight:800;font-size:24px;color:#059669;margin-bottom:16px;display:flex;align-items:center;gap:12px;padding:16px;background:#d1fae5;border-radius:12px;border-left:8px solid #059669">
+          ✅ WYKONANE
+          <span style="background:#059669;color:white;padding:8px 16px;border-radius:16px;font-size:20px;font-weight:700">${totalCompletedCount}</span>
+          ${completed.length > 0 ? `<span style="font-size:17px;color:#374151;font-weight:600">
+            (Zadania na czas: ${onTime}, Spóźnione: ${late})
+          </span>` : ''}
+        </div>
+        <div class="list" style="gap:12px">
+          ${ordersIssued.map(o => renderOrderCard(o, '#059669', '✅ Wydano na produkcję')).join('')}
+          ${completed.map(t => renderTaskCard(t, '#059669')).join('')}
+        </div>
+      </div>`;
+  }
+  
+  // Jeśli brak zadań i zleceń (DUŻA CZCIONKA)
+  if (tasks.length === 0 && orders.length === 0) {
+    html = `
+      <div class="card" style="text-align:center;padding:60px;background:#f8fafc">
+        <div style="font-size:80px;margin-bottom:20px">📊</div>
+        <div style="font-size:28px;font-weight:700;color:#334155">Brak zadań magazynowych i zleceń</div>
+        <div style="font-size:20px;margin-top:16px;color:#64748b;font-weight:500">Zadania i zlecenia pojawią się tutaj gdy zostaną utworzone</div>
+      </div>`;
+  }
+  
+  container.innerHTML = html;
+  console.log(`[renderWarehouseMonitoring] Rendered: Orders(${ordersOverdue.length}+${ordersToday.length}+${ordersUpcoming.length}+${ordersPrepared.length}+${ordersIssued.length}), Tasks(${overdue.length}+${today.length}+${upcoming.length}+${completed.length})`);
 };
 
 // Renderuj zadania magazyniera - NOWA WERSJA z grupowaniem po zleceniach
@@ -10887,6 +11594,10 @@ function showTemplateModal(templateId = null) {
           ).join('')}
         </select>
         <input type="number" class="template-mat-qty" value="${mat.quantity}" min="0.01" step="0.01" placeholder="Ilość" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:4px">
+        <select class="template-mat-type" style="padding:8px;border:1px solid #ccc;border-radius:4px;min-width:130px">
+          <option value="main" ${(mat.materialType === 'main' || !mat.materialType) ? 'selected' : ''}>📦 Główny</option>
+          <option value="component" ${mat.materialType === 'component' ? 'selected' : ''}>🔩 Podzespół</option>
+        </select>
         <button class="btn red small" onclick="removeTemplateMaterial(${idx})">✕</button>
       </div>
     `;
@@ -10924,8 +11635,10 @@ function showTemplateModal(templateId = null) {
         document.querySelectorAll('#template-materials-list > div[data-mat-idx]').forEach(row => {
           const select = row.querySelector('.template-mat-select');
           const qtyInput = row.querySelector('.template-mat-qty');
+          const typeSelect = row.querySelector('.template-mat-type');
           const itemIdx = parseInt(select.value);
           const quantity = parseFloat(qtyInput.value);
+          const materialType = typeSelect ? typeSelect.value : 'main'; // Domyślnie główny
           
           if (!isNaN(itemIdx) && !isNaN(quantity) && quantity > 0) {
             const item = window.warehouseItems[itemIdx];
@@ -10933,7 +11646,8 @@ function showTemplateModal(templateId = null) {
               itemId: item.id,  // ✅ Używamy prawdziwego ID z magazynu, nie indeksu!
               itemName: item.name,
               quantity: quantity,
-              unit: item.unit
+              unit: item.unit,
+              materialType: materialType  // 'main' lub 'component'
             });
           }
         });
@@ -10989,6 +11703,10 @@ function addTemplateMaterial() {
       ).join('')}
     </select>
     <input type="number" class="template-mat-qty" value="1" min="0.01" step="0.01" placeholder="Ilość" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:4px">
+    <select class="template-mat-type" style="padding:8px;border:1px solid #ccc;border-radius:4px;min-width:130px">
+      <option value="main" selected>📦 Główny</option>
+      <option value="component">🔩 Podzespół</option>
+    </select>
     <button class="btn red small" onclick="this.parentElement.remove()">✕</button>
   `;
   list.appendChild(newRow);
@@ -12860,7 +13578,7 @@ function renderWarehouse() {
               </td>
               <td style="padding:12px;text-align:center;font-weight:700;font-size:15px;color:${quantityColor} !important">${item.quantity}</td>
               <td style="padding:12px;text-align:center;font-size:14px;color:#ffffff !important">${item.unit}</td>
-              <td style="padding:12px;text-align:right;font-weight:600;font-size:14px;color:#ffffff !important">${item.price.toFixed(2)}</td>
+              <td style="padding:12px;text-align:right;font-weight:600;font-size:14px;color:#ffffff !important">${item.unitPrice ? item.unitPrice.toFixed(2) : '-'}</td>
               <td style="padding:12px;text-align:center;font-size:14px;color:#ffffff !important">${item.minStock || '-'}</td>
               <td style="padding:12px;font-size:14px;color:#ffffff !important">${locationStr}</td>
               <td style="padding:12px;text-align:center">
@@ -12893,6 +13611,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (searchInput) {
     searchInput.addEventListener('input', renderWarehouse);
   }
+  
+  // Renderuj magazyn jeśli sekcja magazynu jest aktywna
+  setTimeout(() => {
+    const warehouseSection = document.getElementById('p-wh');
+    if (warehouseSection && !warehouseSection.classList.contains('hidden')) {
+      renderWarehouse();
+    }
+  }, 100);
 });
 
 // Automatyczne renderowanie przy wejściu do zakładki
@@ -13414,6 +14140,1173 @@ window.addEventListener('offline', () => {
 });
 
 console.log('✅ [App] Real-time Sync integration loaded');
+
+// ============================================
+// MODUŁ MRP / ZAKUPY
+// ============================================
+
+// Renderowanie listy zamówień zakupowych
+function renderPurchaseOrders() {
+  if (!window.purchaseOrders) {
+    window.purchaseOrders = [];
+  }
+  
+  const statusFilter = document.getElementById('po-status-filter')?.value || '';
+  const typeFilter = document.getElementById('po-type-filter')?.value || '';
+  
+  let filtered = window.purchaseOrders;
+  
+  if (statusFilter) {
+    filtered = filtered.filter(po => po.status === statusFilter);
+  }
+  
+  if (typeFilter) {
+    filtered = filtered.filter(po => po.purchaseType === typeFilter);
+  }
+  
+  const container = document.getElementById('purchase-orders-list');
+  if (!container) return;
+  
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:40px;color:#94a3b8">
+        <div style="font-size:48px;margin-bottom:12px">📦</div>
+        <div style="font-size:18px;font-weight:600;margin-bottom:8px">Brak zamówień zakupowych</div>
+        <div style="font-size:14px">Kliknij "Nowe zamówienie" aby utworzyć pierwsze zamówienie</div>
+      </div>
+    `;
+    return;
+  }
+  
+  // Grupuj według statusu
+  const groups = {
+    draft: filtered.filter(po => po.status === 'draft'),
+    sent: filtered.filter(po => po.status === 'sent'),
+    confirmed: filtered.filter(po => po.status === 'confirmed'),
+    received: filtered.filter(po => po.status === 'received')
+  };
+  
+  let html = '';
+  
+  // Szkice
+  if (groups.draft.length > 0) {
+    html += `<h4 style="color:#94a3b8;margin:16px 0 12px">📝 Szkice (${groups.draft.length})</h4>`;
+    html += groups.draft.map(po => renderPurchaseOrderCard(po)).join('');
+  }
+  
+  // Wysłane
+  if (groups.sent.length > 0) {
+    html += `<h4 style="color:#3b82f6;margin:16px 0 12px">📤 Wysłane (${groups.sent.length})</h4>`;
+    html += groups.sent.map(po => renderPurchaseOrderCard(po)).join('');
+  }
+  
+  // Potwierdzone
+  if (groups.confirmed.length > 0) {
+    html += `<h4 style="color:#f59e0b;margin:16px 0 12px">✅ Potwierdzone (${groups.confirmed.length})</h4>`;
+    html += groups.confirmed.map(po => renderPurchaseOrderCard(po)).join('');
+  }
+  
+  // Odebrane
+  if (groups.received.length > 0) {
+    html += `<h4 style="color:#16a34a;margin:16px 0 12px">📦 Odebrane (${groups.received.length})</h4>`;
+    html += groups.received.map(po => renderPurchaseOrderCard(po)).join('');
+  }
+  
+  container.innerHTML = html;
+}
+
+// Renderowanie karty zamówienia zakupowego
+function renderPurchaseOrderCard(po) {
+  const statusColors = {
+    draft: '#94a3b8',
+    sent: '#3b82f6',
+    confirmed: '#f59e0b',
+    received: '#16a34a'
+  };
+  
+  const statusLabels = {
+    draft: '📝 Szkic',
+    sent: '📤 Wysłane',
+    confirmed: '✅ Potwierdzone',
+    received: '📦 Odebrane'
+  };
+  
+  const statusColor = statusColors[po.status] || '#94a3b8';
+  const statusLabel = statusLabels[po.status] || po.status;
+  
+  const deliveryDate = po.deliveryDate ? new Date(po.deliveryDate).toLocaleDateString('pl-PL') : 'Brak';
+  const createdDate = new Date(po.createdAt).toLocaleDateString('pl-PL');
+  
+  const typeLabel = po.purchaseType === 'small' ? '🛍️ Drobne' : '📦 Standard';
+  const sentViaLabel = po.sentVia ? (po.sentVia === 'print' ? '🖨️ Druk' : po.sentVia === 'email' ? '📧 Email' : '📱 SMS') : '';
+  
+  return `
+    <div class="card" style="border-left:6px solid ${statusColor};position:relative">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+        <div>
+          <div style="font-weight:700;font-size:18px;color:#ffffff;margin-bottom:4px">${po.id}</div>
+          <div style="font-size:14px;color:#94a3b8">📅 Utworzono: ${createdDate}</div>
+          <div style="font-size:14px;color:#94a3b8">🚚 Dostawa: ${deliveryDate}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="display:inline-block;padding:4px 12px;border-radius:12px;background:${statusColor};color:white;font-size:12px;font-weight:600;margin-bottom:4px">${statusLabel}</div>
+          ${sentViaLabel ? `<div style="font-size:12px;color:#94a3b8;margin-top:4px">${sentViaLabel}</div>` : ''}
+          <div style="font-size:12px;color:#94a3b8;margin-top:4px">${typeLabel}</div>
+        </div>
+      </div>
+      
+      <div style="margin-bottom:12px">
+        <div style="font-weight:600;color:#ffffff;margin-bottom:4px">Dostawca:</div>
+        <div style="color:#94a3b8">${po.supplier?.name || 'Brak'}</div>
+        ${po.supplier?.email ? `<div style="font-size:12px;color:#94a3b8">📧 ${po.supplier.email}</div>` : ''}
+        ${po.supplier?.phone ? `<div style="font-size:12px;color:#94a3b8">📞 ${po.supplier.phone}</div>` : ''}
+      </div>
+      
+      <div style="margin-bottom:12px">
+        <div style="font-weight:600;color:#ffffff;margin-bottom:4px">Pozycje: ${po.items?.length || 0}</div>
+        <div style="font-size:14px;color:#94a3b8">
+          ${(po.items || []).slice(0, 3).map(item => `• ${item.materialName} (${item.quantity} ${item.unit})`).join('<br>')}
+          ${po.items?.length > 3 ? `<br>... i ${po.items.length - 3} więcej` : ''}
+        </div>
+      </div>
+      
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid rgba(148,163,184,0.2)">
+        <div style="font-weight:700;font-size:20px;color:#ffffff">${po.totalValue?.toFixed(2) || '0.00'} zł</div>
+        <div class="row" style="gap:6px">
+          ${po.status === 'draft' ? `<button class="btn small blue" onclick="editPurchaseOrder('${po.id}')">✏️ Edytuj</button>` : ''}
+          ${po.status === 'draft' || po.status === 'sent' ? `<button class="btn small green" onclick="sendPurchaseOrder('${po.id}')">📤 Wyślij</button>` : ''}
+          <button class="btn small" onclick="printPurchaseOrder('${po.id}')">🖨️ Drukuj</button>
+          ${po.status === 'sent' || po.status === 'confirmed' ? `<button class="btn small green" onclick="receivePurchaseOrder('${po.id}')">📦 Odbierz</button>` : ''}
+          <button class="btn small red" onclick="deletePurchaseOrder('${po.id}')">🗑️</button>
+        </div>
+      </div>
+      
+      ${po.notes ? `<div style="margin-top:12px;padding:8px;background:rgba(148,163,184,0.1);border-radius:4px;font-size:12px;color:#94a3b8">${po.notes}</div>` : ''}
+    </div>
+  `;
+}
+
+// Modal tworzenia/edycji zamówienia zakupowego
+function showPurchaseOrderModal(orderId = null) {
+  const isEdit = !!orderId;
+  const existingOrder = isEdit ? window.purchaseOrders.find(po => po.id === orderId) : null;
+  
+  const suppliersOptions = (window.suppliers || []).map(s => 
+    `<option value="${s.id}">${s.name}</option>`
+  ).join('');
+  
+  const materialsOptions = (window.warehouseItems || []).map(item => 
+    `<option value="${item.id}" data-unit="${item.unit}">${item.name}</option>`
+  ).join('');
+  
+  const content = `
+    <div style="display:flex;flex-direction:column;gap:16px;max-width:800px">
+      <input type="hidden" id="po-id" value="${existingOrder?.id || ''}">
+      
+      <div class="grid2">
+        <div>
+          <label style="font-weight:600;margin-bottom:4px;display:block">Dostawca *</label>
+          <select id="po-supplier-select" style="width:100%;padding:8px" onchange="populateSupplierDetails()">
+            <option value="">-- Wybierz dostawcę --</option>
+            ${suppliersOptions}
+            <option value="new">+ Dodaj nowego dostawcę</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-weight:600;margin-bottom:4px;display:block">Typ zamówienia</label>
+          <select id="po-type" style="width:100%;padding:8px">
+            <option value="standard" ${existingOrder?.purchaseType === 'standard' ? 'selected' : ''}>📦 Standardowe</option>
+            <option value="small" ${existingOrder?.purchaseType === 'small' ? 'selected' : ''}>🛍️ Drobne zakupy</option>
+          </select>
+        </div>
+      </div>
+      
+      <div id="supplier-details" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px;background:rgba(148,163,184,0.1);border-radius:8px">
+        <div>
+          <label style="font-weight:600;margin-bottom:4px;display:block">Nazwa dostawcy</label>
+          <input type="text" id="po-supplier-name" placeholder="Nazwa firmy" style="width:100%;padding:8px" value="${existingOrder?.supplier?.name || ''}">
+        </div>
+        <div>
+          <label style="font-weight:600;margin-bottom:4px;display:block">Email</label>
+          <input type="email" id="po-supplier-email" placeholder="email@dostawca.pl" style="width:100%;padding:8px" value="${existingOrder?.supplier?.email || ''}">
+        </div>
+        <div>
+          <label style="font-weight:600;margin-bottom:4px;display:block">Telefon</label>
+          <input type="tel" id="po-supplier-phone" placeholder="+48 123 456 789" style="width:100%;padding:8px" value="${existingOrder?.supplier?.phone || ''}">
+        </div>
+        <div>
+          <label style="font-weight:600;margin-bottom:4px;display:block">Data dostawy</label>
+          <input type="date" id="po-delivery-date" style="width:100%;padding:8px" value="${existingOrder?.deliveryDate || ''}">
+        </div>
+      </div>
+      
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <label style="font-weight:600">Pozycje zamówienia</label>
+          <button class="btn small green" onclick="addPurchaseOrderItem()">+ Dodaj pozycję</button>
+        </div>
+        <div id="po-items-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+      
+      <div>
+        <label style="font-weight:600;margin-bottom:4px;display:block">Notatki</label>
+        <textarea id="po-notes" placeholder="Dodatkowe informacje..." style="width:100%;padding:8px;min-height:60px">${existingOrder?.notes || ''}</textarea>
+      </div>
+      
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:rgba(37,99,235,0.1);border-radius:8px">
+        <div style="font-weight:700;font-size:20px;color:#2563eb">Suma: <span id="po-total-value">0.00</span> zł</div>
+        <div class="row" style="gap:8px">
+          <button class="btn" onclick="closeModal()">Anuluj</button>
+          <button class="btn amber" onclick="savePurchaseOrder('draft')">💾 Zapisz jako szkic</button>
+          <button class="btn green" onclick="savePurchaseOrder('sent')">📤 Zapisz i wyślij</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  showModal(isEdit ? '✏️ Edytuj zamówienie' : '➕ Nowe zamówienie zakupowe', content);
+  
+  // Załaduj istniejące pozycje
+  if (existingOrder && existingOrder.items) {
+    existingOrder.items.forEach(item => {
+      addPurchaseOrderItem(item);
+    });
+  } else {
+    addPurchaseOrderItem(); // Dodaj pierwszą pustą pozycję
+  }
+  
+  calculatePOTotal();
+}
+
+// Dodawanie pozycji do zamówienia
+let poItemCounter = 0;
+function addPurchaseOrderItem(existingItem = null) {
+  poItemCounter++;
+  const itemId = `po-item-${poItemCounter}`;
+  
+  const materialsOptions = (window.warehouseItems || []).map(item => 
+    `<option value="${item.id}" data-unit="${item.unit}" ${existingItem && existingItem.materialId === item.id ? 'selected' : ''}>${item.name}</option>`
+  ).join('');
+  
+  const itemHtml = `
+    <div class="card" id="${itemId}" style="padding:12px">
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;align-items:end">
+        <div>
+          <label style="font-size:12px;color:#94a3b8;margin-bottom:4px;display:block">Materiał</label>
+          <select class="po-item-material" onchange="updatePOItemUnit('${itemId}');calculatePOTotal()" style="width:100%;padding:6px">
+            <option value="">-- Wybierz --</option>
+            ${materialsOptions}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;color:#94a3b8;margin-bottom:4px;display:block">Ilość</label>
+          <input type="number" class="po-item-quantity" min="0" step="0.01" value="${existingItem?.quantity || 1}" onchange="calculatePOTotal()" style="width:100%;padding:6px">
+        </div>
+        <div>
+          <label style="font-size:12px;color:#94a3b8;margin-bottom:4px;display:block">Jedn.</label>
+          <input type="text" class="po-item-unit" value="${existingItem?.unit || 'szt'}" readonly style="width:100%;padding:6px;background:#1f2937">
+        </div>
+        <div>
+          <label style="font-size:12px;color:#94a3b8;margin-bottom:4px;display:block">Cena jedn. (zł)</label>
+          <input type="number" class="po-item-price" min="0" step="0.01" value="${existingItem?.unitPrice || 0}" onchange="calculatePOTotal()" style="width:100%;padding:6px">
+        </div>
+        <button class="btn small red" onclick="removePurchaseOrderItem('${itemId}')" style="height:32px">🗑️</button>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('po-items-list').insertAdjacentHTML('beforeend', itemHtml);
+  
+  if (existingItem) {
+    calculatePOTotal();
+  }
+}
+
+// Usuwanie pozycji z zamówienia
+function removePurchaseOrderItem(itemId) {
+  document.getElementById(itemId)?.remove();
+  calculatePOTotal();
+}
+
+// Aktualizacja jednostki po wyborze materiału
+function updatePOItemUnit(itemId) {
+  const itemDiv = document.getElementById(itemId);
+  if (!itemDiv) return;
+  
+  const materialSelect = itemDiv.querySelector('.po-item-material');
+  const selectedOption = materialSelect.options[materialSelect.selectedIndex];
+  const unit = selectedOption.getAttribute('data-unit') || 'szt';
+  
+  const unitInput = itemDiv.querySelector('.po-item-unit');
+  if (unitInput) {
+    unitInput.value = unit;
+  }
+}
+
+// Obliczanie sumy zamówienia
+function calculatePOTotal() {
+  const items = document.querySelectorAll('#po-items-list .card');
+  let total = 0;
+  
+  items.forEach(itemDiv => {
+    const quantity = parseFloat(itemDiv.querySelector('.po-item-quantity')?.value || 0);
+    const price = parseFloat(itemDiv.querySelector('.po-item-price')?.value || 0);
+    total += quantity * price;
+  });
+  
+  const totalSpan = document.getElementById('po-total-value');
+  if (totalSpan) {
+    totalSpan.textContent = total.toFixed(2);
+  }
+}
+
+// Wypełnianie danych dostawcy z listy
+function populateSupplierDetails() {
+  const select = document.getElementById('po-supplier-select');
+  if (!select) return;
+  
+  const supplierId = select.value;
+  
+  if (supplierId === 'new') {
+    // Wyczyść pola dla nowego dostawcy
+    document.getElementById('po-supplier-name').value = '';
+    document.getElementById('po-supplier-email').value = '';
+    document.getElementById('po-supplier-phone').value = '';
+    return;
+  }
+  
+  const supplier = window.suppliers?.find(s => s.id === supplierId);
+  if (supplier) {
+    document.getElementById('po-supplier-name').value = supplier.name || '';
+    document.getElementById('po-supplier-email').value = supplier.email || '';
+    document.getElementById('po-supplier-phone').value = supplier.phone || '';
+  }
+}
+
+// Zapisywanie zamówienia zakupowego
+function savePurchaseOrder(status = 'draft') {
+  const orderId = document.getElementById('po-id')?.value || `PO-${Date.now()}`;
+  const isEdit = window.purchaseOrders?.some(po => po.id === orderId);
+  
+  // Zbierz dane dostawcy
+  const supplier = {
+    name: document.getElementById('po-supplier-name')?.value || '',
+    email: document.getElementById('po-supplier-email')?.value || '',
+    phone: document.getElementById('po-supplier-phone')?.value || '',
+  };
+  
+  // Walidacja
+  if (!supplier.name.trim()) {
+    alert('⚠️ Podaj nazwę dostawcy');
+    return;
+  }
+  
+  // Zbierz pozycje
+  const itemDivs = document.querySelectorAll('#po-items-list .card');
+  const items = [];
+  
+  itemDivs.forEach(itemDiv => {
+    const materialSelect = itemDiv.querySelector('.po-item-material');
+    const materialId = materialSelect?.value;
+    const materialName = materialSelect?.options[materialSelect.selectedIndex]?.text || '';
+    const quantity = parseFloat(itemDiv.querySelector('.po-item-quantity')?.value || 0);
+    const unit = itemDiv.querySelector('.po-item-unit')?.value || 'szt';
+    const unitPrice = parseFloat(itemDiv.querySelector('.po-item-price')?.value || 0);
+    
+    if (materialId && quantity > 0) {
+      items.push({
+        materialId,
+        materialName,
+        quantity,
+        unit,
+        unitPrice,
+        totalPrice: quantity * unitPrice
+      });
+    }
+  });
+  
+  if (items.length === 0) {
+    alert('⚠️ Dodaj co najmniej jedną pozycję do zamówienia');
+    return;
+  }
+  
+  // Oblicz sumę
+  const totalValue = items.reduce((sum, item) => sum + item.totalPrice, 0);
+  
+  // Utwórz obiekt zamówienia
+  const purchaseOrder = {
+    id: orderId,
+    createdAt: isEdit ? window.purchaseOrders.find(po => po.id === orderId)?.createdAt : Date.now(),
+    updatedAt: Date.now(),
+    supplier,
+    items,
+    totalValue,
+    deliveryDate: document.getElementById('po-delivery-date')?.value || '',
+    purchaseType: document.getElementById('po-type')?.value || 'standard',
+    status,
+    sentVia: null,
+    sentAt: null,
+    receivedAt: null,
+    notes: document.getElementById('po-notes')?.value || ''
+  };
+  
+  // Zapisz do tablicy
+  if (!window.purchaseOrders) {
+    window.purchaseOrders = [];
+  }
+  
+  if (isEdit) {
+    const index = window.purchaseOrders.findIndex(po => po.id === orderId);
+    window.purchaseOrders[index] = purchaseOrder;
+  } else {
+    window.purchaseOrders.push(purchaseOrder);
+  }
+  
+  // Zapisz dostawcę jeśli nowy
+  if (!window.suppliers) {
+    window.suppliers = [];
+  }
+  
+  const supplierExists = window.suppliers.some(s => s.name.toLowerCase() === supplier.name.toLowerCase());
+  if (!supplierExists) {
+    window.suppliers.push({
+      id: `SUP-${Date.now()}`,
+      name: supplier.name,
+      email: supplier.email,
+      phone: supplier.phone,
+      createdAt: Date.now()
+    });
+    localStorage.setItem('suppliers', JSON.stringify(window.suppliers));
+  }
+  
+  // Zapisz do localStorage
+  localStorage.setItem('purchaseOrders', JSON.stringify(window.purchaseOrders));
+  
+  // Odśwież widok
+  renderPurchaseOrders();
+  updateMrpDashboard();
+  
+  showNotification(`✅ Zamówienie ${orderId} zostało ${isEdit ? 'zaktualizowane' : 'utworzone'}`, 'success');
+  
+  // Zamknij modal
+  closeModal();
+  
+  // Jeśli status to 'sent', otwórz modal wysyłki (z opóźnieniem)
+  if (status === 'sent') {
+    setTimeout(() => sendPurchaseOrder(orderId), 400);
+  }
+}
+
+// Edycja zamówienia
+function editPurchaseOrder(orderId) {
+  showPurchaseOrderModal(orderId);
+}
+
+// Usuwanie zamówienia
+function deletePurchaseOrder(orderId) {
+  if (!confirm(`Czy na pewno chcesz usunąć zamówienie ${orderId}?`)) {
+    return;
+  }
+  
+  window.purchaseOrders = window.purchaseOrders.filter(po => po.id !== orderId);
+  localStorage.setItem('purchaseOrders', JSON.stringify(window.purchaseOrders));
+  
+  renderPurchaseOrders();
+  updateMrpDashboard();
+  
+  showNotification(`🗑️ Zamówienie ${orderId} zostało usunięte`, 'info');
+}
+
+// Wysyłanie zamówienia (druk/email/SMS)
+function sendPurchaseOrder(orderId) {
+  const order = window.purchaseOrders?.find(po => po.id === orderId);
+  if (!order) return;
+  
+  const content = `
+    <div style="display:flex;flex-direction:column;gap:16px;max-width:500px">
+      <div style="padding:12px;background:rgba(37,99,235,0.1);border-radius:8px">
+        <div style="font-weight:600;margin-bottom:8px">Zamówienie: ${order.id}</div>
+        <div style="font-size:14px;color:#94a3b8">Dostawca: ${order.supplier.name}</div>
+        <div style="font-size:14px;color:#94a3b8">Wartość: ${order.totalValue.toFixed(2)} zł</div>
+      </div>
+      
+      <div style="font-weight:600;font-size:16px;text-align:center;margin:8px 0">Wybierz sposób wysyłki:</div>
+      
+      <button class="btn blue" onclick="printPurchaseOrder('${orderId}');markAsSent('${orderId}', 'print')" style="padding:16px">
+        🖨️ Drukuj dokument
+        <div style="font-size:12px;margin-top:4px;opacity:0.8">Otwórz dokument w nowym oknie i wydrukuj</div>
+      </button>
+      
+      <button class="btn green" onclick="sendPurchaseOrderEmail('${orderId}')" style="padding:16px">
+        📧 Wyślij e-mail
+        <div style="font-size:12px;margin-top:4px;opacity:0.8">Otwórz klienta pocztowego z gotową wiadomością</div>
+      </button>
+      
+      ${order.purchaseType === 'small' ? `
+        <button class="btn orange" onclick="sendPurchaseOrderSMS('${orderId}')" style="padding:16px">
+          📱 Wyślij SMS do kierowcy
+          <div style="font-size:12px;margin-top:4px;opacity:0.8">Dla drobnych zakupów</div>
+        </button>
+      ` : ''}
+      
+      <button class="btn" onclick="closeModal()">Anuluj</button>
+    </div>
+  `;
+  
+  showModal('📤 Wysyłka zamówienia', content);
+}
+
+// Oznaczenie jako wysłane
+function markAsSent(orderId, via) {
+  const order = window.purchaseOrders?.find(po => po.id === orderId);
+  if (!order) return;
+  
+  order.status = 'sent';
+  order.sentVia = via;
+  order.sentAt = Date.now();
+  
+  localStorage.setItem('purchaseOrders', JSON.stringify(window.purchaseOrders));
+  renderPurchaseOrders();
+  updateMrpDashboard();
+  closeModal();
+  
+  showNotification(`✅ Zamówienie ${orderId} oznaczone jako wysłane (${via})`, 'success');
+}
+
+// Drukowanie zamówienia
+function printPurchaseOrder(orderId) {
+  const order = window.purchaseOrders?.find(po => po.id === orderId);
+  if (!order) return;
+  
+  const newWindow = window.open('', '_blank');
+  
+  const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('pl-PL') : 'Nie określono';
+  const createdDate = new Date(order.createdAt).toLocaleDateString('pl-PL');
+  
+  const html = `
+    <!DOCTYPE html>
+    <html lang="pl">
+    <head>
+      <meta charset="UTF-8">
+      <title>Zamówienie ${order.id}</title>
+      <style>
+        @media print {
+          body { margin: 0; padding: 20mm; }
+          .no-print { display: none; }
+        }
+        body { 
+          font-family: Arial, sans-serif; 
+          font-size: 12pt; 
+          line-height: 1.4;
+          color: #000;
+          background: #fff;
+        }
+        h1 { 
+          font-size: 24pt; 
+          border-bottom: 3px solid #000; 
+          padding-bottom: 8px;
+          margin-bottom: 16px;
+        }
+        table { 
+          width: 100%; 
+          border-collapse: collapse; 
+          margin-top: 16px; 
+        }
+        th, td { 
+          border: 1px solid #000; 
+          padding: 8px; 
+          text-align: left; 
+        }
+        th { 
+          background: #f0f0f0; 
+          font-weight: bold; 
+        }
+        .total { 
+          font-size: 18pt; 
+          font-weight: bold; 
+          margin-top: 16px; 
+          text-align: right;
+        }
+        .section {
+          margin-bottom: 20px;
+        }
+        .section-title {
+          font-size: 14pt;
+          font-weight: bold;
+          margin-bottom: 8px;
+          border-bottom: 2px solid #ccc;
+          padding-bottom: 4px;
+        }
+        .info-row {
+          margin-bottom: 4px;
+        }
+        .btn-print {
+          background: #3b82f6;
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          font-size: 14pt;
+          cursor: pointer;
+          border-radius: 6px;
+          margin-bottom: 20px;
+        }
+        .btn-print:hover {
+          background: #2563eb;
+        }
+      </style>
+    </head>
+    <body>
+      <button class="no-print btn-print" onclick="window.print()">🖨️ Drukuj dokument</button>
+      
+      <h1>ZAMÓWIENIE ZAKUPOWE ${order.id}</h1>
+      
+      <div class="section">
+        <div class="info-row"><strong>Data utworzenia:</strong> ${createdDate}</div>
+        <div class="info-row"><strong>Planowana data dostawy:</strong> ${deliveryDate}</div>
+        <div class="info-row"><strong>Typ zamówienia:</strong> ${order.purchaseType === 'small' ? 'Drobne zakupy' : 'Standardowe'}</div>
+      </div>
+      
+      <div class="section">
+        <div class="section-title">Dostawca</div>
+        <div class="info-row"><strong>Nazwa:</strong> ${order.supplier.name}</div>
+        ${order.supplier.email ? `<div class="info-row"><strong>Email:</strong> ${order.supplier.email}</div>` : ''}
+        ${order.supplier.phone ? `<div class="info-row"><strong>Telefon:</strong> ${order.supplier.phone}</div>` : ''}
+      </div>
+      
+      <div class="section">
+        <div class="section-title">Pozycje zamówienia</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Lp.</th>
+              <th>Materiał</th>
+              <th>Ilość</th>
+              <th>Cena jedn. (zł)</th>
+              <th>Wartość (zł)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${order.items.map((item, i) => `
+              <tr>
+                <td>${i + 1}</td>
+                <td>${item.materialName}</td>
+                <td>${item.quantity} ${item.unit}</td>
+                <td>${item.unitPrice.toFixed(2)}</td>
+                <td>${item.totalPrice.toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="total">SUMA: ${order.totalValue.toFixed(2)} zł</div>
+      
+      ${order.notes ? `
+        <div class="section">
+          <div class="section-title">Uwagi</div>
+          <p>${order.notes.replace(/\n/g, '<br>')}</p>
+        </div>
+      ` : ''}
+      
+      <div style="margin-top:40px;padding-top:20px;border-top:1px solid #ccc;font-size:10pt;color:#666">
+        <p>Dokument wygenerowany automatycznie przez System Planowania Produkcji</p>
+        <p>Data wydruku: ${new Date().toLocaleString('pl-PL')}</p>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  newWindow.document.write(html);
+  newWindow.document.close();
+  
+  // Auto-print
+  newWindow.onload = () => {
+    newWindow.focus();
+    setTimeout(() => newWindow.print(), 250);
+  };
+}
+
+// Wysyłka e-mail (mailto)
+function sendPurchaseOrderEmail(orderId) {
+  const order = window.purchaseOrders?.find(po => po.id === orderId);
+  if (!order) return;
+  
+  const subject = encodeURIComponent(`Zamówienie zakupowe ${order.id}`);
+  const body = encodeURIComponent(`
+Dzień dobry,
+
+Przesyłam zamówienie zakupowe ${order.id} z dnia ${new Date(order.createdAt).toLocaleDateString('pl-PL')}.
+
+Pozycje zamówienia:
+${order.items.map((item, i) => 
+  `${i + 1}. ${item.materialName} - ${item.quantity} ${item.unit} x ${item.unitPrice.toFixed(2)} zł = ${item.totalPrice.toFixed(2)} zł`
+).join('\n')}
+
+SUMA: ${order.totalValue.toFixed(2)} zł
+
+Planowana data dostawy: ${order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('pl-PL') : 'Do uzgodnienia'}
+
+${order.notes ? `Uwagi:\n${order.notes}\n` : ''}
+
+Pozdrawiam,
+${window.state?.currentUser?.name || 'Magazyn'}
+  `.trim());
+  
+  const mailtoLink = `mailto:${order.supplier.email || ''}?subject=${subject}&body=${body}`;
+  window.location.href = mailtoLink;
+  
+  markAsSent(orderId, 'email');
+}
+
+// Wysyłka SMS (fallback - otwiera aplikację SMS)
+function sendPurchaseOrderSMS(orderId) {
+  const order = window.purchaseOrders?.find(po => po.id === orderId);
+  if (!order) return;
+  
+  const content = `
+    <div style="display:flex;flex-direction:column;gap:16px;max-width:500px">
+      <div style="padding:12px;background:rgba(245,158,11,0.1);border-radius:8px">
+        <div style="font-weight:600;margin-bottom:8px">Wysyłka SMS dla: ${order.id}</div>
+        <div style="font-size:14px;color:#94a3b8">Drobne zakupy - wartość: ${order.totalValue.toFixed(2)} zł</div>
+      </div>
+      
+      <div>
+        <label style="font-weight:600;margin-bottom:4px;display:block">Numer telefonu kierowcy</label>
+        <input type="tel" id="sms-phone" placeholder="+48 123 456 789" style="width:100%;padding:8px">
+      </div>
+      
+      <div>
+        <label style="font-weight:600;margin-bottom:4px;display:block">Treść SMS</label>
+        <textarea id="sms-message" style="width:100%;padding:8px;min-height:120px;font-family:monospace">${generateSMSTemplate(order)}</textarea>
+        <div style="font-size:12px;color:#94a3b8;margin-top:4px">Długość: <span id="sms-length">0</span> znaków</div>
+      </div>
+      
+      <div class="row" style="gap:8px">
+        <button class="btn" onclick="closeModal()">Anuluj</button>
+        <button class="btn green" onclick="doSendSMS('${orderId}')">📱 Wyślij SMS</button>
+      </div>
+    </div>
+  `;
+  
+  showModal('📱 SMS do kierowcy', content);
+  
+  // Licznik znaków
+  const messageArea = document.getElementById('sms-message');
+  const lengthSpan = document.getElementById('sms-length');
+  if (messageArea && lengthSpan) {
+    messageArea.addEventListener('input', () => {
+      lengthSpan.textContent = messageArea.value.length;
+    });
+    lengthSpan.textContent = messageArea.value.length;
+  }
+}
+
+// Generowanie szablonu SMS
+function generateSMSTemplate(order) {
+  return `ZAKUPY (${order.id}):
+${order.items.map(item => `- ${item.materialName} ${item.quantity}${item.unit}`).join('\n')}
+Łącznie: ${order.totalValue.toFixed(0)}zł
+Dostawa: ${order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('pl-PL') : 'dziś'}`;
+}
+
+// Wysłanie SMS (otwiera aplikację SMS na urządzeniu)
+function doSendSMS(orderId) {
+  const phone = document.getElementById('sms-phone')?.value?.trim();
+  const message = document.getElementById('sms-message')?.value?.trim();
+  
+  if (!phone) {
+    alert('⚠️ Podaj numer telefonu');
+    return;
+  }
+  
+  if (!message) {
+    alert('⚠️ Wpisz treść wiadomości');
+    return;
+  }
+  
+  // Otwórz aplikację SMS
+  const smsLink = `sms:${phone}?body=${encodeURIComponent(message)}`;
+  window.location.href = smsLink;
+  
+  // Poczekaj chwilę i zapytaj czy wysłano
+  setTimeout(() => {
+    if (confirm('Czy SMS został wysłany?')) {
+      markAsSent(orderId, 'sms');
+    }
+  }, 1500);
+}
+
+// Odbieranie zamówienia (tworzenie transakcji PZ)
+function receivePurchaseOrder(orderId) {
+  const order = window.purchaseOrders?.find(po => po.id === orderId);
+  if (!order) return;
+  
+  const content = `
+    <div style="display:flex;flex-direction:column;gap:16px;max-width:600px">
+      <div style="padding:12px;background:rgba(16,185,129,0.1);border-radius:8px">
+        <div style="font-weight:600;margin-bottom:8px">Przyjęcie dostawy: ${order.id}</div>
+        <div style="font-size:14px;color:#94a3b8">Dostawca: ${order.supplier.name}</div>
+      </div>
+      
+      <div>
+        <div style="font-weight:600;margin-bottom:8px">Pozycje do przyjęcia:</div>
+        <div id="receive-items-list" style="display:flex;flex-direction:column;gap:8px">
+          ${order.items.map((item, i) => `
+            <div class="card" style="padding:12px">
+              <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;align-items:center">
+                <div style="font-weight:600">${item.materialName}</div>
+                <div style="text-align:center">
+                  <label style="font-size:12px;color:#94a3b8;display:block">Zamówiono</label>
+                  <div>${item.quantity} ${item.unit}</div>
+                </div>
+                <div>
+                  <label style="font-size:12px;color:#94a3b8;display:block">Otrzymano</label>
+                  <input type="number" id="received-qty-${i}" min="0" step="0.01" value="${item.quantity}" style="width:100%;padding:6px">
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      
+      <div style="padding:12px;background:rgba(245,158,11,0.1);border-radius:8px;font-size:14px">
+        ℹ️ System utworzy transakcje PZ (Przyjęcie Zewnętrzne) i zaktualizuje stany magazynowe
+      </div>
+      
+      <div class="row" style="gap:8px">
+        <button class="btn" onclick="closeModal()">Anuluj</button>
+        <button class="btn green" onclick="confirmReceivePurchaseOrder('${orderId}')">📦 Potwierdź odbiór</button>
+      </div>
+    </div>
+  `;
+  
+  showModal('📦 Odbiór dostawy', content);
+}
+
+// Potwierdzenie odbioru zamówienia
+function confirmReceivePurchaseOrder(orderId) {
+  const order = window.purchaseOrders?.find(po => po.id === orderId);
+  if (!order) return;
+  
+  // Zbierz faktyczne ilości
+  const receivedItems = order.items.map((item, i) => {
+    const receivedQty = parseFloat(document.getElementById(`received-qty-${i}`)?.value || 0);
+    return {
+      ...item,
+      receivedQuantity: receivedQty
+    };
+  });
+  
+  // Utwórz transakcje PZ dla każdej pozycji
+  if (!window.warehouseTransactions) {
+    window.warehouseTransactions = [];
+  }
+  
+  receivedItems.forEach(item => {
+    if (item.receivedQuantity > 0) {
+      const transaction = {
+        id: `PZ-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+        type: 'in',
+        itemId: item.materialId,
+        itemName: item.materialName,
+        quantity: item.receivedQuantity,
+        unit: item.unit,
+        date: Date.now(),
+        orderId: orderId,
+        notes: `Przyjęcie z zamówienia ${orderId} (dostawca: ${order.supplier.name})`,
+        performedBy: window.state?.currentUser?.name || 'System'
+      };
+      
+      window.warehouseTransactions.push(transaction);
+      
+      // Zaktualizuj stan magazynowy
+      if (!window.warehouseItems) {
+        window.warehouseItems = [];
+      }
+      
+      const warehouseItem = window.warehouseItems.find(w => w.id === item.materialId);
+      if (warehouseItem) {
+        warehouseItem.quantity = (warehouseItem.quantity || 0) + item.receivedQuantity;
+      } else {
+        // Dodaj nowy materiał do magazynu
+        window.warehouseItems.push({
+          id: item.materialId,
+          name: item.materialName,
+          quantity: item.receivedQuantity,
+          unit: item.unit,
+          minStock: 0,
+          lastUpdated: Date.now()
+        });
+      }
+    }
+  });
+  
+  // Zaktualizuj status zamówienia
+  order.status = 'received';
+  order.receivedAt = Date.now();
+  
+  // Zapisz wszystko
+  localStorage.setItem('purchaseOrders', JSON.stringify(window.purchaseOrders));
+  localStorage.setItem('warehouseTransactions', JSON.stringify(window.warehouseTransactions));
+  localStorage.setItem('warehouseItems', JSON.stringify(window.warehouseItems));
+  
+  closeModal();
+  renderPurchaseOrders();
+  updateMrpDashboard();
+  
+  showNotification(`✅ Przyjęto dostawę dla zamówienia ${orderId}`, 'success');
+  
+  // Opcjonalnie: przejdź do widoku transakcji
+  if (confirm('Czy chcesz zobaczyć utworzone transakcje PZ?')) {
+    switchWarehouseTab('transactions');
+  }
+}
+
+// Aktualizacja dashboard MRP
+function updateMrpDashboard() {
+  if (!window.purchaseOrders) {
+    window.purchaseOrders = [];
+  }
+  
+  if (!window.warehouseItems) {
+    window.warehouseItems = [];
+  }
+  
+  // Liczba materiałów poniżej progu (example - zakładamy minStock w item)
+  const lowStockCount = window.warehouseItems.filter(item => {
+    const minStock = item.minStock || 10; // domyślny próg
+    return item.quantity < minStock;
+  }).length;
+  
+  // Zamówienia oczekujące (sent lub confirmed)
+  const pendingOrders = window.purchaseOrders.filter(po => 
+    po.status === 'sent' || po.status === 'confirmed'
+  ).length;
+  
+  // Dostawy w tym tygodniu
+  const now = Date.now();
+  const oneWeek = 7 * 24 * 60 * 60 * 1000;
+  const deliveriesThisWeek = window.purchaseOrders.filter(po => {
+    if (!po.deliveryDate || po.status === 'received') return false;
+    const deliveryTime = new Date(po.deliveryDate).getTime();
+    return deliveryTime >= now && deliveryTime <= now + oneWeek;
+  }).length;
+  
+  // Aktualizuj kafelki
+  const lowStockEl = document.getElementById('mrp-low-stock-count');
+  const pendingEl = document.getElementById('mrp-pending-orders');
+  const deliveriesEl = document.getElementById('mrp-deliveries-week');
+  
+  if (lowStockEl) lowStockEl.textContent = lowStockCount;
+  if (pendingEl) pendingEl.textContent = pendingOrders;
+  if (deliveriesEl) deliveriesEl.textContent = deliveriesThisWeek;
+  
+  // Aktualizuj badge MRP (suma alertów)
+  const totalAlerts = lowStockCount + deliveriesThisWeek;
+  const badge = document.getElementById('mrp-badge');
+  if (badge) {
+    if (totalAlerts > 0) {
+      badge.textContent = totalAlerts;
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+}
+
+// Analiza MRP - automatyczne generowanie listy potrzeb
+function scanForPurchaseNeeds() {
+  if (!window.warehouseItems) {
+    alert('⚠️ Brak pozycji w magazynie do analizy');
+    return;
+  }
+  
+  const needs = [];
+  
+  window.warehouseItems.forEach(item => {
+    const minStock = item.minStock || 10; // domyślny próg
+    const currentStock = item.quantity || 0;
+    const reserved = calculateReservedQuantity(item.id); // ilość zarezerwowana
+    const available = currentStock - reserved;
+    
+    if (available < minStock) {
+      const shortage = minStock - available;
+      const suggested = Math.ceil(shortage * 1.5); // zamów 150% niedoboru
+      
+      needs.push({
+        itemId: item.id,
+        itemName: item.name,
+        unit: item.unit,
+        currentStock,
+        reserved,
+        available,
+        minStock,
+        shortage,
+        suggestedOrder: suggested
+      });
+    }
+  });
+  
+  if (needs.length === 0) {
+    alert('✅ Wszystkie materiały powyżej progu minimalnego. Brak potrzeby zamawiania.');
+    return;
+  }
+  
+  // Pokaż modal z wynikami analizy
+  const content = `
+    <div style="display:flex;flex-direction:column;gap:16px;max-width:800px">
+      <div style="padding:12px;background:rgba(239,68,68,0.1);border-radius:8px">
+        <div style="font-weight:600;font-size:16px;margin-bottom:4px">🔴 Znaleziono ${needs.length} materiałów poniżej progu</div>
+        <div style="font-size:14px;color:#94a3b8">Sugerowane zamówienia:</div>
+      </div>
+      
+      <div class="table" style="max-height:400px;overflow-y:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Materiał</th>
+              <th>Stan</th>
+              <th>Zarezerwowane</th>
+              <th>Dostępne</th>
+              <th>Próg min.</th>
+              <th>Niedobór</th>
+              <th style="background:#16a34a;color:white">Zamówić</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${needs.map(need => `
+              <tr>
+                <td>${need.itemName}</td>
+                <td>${need.currentStock} ${need.unit}</td>
+                <td>${need.reserved} ${need.unit}</td>
+                <td style="${need.available < need.minStock ? 'color:#ef4444;font-weight:bold' : ''}">${need.available} ${need.unit}</td>
+                <td>${need.minStock} ${need.unit}</td>
+                <td style="color:#ef4444;font-weight:bold">${need.shortage} ${need.unit}</td>
+                <td style="background:#dcfce7;color:#166534;font-weight:bold">${need.suggestedOrder} ${need.unit}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      
+      <div style="padding:12px;background:rgba(37,99,235,0.1);border-radius:8px;font-size:14px">
+        ℹ️ Sugerowana ilość to 150% niedoboru, aby zapewnić zapas bezpieczeństwa
+      </div>
+      
+      <div class="row" style="gap:8px">
+        <button class="btn" onclick="closeModal()">Zamknij</button>
+        <button class="btn green" onclick="createPurchaseOrderFromNeeds(${JSON.stringify(needs).replace(/"/g, '&quot;')})">
+          ➕ Utwórz zamówienie na podstawie analizy
+        </button>
+      </div>
+    </div>
+  `;
+  
+  showModal('🔍 Analiza MRP - Potrzeby materiałowe', content);
+}
+
+// Obliczanie zarezerwowanej ilości materiału
+function calculateReservedQuantity(itemId) {
+  if (!window.warehouseReservations) {
+    return 0;
+  }
+  
+  return window.warehouseReservations
+    .filter(r => r.itemId === itemId && r.status === 'active')
+    .reduce((sum, r) => sum + (r.quantity || 0), 0);
+}
+
+// Tworzenie zamówienia na podstawie analizy MRP
+function createPurchaseOrderFromNeeds(needs) {
+  closeModal();
+  
+  // Otwórz modal nowego zamówienia
+  showPurchaseOrderModal();
+  
+  // Dodaj pozycje z analizy (po małym opóźnieniu aby modal się załadował)
+  setTimeout(() => {
+    // Wyczyść domyślną pustą pozycję
+    document.getElementById('po-items-list').innerHTML = '';
+    
+    needs.forEach(need => {
+      addPurchaseOrderItem({
+        materialId: need.itemId,
+        materialName: need.itemName,
+        quantity: need.suggestedOrder,
+        unit: need.unit,
+        unitPrice: 0 // użytkownik wpisze cenę
+      });
+    });
+    
+    calculatePOTotal();
+  }, 300);
+}
+
+// Eksport zamówień do CSV
+function exportPurchaseOrdersToCSV() {
+  if (!window.purchaseOrders || window.purchaseOrders.length === 0) {
+    alert('Brak zamówień do eksportu');
+    return;
+  }
+  
+  const headers = ['ID', 'Data utworzenia', 'Dostawca', 'Status', 'Typ', 'Wartość (zł)', 'Data dostawy', 'Liczba pozycji', 'Wysłano przez'];
+  
+  const rows = window.purchaseOrders.map(po => [
+    po.id,
+    new Date(po.createdAt).toLocaleDateString('pl-PL'),
+    po.supplier?.name || '',
+    po.status,
+    po.purchaseType,
+    po.totalValue?.toFixed(2) || '0.00',
+    po.deliveryDate || '',
+    po.items?.length || 0,
+    po.sentVia || ''
+  ]);
+  
+  let csv = headers.join(';') + '\n';
+  csv += rows.map(row => row.join(';')).join('\n');
+  
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', `zamowienia_zakupowe_${new Date().toISOString().split('T')[0]}.csv`);
+  link.style.visibility = 'hidden';
+  
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  showNotification('📊 Eksport zamówień zakończony', 'success');
+}
+
+// Udostępnij funkcje globalnie
+window.renderPurchaseOrders = renderPurchaseOrders;
+window.updateMrpDashboard = updateMrpDashboard;
+window.showPurchaseOrderModal = showPurchaseOrderModal;
+window.addPurchaseOrderItem = addPurchaseOrderItem;
+window.removePurchaseOrderItem = removePurchaseOrderItem;
+window.updatePOItemUnit = updatePOItemUnit;
+window.calculatePOTotal = calculatePOTotal;
+window.populateSupplierDetails = populateSupplierDetails;
+window.savePurchaseOrder = savePurchaseOrder;
+window.editPurchaseOrder = editPurchaseOrder;
+window.deletePurchaseOrder = deletePurchaseOrder;
+window.sendPurchaseOrder = sendPurchaseOrder;
+window.markAsSent = markAsSent;
+window.printPurchaseOrder = printPurchaseOrder;
+window.sendPurchaseOrderEmail = sendPurchaseOrderEmail;
+window.sendPurchaseOrderSMS = sendPurchaseOrderSMS;
+window.doSendSMS = doSendSMS;
+window.receivePurchaseOrder = receivePurchaseOrder;
+window.confirmReceivePurchaseOrder = confirmReceivePurchaseOrder;
+window.scanForPurchaseNeeds = scanForPurchaseNeeds;
+window.createPurchaseOrderFromNeeds = createPurchaseOrderFromNeeds;
+window.exportPurchaseOrdersToCSV = exportPurchaseOrdersToCSV;
+
+console.log('✅ Moduł MRP/Zakupy załadowany');
+
 </script>
 
 </body>
