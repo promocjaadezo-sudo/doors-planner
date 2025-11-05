@@ -2837,22 +2837,43 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
 
   function updateConnectionStatus(){
     const info = qs('#set-info');
+    const syncStatus = qs('#sync-status');
     if(!info) return;
     
     if(state.storage.mode === 'firebase'){
       setInfoText('Tryb Firebase - sprawdzam połączenie...', 'default');
+      if(syncStatus) {
+        syncStatus.className = 'sync-status sync-pending';
+        syncStatus.textContent = '🔄 Łączę...';
+      }
       // Sprawdź połączenie z Firebase
       ensureFirebase().then(ok => {
         if(ok){
           setInfoText('✅ Połączono z Firebase', 'success');
+          if(syncStatus) {
+            syncStatus.className = 'sync-status sync-ok';
+            syncStatus.textContent = '✅ Połączono';
+          }
         } else {
           setInfoText('⚠️ Firebase niedostępny - tryb offline', 'warning');
+          if(syncStatus) {
+            syncStatus.className = 'sync-status sync-error';
+            syncStatus.textContent = '⚠️ Offline';
+          }
         }
       }).catch(() => {
         setInfoText('❌ Błąd połączenia z Firebase', 'error');
+        if(syncStatus) {
+          syncStatus.className = 'sync-status sync-error';
+          syncStatus.textContent = '❌ Błąd';
+        }
       });
     } else {
       setInfoText('Tryb localStorage (offline)', 'default');
+      if(syncStatus) {
+        syncStatus.className = 'sync-status sync-disconnected';
+        syncStatus.textContent = '💾 Lokalnie';
+      }
     }
   }
   // Upewnij się że funkcja dostępna globalnie do diagnostyki ładowania
