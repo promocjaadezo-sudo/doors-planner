@@ -1625,6 +1625,17 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   }
 
   const storeKey='door_v50_state';
+  
+  // Konfiguracja dla usuwania - timeout na czyszczenie oczekujących usunięć (ms)
+  const PENDING_DELETION_CLEANUP_TIMEOUT = 5000;
+  
+  // Funkcja pomocnicza do inicjalizacji struktury oczekujących usunięć
+  function ensurePendingDeletions(state) {
+    if (!state._pendingDeletions) {
+      state._pendingDeletions = { orders: [], tasks: [], after: [] };
+    }
+    return state._pendingDeletions;
+  }
 
   let state={storage:{mode:'firebase',appId:'doors-demo',userId:'hala-1',fbConfig:{
     "apiKey": "AIzaSyD93UqqsHWoAUBV7g8OVKAnajIfGDX_ZdY",
@@ -2295,8 +2306,8 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           const id = t.dataset.od;
           
           // Dodaj do listy oczekujących usunięć (zapobiega przywracaniu przez loadFromDB)
-          if (!state._pendingDeletions) state._pendingDeletions = { orders: [], tasks: [], after: [] };
-          if (!state._pendingDeletions.orders.includes(id)) state._pendingDeletions.orders.push(id);
+          const pendingDeletions = ensurePendingDeletions(state);
+          if (!pendingDeletions.orders.includes(id)) pendingDeletions.orders.push(id);
           
           // Usuń z lokalnego state
           state.orders = state.orders.filter(x => x.id !== id); 
@@ -2325,11 +2336,10 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
             
             // 3. Po zakończeniu synchronizacji, usuń z listy oczekujących usunięć
             setTimeout(() => {
-              if (state._pendingDeletions && state._pendingDeletions.orders) {
-                state._pendingDeletions.orders = state._pendingDeletions.orders.filter(oid => oid !== id);
-                save();
-              }
-            }, 5000); // 5 sekund powinno wystarczyć na synchronizację
+              const pd = ensurePendingDeletions(state);
+              pd.orders = pd.orders.filter(oid => oid !== id);
+              save();
+            }, PENDING_DELETION_CLEANUP_TIMEOUT);
           }
           
           // Natychmiastowe odświeżenie wszystkich widoków (bez opóźnienia)
@@ -6681,7 +6691,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
 
       const skipped = [];
       const updated = [];
-      const pendingDeletions = state._pendingDeletions || { orders: [], tasks: [], after: [] };
+      const pendingDeletions = ensurePendingDeletions(state);
       
       Object.entries(remoteCollections).forEach(([key, collection])=>{
         const remoteLen = Array.isArray(collection) ? collection.length : (collection && typeof collection === 'object' ? Object.keys(collection).length : 0);
