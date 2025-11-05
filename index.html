@@ -610,27 +610,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
       <div><label>Model</label><input id="o-model" placeholder="Model / wariant"></div>
       <div><label>Ilość</label><input id="o-qty" type="number" min="1" value="1"></div>
       <div><label>Data przyjęcia</label><input id="o-start" type="date"></div>
-      <div style="grid-column:1/-1">
-        <label>Koniec produkcji</label>
-        <div style="display:flex;gap:8px;align-items:center">
-          <select id="o-weeks" style="flex:1">
-            <option value="">— tygodnie —</option>
-            <option value="2">2 tygodnie</option>
-            <option value="3">3 tygodnie</option>
-            <option value="4">4 tygodnie</option>
-            <option value="5">5 tygodni</option>
-            <option value="6">6 tygodni</option>
-            <option value="7">7 tygodni</option>
-            <option value="8">8 tygodni</option>
-            <option value="9">9 tygodni</option>
-            <option value="10">10 tygodni</option>
-            <option value="11">11 tygodni</option>
-            <option value="12">12 tygodni</option>
-          </select>
-          <span style="color:#666">lub</span>
-          <input id="o-end" type="date" style="flex:1">
-        </div>
-      </div>
+      <div><label>Termin produkcji</label><input id="o-end" type="date"></div>
       <div style="grid-column:1/-1"><label>Uwagi</label><textarea id="o-notes" rows="2" placeholder="Dodatkowe informacje, wymagania, kontakt..."></textarea></div>
       <div><label>Termin montażu</label><input id="o-install" type="date"></div>
       <div><label>Adres montażu</label><input id="o-addr" placeholder="ulica nr, miejscowość"></div>
@@ -758,47 +738,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
 
   <div class="card hidden" id="p-emp">
     <div class="row" style="justify-content:space-between"><h3>Pracownicy</h3><button class="btn" id="emp-add">Dodaj</button></div>
-    
-    <!-- Formularz dodawania pracownika -->
-    <div id="emp-form-container" class="hidden" style="margin:16px 0;padding:16px;background:#f0f9ff;border:2px solid #3b82f6;border-radius:8px">
-      <div style="font-weight:600;font-size:16px;color:#1e40af;margin-bottom:12px">➕ Nowy pracownik</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 100px 100px 1fr;gap:12px;align-items:end">
-        <div>
-          <label for="emp-form-name" style="display:block;font-size:13px;color:#475569;margin-bottom:4px">Imię i nazwisko *</label>
-          <input type="text" id="emp-form-name" placeholder="np. Jan Kowalski" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px">
-        </div>
-        <div>
-          <label for="emp-form-role" style="display:block;font-size:13px;color:#475569;margin-bottom:4px">Rola / Stanowisko</label>
-          <select id="emp-form-role" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px">
-            <option value="">— Wybierz rolę —</option>
-            <option value="Magazynier">📦 Magazynier</option>
-            <option value="Produkcja">🔧 Produkcja</option>
-            <option value="Montaż">🏗️ Montaż</option>
-            <option value="Handlowiec">💼 Handlowiec</option>
-            <option value="Kierownik">👔 Kierownik</option>
-            <option value="Inne">➕ Inne</option>
-          </select>
-        </div>
-        <div>
-          <label for="emp-form-cap" style="display:block;font-size:13px;color:#475569;margin-bottom:4px">Cap %</label>
-          <input type="number" id="emp-form-cap" value="100" min="0" max="100" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px">
-        </div>
-        <div>
-          <label for="emp-form-hours" style="display:block;font-size:13px;color:#475569;margin-bottom:4px">h/d</label>
-          <input type="number" id="emp-form-hours" value="8" min="1" max="24" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px">
-        </div>
-        <div>
-          <label for="emp-form-phone" style="display:block;font-size:13px;color:#475569;margin-bottom:4px">Telefon</label>
-          <input type="tel" id="emp-form-phone" placeholder="np. 123-456-789" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px">
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
-        <button class="btn green" id="emp-form-save">✓ Zapisz</button>
-        <button class="btn" id="emp-form-cancel">✕ Anuluj</button>
-      </div>
-    </div>
-    
-    <div class="table"><table><thead><tr><th>Imię i nazwisko</th><th>Rola</th><th>Telefon</th><th>cap%</th><th>h/d</th><th>Akcje</th></tr></thead><tbody id="emp-tb"></tbody></table></div>
+    <div class="table"><table><thead><tr><th>Imię i nazwisko</th><th>cap%</th><th>h/d</th><th>Akcje</th></tr></thead><tbody id="emp-tb"></tbody></table></div>
   </div>
 
   <div class="card hidden" id="p-as">
@@ -872,9 +812,8 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
     </div>
     
     <!-- Zakładki magazynu -->
-    <div class="row" style="gap:8px;margin-bottom:16px;border-bottom:1px solid var(--b);padding-bottom:8px;flex-wrap:wrap">
+    <div class="row" style="gap:8px;margin-bottom:16px;border-bottom:1px solid var(--b);padding-bottom:8px">
       <button class="btn" id="wh-tab-items" onclick="switchWarehouseTab('items')">📋 Pozycje</button>
-      <button class="btn" id="wh-tab-orders" onclick="switchWarehouseTab('orders')">📦 Zlecenia do realizacji</button>
       <button class="btn" id="wh-tab-transactions" onclick="switchWarehouseTab('transactions')">📝 Przychód/Rozchód</button>
       <button class="btn" id="wh-tab-reservations" onclick="switchWarehouseTab('reservations')">🔒 Rezerwacje</button>
       <button class="btn" id="wh-tab-tasks" onclick="switchWarehouseTab('tasks')" style="position:relative">
@@ -896,21 +835,6 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
       <div class="list" id="wh-list">
         <div style="text-align:center;padding:40px;color:#999">Brak pozycji w magazynie. Kliknij "Dodaj pozycję".</div>
       </div>
-    </div>
-    
-    <!-- Widok: Zlecenia do realizacji (MAGAZYNIER) -->
-    <div id="wh-view-orders" class="hidden">
-      <div style="margin-bottom:16px;padding:12px;background:#dbeafe;border-left:4px solid #3b82f6;border-radius:4px">
-        <div style="font-weight:600;font-size:16px;color:#1e40af;margin-bottom:4px">📦 Zlecenia do przygotowania</div>
-        <div style="font-size:14px;color:#64748b">Sprawdź materiały, obciąż magazyn i wydaj na produkcję</div>
-      </div>
-      <div class="row" style="gap:8px;margin-bottom:16px">
-        <button class="btn" onclick="filterWarehouseOrders('all')">Wszystkie</button>
-        <button class="btn amber" onclick="filterWarehouseOrders('pending')">🟡 Oczekujące</button>
-        <button class="btn blue" onclick="filterWarehouseOrders('prepared')">🔵 Przygotowane</button>
-        <button class="btn green" onclick="filterWarehouseOrders('issued')">✅ Wydane</button>
-      </div>
-      <div class="list" id="wh-orders-list"></div>
     </div>
     
     <!-- Widok: Przychód/Rozchód -->
@@ -942,17 +866,11 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
         <div style="font-weight:600;font-size:16px;color:#1e40af;margin-bottom:4px">✓ Zadania magazyniera</div>
         <div style="font-size:14px;color:#64748b">Lista zadań związanych z zamówieniami, przyjęciem i wydaniem materiałów</div>
       </div>
-      <div class="row" style="gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <div class="row" style="gap:8px;margin-bottom:16px">
         <button class="btn" onclick="filterWarehouseTasks('all')">Wszystkie</button>
         <button class="btn" onclick="filterWarehouseTasks('pending')">⏳ Do zrobienia</button>
         <button class="btn" onclick="filterWarehouseTasks('urgent')">🔴 Pilne</button>
         <button class="btn green" onclick="filterWarehouseTasks('completed')">✅ Zakończone</button>
-        <button class="btn orange" onclick="window.syncWarehouseTasks(); renderWarehouseTasks(); alert('✓ Zadania przypisane do aktualnego magazyniera')">🔄 Przypisz ponownie</button>
-        <div style="flex:1;min-width:200px">
-          <select id="wh-employee-filter" onchange="filterWarehouseTasksByEmployee()" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px">
-            <option value="">👤 Wszyscy pracownicy</option>
-          </select>
-        </div>
       </div>
       <div class="list" id="wh-tasks-list"></div>
     </div>
@@ -1532,7 +1450,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     }
 
     // Check for duplicate names (optional)
-    const existingOrder = state.orders.find(o => o.name && o.name.toLowerCase() === name.toLowerCase() && o.id !== qs('#o-id').value);
+    const existingOrder = state.orders.find(o => o.name.toLowerCase() === name.toLowerCase() && o.id !== qs('#o-id').value);
     if (existingOrder) errors.push('Zamówienie o tej nazwie już istnieje');
 
     return errors;
@@ -1550,7 +1468,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     if (hoursPerDay <= 0 || hoursPerDay > 24) errors.push('Godziny pracy dziennie muszą być między 1 a 24');
 
     // Check for duplicate names
-    const existingEmp = state.employees.find(e => e.name && e.name.toLowerCase() === name.toLowerCase() && e.id !== qs('#emp-id').value);
+    const existingEmp = state.employees.find(e => e.name.toLowerCase() === name.toLowerCase() && e.id !== qs('#emp-id').value);
     if (existingEmp) errors.push('Pracownik o tym imieniu i nazwisku już istnieje');
 
     return errors;
@@ -1707,6 +1625,17 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   }
 
   const storeKey='door_v50_state';
+  
+  // Konfiguracja dla usuwania - timeout na czyszczenie oczekujących usunięć (ms)
+  const PENDING_DELETION_CLEANUP_TIMEOUT = 5000;
+  
+  // Funkcja pomocnicza do inicjalizacji struktury oczekujących usunięć
+  function ensurePendingDeletions(state) {
+    if (!state._pendingDeletions) {
+      state._pendingDeletions = { orders: [], tasks: [], after: [] };
+    }
+    return state._pendingDeletions;
+  }
 
   let state={storage:{mode:'firebase',appId:'doors-demo',userId:'hala-1',fbConfig:{
     "apiKey": "AIzaSyD93UqqsHWoAUBV7g8OVKAnajIfGDX_ZdY",
@@ -2071,24 +2000,14 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     if(raw) {
       const loadedData = JSON.parse(raw);
       console.log('📦 LOAD: Dane z localStorage (długość):', raw.length, 'znaków');
-      
-      // KRYTYCZNE: Sprawdź timestamp - jeśli dane są stare (>7 dni), NIE ładuj ich
-      const loadedTimestamp = loadedData.lastModified || 0;
-      const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-      
-      if (loadedTimestamp > sevenDaysAgo) {
-        Object.assign(state, loadedData);
-        console.log('✅ LOAD: Dane załadowane z localStorage:', {
-          employees: state.employees?.length || 0,
-          operations: state.operationsCatalog?.length || 0,
-          processes: state.processes?.length || 0,
-          orders: state.orders?.length || 0,
-          tasks: state.tasks?.length || 0,
-          lastModified: new Date(loadedTimestamp).toLocaleString('pl-PL')
-        });
-      } else {
-        console.warn('⚠️ LOAD: Dane w localStorage są stare (ostatnia modyfikacja:', new Date(loadedTimestamp).toLocaleString('pl-PL'), ') - POMIJAM ładowanie!');
-      }
+      Object.assign(state, loadedData);
+      console.log('✅ LOAD: Dane załadowane z localStorage:', {
+        employees: state.employees?.length || 0,
+        operations: state.operationsCatalog?.length || 0,
+        processes: state.processes?.length || 0,
+        orders: state.orders?.length || 0,
+        tasks: state.tasks?.length || 0
+      });
     } else {
       console.log('⚠️ LOAD: Brak danych w localStorage (klucz: ' + storeKey + '), używam domyślne');
     }
@@ -2282,23 +2201,22 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       }
     }
     
-    // Uruchom automatyczne łączenie z małym opóźnieniem
-    setTimeout(() => {
+    // Uruchom automatyczne łączenie natychmiast po inicjalizacji
+    (async () => {
       // KROK 1: Włącz kolejkę PRZED jakimkolwiek połączeniem z Firebase
       if (window.FirebaseSyncQueue) {
         window.FirebaseSyncQueue.enable();
         console.log('🔄 INIT: Kolejka synchronizacji włączona (pre-connect)');
       }
-      
+
       // KROK 2: Teraz połącz z Firebase
-      autoConnectFirebase().then(success => {
-        if (success) {
-          console.log('🎉 INIT: Automatyczne łączenie z Firebase zakończone sukcesem!');
-        } else {
-          console.log('⚠️ INIT: Automatyczne łączenie z Firebase nie powiodło się - sprawdź konfigurację');
-        }
-      });
-    }, 1000); // 1 sekunda na inicjalizację DOM
+      const success = await autoConnectFirebase();
+      if (success) {
+        console.log('🎉 INIT: Automatyczne łączenie z Firebase zakończone sukcesem!');
+      } else {
+        console.log('⚠️ INIT: Automatyczne łączenie z Firebase nie powiodło się - sprawdź konfigurację');
+      }
+    })();
     
   } else {
     console.log('📦 INIT: Tryb localStorage - używam lokalnych danych');
@@ -2387,6 +2305,10 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         if(t.dataset.od) {
           const id = t.dataset.od;
           
+          // Dodaj do listy oczekujących usunięć (zapobiega przywracaniu przez loadFromDB)
+          const pendingDeletions = ensurePendingDeletions(state);
+          if (!pendingDeletions.orders.includes(id)) pendingDeletions.orders.push(id);
+          
           // Usuń z lokalnego state
           state.orders = state.orders.filter(x => x.id !== id); 
           state.tasks = state.tasks.filter(t => t.orderId !== id); 
@@ -2411,17 +2333,22 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
             
             // 2. Następnie pełny zapis aktualnego stanu
             window.FirebaseSyncQueue.enqueue('save', { state }, 10);
+            
+            // 3. Po zakończeniu synchronizacji, usuń z listy oczekujących usunięć
+            setTimeout(() => {
+              const pd = ensurePendingDeletions(state);
+              pd.orders = pd.orders.filter(oid => oid !== id);
+              save();
+            }, PENDING_DELETION_CLEANUP_TIMEOUT);
           }
           
-          // Wymuszenie odświeżenia wszystkich widoków
-          setTimeout(() => {
-            renderOrderPage(); 
-            renderTasks(); 
-            renderASPage(); 
-            renderDash(window.state||state); 
-            renderGantt();
-            updateTasksBadge();
-          }, 50);
+          // Natychmiastowe odświeżenie wszystkich widoków (bez opóźnienia)
+          renderOrderPage(); 
+          renderTasks(); 
+          renderASPage(); 
+          renderDash(window.state||state); 
+          renderGantt();
+          updateTasksBadge();
           break;
         }
         if(t.dataset.oed) {
@@ -2613,78 +2540,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         if(t.dataset.empDel) { state.employees = state.employees.filter(x => x.id !== t.dataset.empDel); save(); renderEmployees(); break; }
         if(t.dataset.empEd) {
           const e = state.employees.find(x => x.id === t.dataset.empEd); if (!e) return;
-          
-          // Pytaj o imię
-          const n = prompt('Imię i nazwisko:', e.name);
-          if (n === null) break; // Anulowano
-          if (!n || !n.trim()) {
-            alert('⚠️ Imię i nazwisko nie może być puste');
-            break;
-          }
-          e.name = n.trim();
-          
-          // Pytaj o rolę
-          const currentRole = e.role || '';
-          const roleOptions = ['', 'Magazynier', 'Produkcja', 'Montaż', 'Handlowiec', 'Kierownik', 'Inne'];
-          const rolePrompt = 'Wybierz rolę (wpisz numer lub zostaw puste):\n\n' +
-            '0 - Brak roli\n' +
-            '1 - 📦 Magazynier\n' +
-            '2 - 🔧 Produkcja\n' +
-            '3 - 🏗️ Montaż\n' +
-            '4 - 💼 Handlowiec\n' +
-            '5 - 👔 Kierownik\n' +
-            '6 - ➕ Inne\n\n' +
-            `Aktualna rola: ${currentRole || '(brak)'}`;
-          
-          const roleChoice = prompt(rolePrompt, '');
-          if (roleChoice !== null) {
-            const roleIndex = parseInt(roleChoice);
-            if (!isNaN(roleIndex) && roleIndex >= 0 && roleIndex < roleOptions.length) {
-              e.role = roleOptions[roleIndex] || null;
-            }
-          }
-          
-          // Pytaj o telefon
-          const currentPhone = e.phone || '';
-          const phoneInput = prompt('Telefon:', currentPhone);
-          if (phoneInput !== null) {
-            e.phone = phoneInput.trim() || null;
-          }
-          
-          // Pytaj o Cap%
-          const currentCap = e.cap || 100;
-          const capInput = prompt('Cap% (0-100):', currentCap);
-          if (capInput !== null) {
-            const cap = parseInt(capInput);
-            if (!isNaN(cap) && cap >= 0 && cap <= 100) {
-              e.cap = cap;
-            } else {
-              alert('⚠️ Cap% musi być liczbą od 0 do 100');
-            }
-          }
-          
-          // Pytaj o godziny dziennie
-          const currentHours = e.hoursPerDay || 8;
-          const hoursInput = prompt('Godziny dziennie (1-24):', currentHours);
-          if (hoursInput !== null) {
-            const hours = parseInt(hoursInput);
-            if (!isNaN(hours) && hours >= 1 && hours <= 24) {
-              e.hoursPerDay = hours;
-            } else {
-              alert('⚠️ Godziny muszą być liczbą od 1 do 24');
-            }
-          }
-          
-          save(); 
-          renderEmployees(); 
-          
-          // Jeśli zmieniono na magazyniera, synchronizuj zadania
-          if (e.role === 'Magazynier' && typeof window.syncWarehouseTasks === 'function') {
-            console.log('[emp-edit] Magazynier zaktualizowany, synchronizuję zadania...');
-            window.syncWarehouseTasks();
-          }
-          
-          break;
+          const n = prompt('Nowe imię', e.name) || e.name; e.name = n; save(); renderEmployees(); break;
         }
         if(t.dataset.assign) {
           // Assign task to employee with conflict detection
@@ -2991,22 +2847,43 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
 
   function updateConnectionStatus(){
     const info = qs('#set-info');
+    const syncStatus = qs('#sync-status');
     if(!info) return;
     
     if(state.storage.mode === 'firebase'){
       setInfoText('Tryb Firebase - sprawdzam połączenie...', 'default');
+      if(syncStatus) {
+        syncStatus.className = 'sync-status sync-pending';
+        syncStatus.textContent = '🔄 Łączę...';
+      }
       // Sprawdź połączenie z Firebase
       ensureFirebase().then(ok => {
         if(ok){
           setInfoText('✅ Połączono z Firebase', 'success');
+          if(syncStatus) {
+            syncStatus.className = 'sync-status sync-ok';
+            syncStatus.textContent = '✅ Połączono';
+          }
         } else {
           setInfoText('⚠️ Firebase niedostępny - tryb offline', 'warning');
+          if(syncStatus) {
+            syncStatus.className = 'sync-status sync-error';
+            syncStatus.textContent = '⚠️ Offline';
+          }
         }
       }).catch(() => {
         setInfoText('❌ Błąd połączenia z Firebase', 'error');
+        if(syncStatus) {
+          syncStatus.className = 'sync-status sync-error';
+          syncStatus.textContent = '❌ Błąd';
+        }
       });
     } else {
       setInfoText('Tryb localStorage (offline)', 'default');
+      if(syncStatus) {
+        syncStatus.className = 'sync-status sync-disconnected';
+        syncStatus.textContent = '💾 Lokalnie';
+      }
     }
   }
   // Upewnij się że funkcja dostępna globalnie do diagnostyki ładowania
@@ -3047,11 +2924,11 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       }
   const genBtn = o.tasksGenerated ? '' : `<button class=\"btn\" data-ogen=\"${o.id}\">Gen. zadania</button>`;
   const replanOneBtn = `<button class=\"btn amber\" data-replan-order=\"${o.id}\" title=\"Resetuj i przelicz tylko zadania tego zlecenia\">Replan</button>`;
-  // UKRYTO: Handlowiec nie zarządza materiałami - przycisk Checklist przeniesiony do Magazynu
-  // const checklistBtn = o.processId ? `<button class=\"btn blue\" data-checklist=\"${o.id}\" title=\"Pokaż checklistę materiałów\">📋 Checklist</button>` : '';
+  const checklistBtn = o.processId ? `<button class=\"btn blue\" data-checklist=\"${o.id}\" title=\"Pokaż checklistę materiałów\">📋 Checklist</button>` : '';
   
-  // Status materiałów - tylko informacyjnie (bez przycisku zarządzania)
+  // Oblicz status materiałów dla zlecenia
   let materialsStatus = '-';
+  let materialsBtn = '';
   if (o.materialChecklist && o.materialChecklist.length > 0) {
     const warehouseItems = window.warehouseItems || [];
     const reservations = window.warehouseReservations || [];
@@ -3083,16 +2960,15 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     } else {
       materialsStatus = '⚠️ Braki';
     }
-    // UKRYTO: Przycisk "Materiały" - zarządzanie przeniesione do zakładki Magazyn
-    // materialsBtn = `<button class=\"btn blue\" onclick=\"window.showOrderMaterials('${o.id}')\" title=\"Pokaż materiały i wydaj z magazynu\">📦 Materiały</button>`;
+    materialsBtn = `<button class=\"btn blue\" onclick=\"window.showOrderMaterials('${o.id}')\" title=\"Pokaż materiały i wydaj z magazynu\">📦 Materiały</button>`;
   }
   
   tr.innerHTML=`<td>${o.name||'-'}</td><td>${o.client||'-'}</td><td>${o.model||'-'}</td><td>${o.quantity||'-'}</td>
                     <td>${o.startDate||'-'}</td><td>${o.endDate||'-'}</td><td>${o.installDate||'-'}</td><td>${place||'-'}</td>
                     <td>${bar} <div class="muted" style="font-size:12px;margin-top:4px">${pct}% (${pr.done}/${pr.total})</div></td>
                     <td>${leadH}</td>
-                    <td>${materialsStatus}</td>
-  <td><div class="row"><button class="btn" data-oed="${o.id}">Edytuj</button>${genBtn}${replanOneBtn}<button class="btn red" data-od="${o.id}">Usuń</button></div></td>`;
+                    <td>${materialsStatus}<br>${materialsBtn}</td>
+  <td style="min-width: 200px"><div class="row"><button class="btn" data-oed="${o.id}">Edytuj</button>${genBtn}${checklistBtn}${replanOneBtn}<button class="btn red" data-od="${o.id}">Usuń</button></div></td>`;
       host.appendChild(tr);
     });
   }
@@ -3220,43 +3096,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         processId:qs('#o-proc').value||'',leadEmployeeId:qs('#o-lead').value||''};
       if(id){
         const existing = state.orders.find(x=>x.id===id);
-        if(existing){ 
-          Object.assign(existing, orderObj); 
-          (window.logDev||console.log)('[order-form] updated', id); 
-          
-          // Regeneruj zadania produkcyjne
-          try{
-            // Usuń stare zadania dla tego zlecenia
-            const oldTasksCount = (state.tasks||[]).length;
-            state.tasks = (state.tasks||[]).filter(t => t.orderId !== id);
-            const removedCount = oldTasksCount - state.tasks.length;
-            (window.logDev||console.log)('[order-form] removed old tasks:', removedCount);
-            
-            // Aktualizuj zadanie montażowe
-            const afterTask = (state.after||[]).find(a => a.order === id);
-            if(afterTask){
-              afterTask.desc = orderObj.notes || '';
-              afterTask.installDate = orderObj.installDate || '';
-              afterTask.phone = orderObj.phone || '';
-              afterTask.postalCode = orderObj.postalCode || '';
-              afterTask.address = orderObj.address || '';
-              afterTask.leadEmployeeId = orderObj.leadEmployeeId || '';
-              (window.logDev||console.log)('[order-form] updated montaż task');
-            }
-            
-            // Wygeneruj nowe zadania
-            if(window.scheduleCore){
-              const gen = window.scheduleCore.generateTasksForOrder(orderObj, state);
-              if(gen && gen.length){
-                state.tasks = (state.tasks||[]).concat(gen);
-                if(typeof updateScheduleConfigFromUI === 'function'){ updateScheduleConfigFromUI(); }
-                window.scheduleCore.generateSchedule(state);
-                orderObj.tasksGenerated = true;
-                (window.logDev||console.log)('[order-form] regenerated tasks', gen.length);
-              }
-            }
-          }catch(e){ console.warn('[order-form] regenerate tasks error', e.message); }
-        }
+        if(existing){ Object.assign(existing, orderObj); (window.logDev||console.log)('[order-form] updated', id); }
       } else {
         orderObj.tasksGenerated = false;
         state.orders.push(orderObj);
@@ -3274,7 +3114,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
             phone: orderObj.phone || '',
             postalCode: orderObj.postalCode || '',
             address: orderObj.address || '',
-            leadEmployeeId: orderObj.leadEmployeeId || '',
             employeeIds: [],
             hours: 0
           };
@@ -3581,9 +3420,19 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     state.PROC_TMP=[]; save(); ev.target.reset(); renderProcPage();
   });
 
+  function updateTaskFilters(){
+    const selOrd=qs('#tasks-filter-order'); 
+    if(selOrd){ 
+      selOrd.innerHTML='<option value="">Wszystkie zlecenia</option>'+ (state.orders||[]).map(o=>`<option value="${o.id}">${o.name}</option>`).join(''); 
+    }
+  }
+
   function renderTasks(){
     const list=qs('#tasks-list'); if(!list) return; list.innerHTML='';
-    const selOrd=qs('#tasks-filter-order'); if(selOrd){ selOrd.innerHTML='<option value="">Wszystkie zlecenia</option>'+ (state.orders||[]).map(o=>`<option value="${o.id}">${o.name}</option>`).join(''); }
+
+    // Aktualizuj filtry przy każdym renderowaniu
+    updateTaskFilters();
+
     const fOrd=qs('#tasks-filter-order')?.value||''; const fSt=qs('#tasks-filter-status')?.value||'';
     const groupBy=qs('#tasks-group-by')?.value||'';
     const rows=(state.tasks||[]).filter(t=>(!fOrd||t.orderId===fOrd)&&(!fSt||(t.status||'')===fSt));
@@ -3626,8 +3475,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     // helper for assignment info with score
     const assignmentInfo = (tt) => {
       try {
-        // Support multiple formats: assignees, assignee, employeeId (for montaż tasks)
-        const assignees = tt.assignees || (tt.assignee ? [tt.assignee] : (tt.employeeId ? [tt.employeeId] : []));
+        const assignees = tt.assignees || (tt.assignee ? [tt.assignee] : []);
         if(!assignees || assignees.length === 0) {
           return `<span class="muted" style="font-size:12px">⚠️ Nieprzypisane</span>`;
         }
@@ -3943,7 +3791,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     }
   }
 
-  window.generateTasksByWorker = function(){
+  function generateTasksByWorker(){
     showReportsProgress(true, 'Przetwarzanie danych pracowników...', 20);
     
     setTimeout(() => {
@@ -4044,11 +3892,11 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='tasks_by_employee.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   }
 
-  const tasksGenBtn = qs('#tasks-gen-by-emp'); if(tasksGenBtn){ tasksGenBtn.addEventListener('click', ()=>{ window.generateTasksByWorker(); }); }
+  const tasksGenBtn = qs('#tasks-gen-by-emp'); if(tasksGenBtn){ tasksGenBtn.addEventListener('click', ()=>{ generateTasksByWorker(); }); }
   const tasksExportAllBtn = qs('#tasks-export-csv-by-emp'); if(tasksExportAllBtn){ tasksExportAllBtn.addEventListener('click', ()=>{ exportCSVAllByWorker(); }); }
   const tasksShowByEmpBtn = qs('#tasks-show-by-emp'); if(tasksShowByEmpBtn){ tasksShowByEmpBtn.addEventListener('click', ()=>{
     state.uiShowTasksByEmpTable = !state.uiShowTasksByEmpTable;
-    if(state.uiShowTasksByEmpTable){ tasksShowByEmpBtn.textContent = 'Ukryj podział'; window.generateTasksByWorker(); }
+    if(state.uiShowTasksByEmpTable){ tasksShowByEmpBtn.textContent = 'Ukryj podział'; generateTasksByWorker(); }
     else { tasksShowByEmpBtn.textContent = 'Pokaż podział'; const byW = qs('#tasks-by-worker'); if(byW) byW.innerHTML = ''; }
   }); }
   const tasksFilterOrder = qs('#tasks-filter-order'); if(tasksFilterOrder){ tasksFilterOrder.addEventListener('change', ()=>{ renderTasks(); }); }
@@ -4143,18 +3991,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     });
   }
 
-  function renderEmployees(){ 
-    const tb=qs('#emp-tb'); 
-    tb.innerHTML=''; 
-    (state.employees||[]).forEach(e=>{ 
-      const tr=document.createElement('tr'); 
-      const roleText = e.role ? e.role : '<span style="color:#94a3b8">—</span>';
-      const roleIcon = e.role === 'Magazynier' ? '📦' : e.role === 'Produkcja' ? '🔧' : e.role === 'Montaż' ? '🏗️' : e.role === 'Handlowiec' ? '💼' : e.role === 'Kierownik' ? '👔' : '';
-      const phoneText = e.phone ? e.phone : '<span style="color:#94a3b8">—</span>';
-      tr.innerHTML='<td>'+e.name+'</td><td>'+roleIcon+' '+roleText+'</td><td>'+phoneText+'</td><td>'+(e.cap||100)+'</td><td>'+(e.hoursPerDay||8)+'</td><td><button class="btn" data-emp-ed="'+e.id+'">Edytuj</button> <button class="btn red" data-emp-del="'+e.id+'">Usuń</button></td>'; 
-      tb.appendChild(tr); 
-    }); 
-  }
+  function renderEmployees(){ const tb=qs('#emp-tb'); tb.innerHTML=''; (state.employees||[]).forEach(e=>{ const tr=document.createElement('tr'); tr.innerHTML='<td>'+e.name+'</td><td>'+(e.cap||100)+'</td><td>'+(e.hoursPerDay||8)+'</td><td><button class="btn" data-emp-ed="'+e.id+'">Edytuj</button> <button class="btn red" data-emp-del="'+e.id+'">Usuń</button></td>'; tb.appendChild(tr); } ); }
 
   // Function to restore authentic data
   function restoreAuthenticData() {
@@ -5826,131 +5663,19 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     if(capacityExportBtn){ capacityExportBtn.addEventListener('click', () => exportCapacityAnalysis()); }
 
     qs('#emp-add').addEventListener('click',()=>{
-      // Pokaż formularz dodawania pracownika
-      const formContainer = document.getElementById('emp-form-container');
-      const nameInput = document.getElementById('emp-form-name');
-      const roleSelect = document.getElementById('emp-form-role');
-      
-      if (formContainer) {
-        formContainer.classList.remove('hidden');
-        nameInput.value = '';
-        roleSelect.value = '';
-        nameInput.focus();
+      const name = prompt('Imię i nazwisko');
+      if (!name || !name.trim()) return;
+
+      const trimmedName = name.trim();
+      if (trimmedName.length < 2) {
+        alert('Imię i nazwisko musi mieć co najmniej 2 znaki');
+        return;
       }
+
+      state.employees.push({id:uid(),name:trimmedName,cap:100,hoursPerDay:8});
+      save();
+      renderEmployees();
     });
-    
-    // Zapisz nowego pracownika
-    const empFormSave = document.getElementById('emp-form-save');
-    if (empFormSave) {
-      empFormSave.addEventListener('click', () => {
-        const nameInput = document.getElementById('emp-form-name');
-        const roleSelect = document.getElementById('emp-form-role');
-        const capInput = document.getElementById('emp-form-cap');
-        const hoursInput = document.getElementById('emp-form-hours');
-        const phoneInput = document.getElementById('emp-form-phone');
-        const formContainer = document.getElementById('emp-form-container');
-        
-        const name = nameInput.value.trim();
-        const role = roleSelect.value;
-        const cap = parseInt(capInput.value) || 100;
-        const hoursPerDay = parseInt(hoursInput.value) || 8;
-        const phone = phoneInput.value.trim();
-        
-        if (!name) {
-          alert('⚠️ Podaj imię i nazwisko pracownika');
-          nameInput.focus();
-          return;
-        }
-        
-        if (name.length < 2) {
-          alert('⚠️ Imię i nazwisko musi mieć co najmniej 2 znaki');
-          nameInput.focus();
-          return;
-        }
-        
-        if (cap < 0 || cap > 100) {
-          alert('⚠️ Cap% musi być między 0 a 100');
-          capInput.focus();
-          return;
-        }
-        
-        if (hoursPerDay < 1 || hoursPerDay > 24) {
-          alert('⚠️ Godziny dziennie muszą być między 1 a 24');
-          hoursInput.focus();
-          return;
-        }
-        
-        // Sprawdź czy pracownik już istnieje
-        const existing = state.employees.find(e => 
-          e.name && e.name.toLowerCase() === name.toLowerCase()
-        );
-        
-        if (existing) {
-          alert('⚠️ Pracownik o tym imieniu już istnieje w systemie');
-          nameInput.focus();
-          return;
-        }
-        
-        // Dodaj pracownika
-        const newEmployee = {
-          id: uid(),
-          name: name,
-          role: role || null,
-          phone: phone || null,
-          cap: cap,
-          hoursPerDay: hoursPerDay
-        };
-        
-        console.log('[emp-add] Creating new employee with ID:', newEmployee.id, 'name:', newEmployee.name, 'role:', newEmployee.role);
-        
-        state.employees.push(newEmployee);
-        save();
-        renderEmployees();
-        
-        console.log('[emp-add] Employee saved to state.employees. Total employees:', state.employees.length);
-        
-        // Ukryj formularz i wyczyść
-        formContainer.classList.add('hidden');
-        nameInput.value = '';
-        roleSelect.value = '';
-        capInput.value = '100';
-        hoursInput.value = '8';
-        phoneInput.value = '';
-        
-        // Komunikat
-        const roleText = role ? ` (${role})` : '';
-        alert(`✓ Dodano pracownika: ${name}${roleText}`);
-        
-        // Jeśli to magazynier, automatycznie przypisz zadania
-        if (role === 'Magazynier' && typeof window.syncWarehouseTasks === 'function') {
-          console.log('[emp-add] Magazynier dodany z ID:', newEmployee.id, '- synchronizuję zadania...');
-          window.syncWarehouseTasks();
-        }
-      });
-    }
-    
-    // Anuluj dodawanie
-    const empFormCancel = document.getElementById('emp-form-cancel');
-    if (empFormCancel) {
-      empFormCancel.addEventListener('click', () => {
-        const formContainer = document.getElementById('emp-form-container');
-        const nameInput = document.getElementById('emp-form-name');
-        const roleSelect = document.getElementById('emp-form-role');
-        const capInput = document.getElementById('emp-form-cap');
-        const hoursInput = document.getElementById('emp-form-hours');
-        const phoneInput = document.getElementById('emp-form-phone');
-        
-        if (formContainer) {
-          formContainer.classList.add('hidden');
-          // Wyczyść formularz
-          nameInput.value = '';
-          roleSelect.value = '';
-          capInput.value = '100';
-          hoursInput.value = '8';
-          phoneInput.value = '';
-        }
-      });
-    }
   }
 
   document.addEventListener('DOMContentLoaded', function() {
@@ -6461,13 +6186,10 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         ? empIds.map(eid => (state.employees||[]).find(e=>e.id===eid)?.name || eid).join(', ')
         : '-';
       const hoursText = a.hours ? `${a.hours}h` : '-';
-      // Get lead employee name (handlowiec)
-      const leadEmp = a.leadEmployeeId ? (state.employees||[]).find(e=>e.id===a.leadEmployeeId) : null;
-      const leadName = leadEmp ? leadEmp.name : '';
       d.innerHTML=`<div class="row" style="justify-content:space-between"><div><b>${a.type}</b> • ${a.status} • ${orderObj.name||a.order||''}
       <div class="muted">Montaż: ${a.installDate||'-'} • wyjazd: ${a.departTime||'-'} • wizyta: ${a.visitTime||'-'} • czas: ${hoursText}</div>
       <div class="muted">Adres: ${address || '-'} • Kod: ${placeCode || '-'} • Tel: ${phoneNumber || '-'}</div>
-      <div class="muted">Montażyści: ${empNames}${leadName ? ' • <b>Prowadzący (kontakt):</b> ' + leadName : ''}</div>
+      <div class="muted">Pracownicy: ${empNames}</div>
       <div class="muted">${a.desc||''}</div></div><div><button class="btn" data-as-ed="${a.id}">Edytuj</button> <button class="btn red" data-as-del="${a.id}">Usuń</button></div></div>`;
       host.appendChild(d);
     });
@@ -6969,6 +6691,8 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
 
       const skipped = [];
       const updated = [];
+      const pendingDeletions = ensurePendingDeletions(state);
+      
       Object.entries(remoteCollections).forEach(([key, collection])=>{
         const remoteLen = Array.isArray(collection) ? collection.length : (collection && typeof collection === 'object' ? Object.keys(collection).length : 0);
         const localLen = Array.isArray(localCollections[key]) ? localCollections[key].length : (localCollections[key] && typeof localCollections[key] === 'object' ? Object.keys(localCollections[key]).length : 0);
@@ -6980,7 +6704,19 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         }
 
         console.log(`📝 Aktualizuję kolekcję '${key}': lokalna=${localLen}, zdalna=${remoteLen}`);
-        state[key] = Array.isArray(collection) ? collection.slice() : (collection ? JSON.parse(JSON.stringify(collection)) : Array.isArray(state[key]) ? [] : {});
+        
+        // Filtruj elementy oczekujące na usunięcie (zapobiega przywracaniu usuniętych elementów)
+        let filteredCollection = Array.isArray(collection) ? collection.slice() : (collection ? JSON.parse(JSON.stringify(collection)) : Array.isArray(state[key]) ? [] : {});
+        
+        if (Array.isArray(filteredCollection) && pendingDeletions[key] && pendingDeletions[key].length > 0) {
+          const beforeFilter = filteredCollection.length;
+          filteredCollection = filteredCollection.filter(item => !pendingDeletions[key].includes(item.id));
+          if (beforeFilter > filteredCollection.length) {
+            console.log(`🚫 Odfiltrowano ${beforeFilter - filteredCollection.length} elementów oczekujących na usunięcie z kolekcji '${key}'`);
+          }
+        }
+        
+        state[key] = filteredCollection;
         updated.push(key);
       });
 
@@ -7004,6 +6740,10 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         console.warn('[firebase] loadFromDB: pominięto puste kolekcje', skipped);
       }
       qs('#set-info').textContent = skipped.length ? '✅ Wczytano dane z Firebase (pominięto puste kolekcje).' : '✅ Wczytano dane z Firebase.';
+      
+      // Aktualizuj filtry zadań po załadowaniu danych
+      try{ updateTaskFilters(); }catch(e){ console.warn('updateTaskFilters error', e); }
+      
       if(state.page==='order') renderOrderPage(); if(state.page==='tasks') renderTasks(); if(state.page==='opcat') renderOps();
   if(state.page==='proc') renderProcPage(); if(state.page==='emp') renderEmployees(); if(state.page==='as') renderASPage(); renderDash(); renderGantt();
       return { updatedCollections: updated, skippedCollections: skipped };
@@ -8591,7 +8331,7 @@ function updateShoppingListBadge() {
 // Przełączanie zakładek magazynu
 function switchWarehouseTab(tab) {
   // Ukryj wszystkie widoki
-  const views = ['items', 'orders', 'transactions', 'reservations', 'tasks', 'templates'];
+  const views = ['items', 'transactions', 'reservations', 'tasks', 'templates'];
   views.forEach(v => {
     const viewEl = document.getElementById(`wh-view-${v}`);
     const tabBtn = document.getElementById(`wh-tab-${v}`);
@@ -8608,8 +8348,6 @@ function switchWarehouseTab(tab) {
   // Renderuj odpowiednią zawartość
   if (tab === 'items') {
     renderWarehouse();
-  } else if (tab === 'orders') {
-    renderWarehouseOrders();
   } else if (tab === 'transactions') {
     renderTransactions();
   } else if (tab === 'reservations') {
@@ -9729,117 +9467,29 @@ if (!window.warehouseTasks) {
   window.warehouseTasks = JSON.parse(localStorage.getItem('warehouseTasks') || '[]');
 }
 
-// Znajdź pracownika z rolą "Magazynier" do automatycznego przypisywania zadań
-window.getOrCreateWarehouseManager = function() {
-  if (!window.state || !window.state.employees) {
-    console.warn('[getOrCreateWarehouseManager] No state or employees array');
-    return null;
-  }
-  
-  // Szukaj pracownika z rolą "Magazynier"
-  let manager = window.state.employees.find(emp => emp.role === 'Magazynier');
-  
-  // Jeśli nie znaleziono, szukaj po nazwie (case-insensitive)
-  if (!manager) {
-    manager = window.state.employees.find(emp => 
-      emp.name && emp.name.toLowerCase().includes('magazyn')
-    );
-  }
-  
-  // Jeśli nadal nie ma, zwróć null (użytkownik musi dodać ręcznie)
-  if (!manager) {
-    console.log('[getOrCreateWarehouseManager] No warehouse manager found. Please add employee with role "Magazynier"');
-    return null;
-  }
-  
-  console.log('[getOrCreateWarehouseManager] Manager found:', manager.name, manager.id, 'role:', manager.role);
-  return manager.id;
-};
-
   // Synchronizuj zadania magazynowe ze zleceniami (wywoływane po każdym zapisie stanu)
 window.syncWarehouseTasks = function() {
-  console.log('[syncWarehouseTasks] Start synchronization');
-  
-  if (!window.state || !window.state.orders) {
-    console.log('[syncWarehouseTasks] No state or orders available');
-    return;
-  }
-  
-  console.log('[syncWarehouseTasks] Found', window.state.orders.length, 'orders');
+  if (!window.state || !window.state.orders) return;
   
   // Dla każdego aktywnego zlecenia sprawdź materiały
   window.state.orders.forEach(order => {
     if (order.materialChecklist && order.materialChecklist.length > 0) {
-      console.log('[syncWarehouseTasks] Processing order', order.name, 'with', order.materialChecklist.length, 'materials');
       generateWarehouseTasksForOrder(order);
     }
   });
-  
-  console.log('[syncWarehouseTasks] Total warehouse tasks:', window.warehouseTasks.length);
-  
-  // Automatycznie przypisz nieprzypisane zadania do magazyniera
-  const warehouseManagerId = window.getOrCreateWarehouseManager();
-  console.log('[syncWarehouseTasks] Retrieved warehouse manager ID:', warehouseManagerId);
-  
-  if (warehouseManagerId) {
-    let assignedCount = 0;
-    let reassignedCount = 0;
-    console.log('[syncWarehouseTasks] Total tasks before assignment:', window.warehouseTasks.length);
-    
-    // Pobierz listę aktualnych ID pracowników
-    const currentEmployeeIds = (window.state.employees || []).map(e => e.id);
-    console.log('[syncWarehouseTasks] Current employee IDs:', currentEmployeeIds);
-    
-    window.warehouseTasks.forEach((task, idx) => {
-      console.log(`[syncWarehouseTasks] Task ${idx}: ID=${task.id}, assignedToId="${task.assignedToId}", status=${task.status}, itemName="${task.itemName}"`);
-      
-      // Przypadek 1: Zadanie bez przypisania
-      if (!task.assignedToId && task.status !== 'cancelled' && task.status !== 'completed') {
-        console.log(`[syncWarehouseTasks] Assigning unassigned task ${idx} to manager ID:`, warehouseManagerId);
-        task.assignedToId = warehouseManagerId;
-        assignedCount++;
-      }
-      // Przypadek 2: Zadanie przypisane do nieistniejącego pracownika
-      else if (task.assignedToId && !currentEmployeeIds.includes(task.assignedToId) && task.status !== 'cancelled' && task.status !== 'completed') {
-        console.log(`[syncWarehouseTasks] Reassigning task ${idx} from deleted employee "${task.assignedToId}" to manager ID:`, warehouseManagerId);
-        task.assignedToId = warehouseManagerId;
-        reassignedCount++;
-      }
-    });
-    
-    if (assignedCount > 0 || reassignedCount > 0) {
-      console.log('[syncWarehouseTasks] Auto-assigned', assignedCount, 'new tasks and reassigned', reassignedCount, 'orphaned tasks to warehouse manager ID:', warehouseManagerId);
-      localStorage.setItem('warehouseTasks', JSON.stringify(window.warehouseTasks));
-    } else {
-      console.log('[syncWarehouseTasks] No tasks to assign or reassign');
-    }
-  } else {
-    console.warn('[syncWarehouseTasks] No warehouse manager ID found - tasks will remain unassigned');
-  }
   
   // Aktualizuj badge
   if (typeof window.updateTasksBadge === 'function') {
     window.updateTasksBadge();
   }
-};
-
-// Generuj automatyczne zadania dla zlecenia
+};// Generuj automatyczne zadania dla zlecenia
 window.generateWarehouseTasksForOrder = function(order) {
   if (!order || !order.id) return;
-  
-  console.log('[generateWarehouseTasksForOrder] Processing order:', order.name);
   
   const orderStartDate = order.startDate ? new Date(order.startDate) : null;
   const materialsNeeded = order.materialChecklist || [];
   
-  console.log('[generateWarehouseTasksForOrder] Materials needed:', materialsNeeded.length);
-  console.log('[generateWarehouseTasksForOrder] Warehouse items available:', (window.warehouseItems || []).length);
-  
   if (materialsNeeded.length === 0) return;
-  
-  // Znajdź lub utwórz magazyniera (automatyczne przypisanie zadań)
-  const warehouseManagerId = window.getOrCreateWarehouseManager();
-  console.log('[generateWarehouseTasksForOrder] Warehouse manager ID:', warehouseManagerId);
   
   // Oblicz daty ostrzeżeń (3 dni przed start produkcji)
   const warningDate = orderStartDate ? new Date(orderStartDate) : new Date();
@@ -9850,8 +9500,6 @@ window.generateWarehouseTasksForOrder = function(order) {
     const warehouseItem = (window.warehouseItems || []).find(w => w.id === material.itemId);
     const inStock = warehouseItem ? warehouseItem.quantity : 0;
     const needed = material.quantity || 0;
-    
-    console.log('[generateWarehouseTasksForOrder] Material:', material.itemName, '- inStock:', inStock, 'needed:', needed);
     
     if (inStock < needed) {
       // Brakuje materiału - utwórz zadanie zamówienia
@@ -9871,8 +9519,7 @@ window.generateWarehouseTasksForOrder = function(order) {
         dueDate: warningDate.toISOString(),
         createdAt: new Date().toISOString(),
         createdBy: 'System',
-        assignedTo: 'Magazynier', // Tekst legacy
-        assignedToId: warehouseManagerId // Automatyczne przypisanie do magazyniera
+        assignedTo: 'Magazynier'
       };
       
       // Sprawdź czy nie ma już takiego zadania
@@ -9884,487 +9531,19 @@ window.generateWarehouseTasksForOrder = function(order) {
       );
       
       if (!existingTask) {
-        console.log('[generateWarehouseTasksForOrder] Creating new task for material:', material.itemName);
         window.warehouseTasks.push(task);
-      } else {
-        console.log('[generateWarehouseTasksForOrder] Task already exists for material:', material.itemName);
       }
     }
   });
   
   // Zapisz zadania
   localStorage.setItem('warehouseTasks', JSON.stringify(window.warehouseTasks));
-  console.log('[generateWarehouseTasksForOrder] Saved to localStorage, total tasks:', window.warehouseTasks.length);
-};
-
-// ============ SYSTEM ZLECEŃ DO REALIZACJI (MAGAZYNIER) ============
-
-// Globalny filtr zleceń magazynowych
-window._warehouseOrdersFilter = window._warehouseOrdersFilter || 'all';
-
-// Filtrowanie zleceń
-window.filterWarehouseOrders = function(status) {
-  window._warehouseOrdersFilter = status;
-  renderWarehouseOrders();
-};
-
-// Renderuj zlecenia do realizacji
-window.renderWarehouseOrders = function() {
-  console.log('[renderWarehouseOrders] Function called');
-  
-  const list = document.getElementById('wh-orders-list');
-  if (!list) {
-    console.log('[renderWarehouseOrders] List element not found!');
-    return;
-  }
-  
-  const orders = (window.state.orders || []).filter(o => o.processId); // Tylko zlecenia z procesem
-  
-  if (orders.length === 0) {
-    list.innerHTML = '<div style="text-align:center;padding:40px;color:#999">Brak zleceń z przypisanymi procesami</div>';
-    return;
-  }
-  
-  // Filtruj według statusu
-  const filter = window._warehouseOrdersFilter;
-  let filteredOrders = orders;
-  
-  if (filter === 'pending') {
-    filteredOrders = orders.filter(o => !o.materialsPrepared && !o.materialsIssued);
-  } else if (filter === 'prepared') {
-    filteredOrders = orders.filter(o => o.materialsPrepared && !o.materialsIssued);
-  } else if (filter === 'issued') {
-    filteredOrders = orders.filter(o => o.materialsIssued);
-  }
-  
-  if (filteredOrders.length === 0) {
-    list.innerHTML = '<div style="text-align:center;padding:40px;color:#999">Brak zleceń dla wybranego filtru</div>';
-    return;
-  }
-  
-  // Renderuj każde zlecenie
-  list.innerHTML = filteredOrders.map(order => renderWarehouseOrderCard(order)).join('');
-};
-
-// Renderuj kartę pojedynczego zlecenia
-function renderWarehouseOrderCard(order) {
-  // Oblicz termin dla magazyniera (3 dni przed startem produkcji)
-  const startDate = order.startDate ? new Date(order.startDate) : null;
-  const deadline = startDate ? new Date(startDate) : new Date();
-  deadline.setDate(deadline.getDate() - 3); // 3 dni wcześniej
-  
-  const now = new Date();
-  const daysUntilDeadline = startDate ? Math.ceil((deadline - now) / (1000 * 60 * 60 * 24)) : 0;
-  
-  // Status czasowy
-  let timeStatus = '';
-  let timeClass = '';
-  if (order.materialsIssued) {
-    timeStatus = '✅ Wydano';
-    timeClass = 'green';
-  } else if (daysUntilDeadline < 0) {
-    timeStatus = `🔴 Opóźnienie ${Math.abs(daysUntilDeadline)} dni`;
-    timeClass = 'red';
-  } else if (daysUntilDeadline <= 1) {
-    timeStatus = `🟡 Zostało ${daysUntilDeadline} dni`;
-    timeClass = 'amber';
-  } else {
-    timeStatus = `🟢 Zostało ${daysUntilDeadline} dni`;
-    timeClass = 'green';
-  }
-  
-  // Pobierz proces i szablon
-  const process = (window.state.processes || []).find(p => p.id === order.processId);
-  const template = process && process.materialTemplateId ? 
-    (window.materialTemplates || []).find(t => t.id === process.materialTemplateId) : null;
-  
-  if (!template) {
-    return `
-      <div class="card" style="background:#fee;border-left:4px solid #dc2626">
-        <div style="font-weight:600;font-size:16px;color:#dc2626">⚠️ ${order.name}</div>
-        <div style="font-size:14px;color:#7f1d1d;margin-top:8px">Proces nie ma przypisanego szablonu materiałowego</div>
-      </div>
-    `;
-  }
-  
-  return `
-    <div class="card" style="border-left:4px solid #3b82f6">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
-        <div>
-          <div style="font-weight:600;font-size:18px;color:#ffffff">${order.name}</div>
-          <div style="font-size:13px;color:#94a3b8;margin-top:4px">
-            Klient: ${order.client || '-'} | Model: ${order.model || '-'} | Ilość: ${order.quantity || 1}
-          </div>
-        </div>
-        <div class="pill ${timeClass}" style="font-size:13px">${timeStatus}</div>
-      </div>
-      
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;font-size:13px">
-        <div>
-          <div style="color:#94a3b8">Start produkcji:</div>
-          <div style="font-weight:600">${order.startDate || '-'}</div>
-        </div>
-        <div>
-          <div style="color:#94a3b8">Termin magazynier:</div>
-          <div style="font-weight:600">${deadline.toLocaleDateString('pl-PL')}</div>
-        </div>
-        <div>
-          <div style="color:#94a3b8">Szablon:</div>
-          <div style="font-weight:600">${template.name}</div>
-        </div>
-      </div>
-      
-      <div class="row" style="gap:8px">
-        <button class="btn blue" onclick="showOrderMaterialsPreparation('${order.id}')">📋 Checklist materiałów</button>
-        ${order.materialsPrepared && !order.materialsIssued ? 
-          `<button class="btn green" onclick="issueOrderMaterials('${order.id}')">📤 Wydaj na produkcję</button>` : ''}
-        ${order.materialsIssued ? 
-          `<div class="pill green">✅ Wydano ${order.materialsIssuedAt ? new Date(order.materialsIssuedAt).toLocaleDateString('pl-PL') : ''}</div>` : ''}
-      </div>
-    </div>
-  `;
-}
-
-// Pokaż przygotowanie materiałów dla zlecenia
-window.showOrderMaterialsPreparation = function(orderId) {
-  const order = (window.state.orders || []).find(o => o.id === orderId);
-  if (!order) {
-    alert('Nie znaleziono zlecenia');
-    return;
-  }
-  
-  const process = (window.state.processes || []).find(p => p.id === order.processId);
-  if (!process || !process.materialTemplateId) {
-    alert('Proces nie ma przypisanego szablonu materiałowego');
-    return;
-  }
-  
-  const template = (window.materialTemplates || []).find(t => t.id === process.materialTemplateId);
-  if (!template) {
-    alert('Nie znaleziono szablonu materiałowego');
-    return;
-  }
-  
-  // Inicjalizuj checklistę w zleceniu jeśli nie istnieje
-  if (!order.warehouseMaterialChecklist) {
-    order.warehouseMaterialChecklist = (template.materials || []).map((m, idx) => ({
-      itemId: m.itemId,
-      itemName: m.itemName,
-      quantity: m.quantity,
-      unit: m.unit,
-      checked: true, // Domyślnie wszystkie zaznaczone
-      checkedAt: null,
-      checkedBy: null
-    }));
-    save();
-  }
-  
-  // Pobierz materiały z checklisty zlecenia
-  const materials = order.warehouseMaterialChecklist || [];
-  const warehouseItems = window.warehouseItems || [];
-  
-  // Tworzenie interaktywnej checklisty z checkboxami
-  const checklistHtml = materials.map((material, idx) => {
-    const isChecked = material.checked !== false; // Domyślnie zaznaczone
-    const whItem = warehouseItems.find(w => w.id === material.itemId);
-    const inStock = whItem ? whItem.quantity : 0;
-    const needed = material.quantity * (order.quantity || 1); // Przemnóż przez ilość w zleceniu
-    const available = inStock >= needed;
-    const shortage = Math.max(0, needed - inStock);
-    
-    const statusColor = available ? '#16a34a' : (inStock > 0 ? '#f59e0b' : '#dc2626');
-    const statusIcon = available ? '✅' : (inStock > 0 ? '⚠️' : '❌');
-    const statusText = available ? 'Dostępne' : (inStock > 0 ? `Brak ${shortage} ${material.unit}` : 'Brak w magazynie');
-    
-    const checkboxStyle = isChecked 
-      ? 'background:#16a34a;border:2px solid #16a34a;color:white' 
-      : 'background:#374151;border:2px solid #6b7280;color:transparent';
-    
-    const rowOpacity = isChecked ? '1' : '0.5';
-    const rowStyle = available ? '#0f172a' : '#1f1f2e';
-    
-    return `
-      <div style="display:flex;align-items:center;gap:12px;padding:12px;border-bottom:1px solid #334155;background:${rowStyle};opacity:${rowOpacity};transition:all 0.2s" 
-           onclick="toggleWarehouseMaterialItem('${orderId}', ${idx})">
-        <div style="width:28px;height:28px;min-width:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;cursor:pointer;transition:all 0.2s;${checkboxStyle}">
-          ${isChecked ? '✓' : ''}
-        </div>
-        <div style="font-size:20px;width:32px;text-align:center">${statusIcon}</div>
-        <div style="flex:1;cursor:pointer">
-          <div style="font-weight:600;font-size:15px;color:#ffffff;${!isChecked ? 'text-decoration:line-through' : ''}">${material.itemName}</div>
-          <div style="font-size:13px;color:#94a3b8;margin-top:2px">
-            Potrzebne: <strong>${needed} ${material.unit}</strong> | 
-            W magazynie: <strong style="color:${statusColor}">${inStock} ${material.unit}</strong>
-          </div>
-        </div>
-        <div style="padding:4px 12px;background:${statusColor};color:white;border-radius:16px;font-size:12px;font-weight:600">
-          ${statusText}
-        </div>
-      </div>
-    `;
-  }).join('');
-  
-  const checkedMaterials = materials.filter(m => m.checked !== false);
-  const allAvailable = checkedMaterials.every(m => {
-    const whItem = warehouseItems.find(w => w.id === m.itemId);
-    const inStock = whItem ? whItem.quantity : 0;
-    const needed = m.quantity * (order.quantity || 1);
-    return inStock >= needed;
-  });
-  
-  const content = `
-    <div style="margin-bottom:16px;padding:12px;background:#dbeafe;border-left:4px solid #3b82f6;border-radius:4px;color:#1e40af">
-      <div style="font-weight:600;margin-bottom:4px">Zlecenie: ${order.name}</div>
-      <div style="font-size:13px">Szablon: ${template.name} | Ilość: ${order.quantity || 1} szt.</div>
-      <div style="font-size:13px;margin-top:6px;font-weight:600">
-        ✓ Zaznaczone: ${checkedMaterials.length} / ${materials.length} pozycji
-      </div>
-    </div>
-    
-    <div style="padding:8px 12px;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:4px;margin-bottom:12px;color:#92400e">
-      <div style="font-weight:600;font-size:13px">💡 Kliknij na wiersz aby zaznaczyć/odznaczyć materiał</div>
-      <div style="font-size:12px;margin-top:2px">Tylko zaznaczone materiały zostaną obciążone i zarezerwowane</div>
-    </div>
-    
-    <div style="max-height:400px;overflow-y:auto;border:1px solid #334155;border-radius:8px;margin-bottom:16px">
-      ${checklistHtml}
-    </div>
-    
-    <div style="padding:12px;background:${allAvailable ? '#dcfce7' : '#fef3c7'};border-radius:8px;border:1px solid ${allAvailable ? '#86efac' : '#fcd34d'}">
-      <div style="font-weight:600;color:${allAvailable ? '#15803d' : '#92400e'}">
-        ${allAvailable ? '✅ Wszystkie zaznaczone materiały dostępne' : '⚠️ Niektóre zaznaczone materiały niedostępne'}
-      </div>
-      <div style="font-size:13px;color:${allAvailable ? '#166534' : '#78350f'};margin-top:4px">
-        ${allAvailable ? 
-          'Możesz obciążyć magazyn i przygotować zaznaczone materiały do wydania' : 
-          'Brakujące materiały zostaną zamówione automatycznie. Magazyn zostanie obciążony (stan ujemny na czerwono).'}
-      </div>
-    </div>
-  `;
-  
-  const buttons = [
-    {
-      text: order.materialsPrepared ? '✅ Materiały już przygotowane' : `📦 Obciąż magazyn (${checkedMaterials.length} poz.)`,
-      disabled: order.materialsPrepared || checkedMaterials.length === 0,
-      action: () => {
-        if (checkedMaterials.length === 0) {
-          alert('⚠️ Zaznacz przynajmniej jeden materiał!');
-          return;
-        }
-        if (confirm(`Czy na pewno obciążyć magazyn dla zlecenia "${order.name}"?\n\nZaznaczone materiały: ${checkedMaterials.length} / ${materials.length}\n\nOperacja:\n- Zmniejszy stany magazynowe\n- Utworzy rezerwacje\n- Oznaczy zlecenie jako przygotowane\n\nBrakujące materiały: automatyczne zamówienie`)) {
-          prepareOrderMaterials(orderId);
-          window.dialogInstance.close();
-        }
-      }
-    },
-    { text: 'Anuluj', action: () => window.dialogInstance.close() }
-  ];
-  
-  showModal(`📋 Materiały - ${order.name}`, content, buttons);
-};
-
-// Toggle zaznaczenia materiału w checkliście magazynowej
-window.toggleWarehouseMaterialItem = function(orderId, itemIdx) {
-  const order = (window.state.orders || []).find(o => o.id === orderId);
-  if (!order || !order.warehouseMaterialChecklist) return;
-  
-  const item = order.warehouseMaterialChecklist[itemIdx];
-  if (!item) return;
-  
-  // Przełącz zaznaczenie
-  item.checked = !item.checked;
-  item.checkedAt = new Date().toISOString();
-  item.checkedBy = window.getOrCreateWarehouseManager();
-  
-  save();
-  
-  // Odśwież modal
-  showOrderMaterialsPreparation(orderId);
-};
-
-// Przygotuj materiały - obciąż magazyn (tylko zaznaczone)
-function prepareOrderMaterials(orderId) {
-  const order = (window.state.orders || []).find(o => o.id === orderId);
-  if (!order) return;
-  
-  if (!order.warehouseMaterialChecklist) {
-    alert('Brak checklisty materiałów dla tego zlecenia');
-    return;
-  }
-  
-  // TYLKO ZAZNACZONE MATERIAŁY
-  const materials = order.warehouseMaterialChecklist.filter(m => m.checked !== false);
-  
-  if (materials.length === 0) {
-    alert('⚠️ Nie zaznaczono żadnych materiałów!');
-    return;
-  }
-  
-  const warehouseItems = window.warehouseItems || [];
-  window.warehouseReservations = window.warehouseReservations || [];
-  window.warehouseTasks = window.warehouseTasks || [];
-  
-  let reservedCount = 0;
-  let orderedCount = 0;
-  
-  materials.forEach(material => {
-    const whItem = warehouseItems.find(w => w.id === material.itemId);
-    const needed = material.quantity * (order.quantity || 1);
-    
-    if (!whItem) {
-      // Materiał nie istnieje - dodaj do magazynu z zerem
-      const newItem = {
-        id: material.itemId,
-        name: material.itemName,
-        unit: material.unit,
-        quantity: 0,
-        minStock: 0
-      };
-      warehouseItems.push(newItem);
-      window.warehouseItems = warehouseItems;
-    }
-    
-    const item = warehouseItems.find(w => w.id === material.itemId);
-    const inStock = item.quantity;
-    
-    // Utwórz rezerwację (nawet jeśli stan ujemny)
-    const reservation = {
-      id: `res-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      itemId: material.itemId,
-      itemName: material.itemName,
-      quantity: needed,
-      unit: material.unit,
-      orderId: order.id,
-      orderName: order.name,
-      status: 'active',
-      createdAt: new Date().toISOString(),
-      createdBy: 'System'
-    };
-    window.warehouseReservations.push(reservation);
-    reservedCount++;
-    
-    // Zmniejsz stan magazynowy (może być ujemny)
-    item.quantity -= needed;
-    
-    // Jeśli brak - utwórz zadanie zamówienia
-    if (inStock < needed) {
-      const shortage = needed - inStock;
-      const task = {
-        id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        type: 'order_material',
-        orderId: order.id,
-        orderName: order.name,
-        itemId: material.itemId,
-        itemName: material.itemName,
-        unit: material.unit,
-        quantityNeeded: needed,
-        quantityInStock: inStock,
-        quantityToOrder: shortage,
-        status: 'pending',
-        priority: 'urgent',
-        dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // +5 dni
-        createdAt: new Date().toISOString(),
-        createdBy: 'System',
-        assignedToId: window.getOrCreateWarehouseManager()
-      };
-      window.warehouseTasks.push(task);
-      orderedCount++;
-    }
-  });
-  
-  // Oznacz zlecenie jako przygotowane
-  order.materialsPrepared = true;
-  order.materialsPreparedAt = new Date().toISOString();
-  order.materialsPreparedBy = window.getOrCreateWarehouseManager();
-  
-  // Zapisz
-  save();
-  localStorage.setItem('warehouseReservations', JSON.stringify(window.warehouseReservations));
-  localStorage.setItem('warehouseTasks', JSON.stringify(window.warehouseTasks));
-  
-  // Odśwież widoki
-  renderWarehouseOrders();
-  renderWarehouse();
-  updateTasksBadge();
-  
-  alert(`✅ Magazyn obciążony!\n\n📦 Zarezerwowano: ${reservedCount} pozycji\n🛒 Utworzono zamówienia: ${orderedCount} pozycji\n\nSprawdź stany magazynowe w zakładce "Pozycje"`);
-}
-
-// Wydaj materiały na produkcję
-window.issueOrderMaterials = function(orderId) {
-  const order = (window.state.orders || []).find(o => o.id === orderId);
-  if (!order) {
-    alert('Nie znaleziono zlecenia');
-    return;
-  }
-  
-  if (!order.materialsPrepared) {
-    alert('⚠️ Materiały nie zostały jeszcze przygotowane!\n\nNajpierw obciąż magazyn.');
-    return;
-  }
-  
-  if (order.materialsIssued) {
-    alert('⚠️ Materiały dla tego zlecenia zostały już wydane!');
-    return;
-  }
-  
-  const confirmMsg = `Czy na pewno wydać materiały na produkcję dla zlecenia "${order.name}"?\n\nOperacja:\n- Utworzy dokument WZ\n- Oznacz zlecenie jako gotowe do produkcji\n- Zwolni rezerwacje`;
-  
-  if (!confirm(confirmMsg)) return;
-  
-  // Znajdź rezerwacje dla tego zlecenia
-  const reservations = (window.warehouseReservations || []).filter(r => r.orderId === orderId && r.status === 'active');
-  
-  // Zmień status rezerwacji na "used"
-  reservations.forEach(r => r.status = 'used');
-  
-  // Utwórz dokument WZ
-  const transaction = {
-    id: `wz-${Date.now()}`,
-    type: 'out',
-    documentNumber: `WZ/${new Date().getFullYear()}/${Date.now()}`,
-    date: new Date().toISOString(),
-    orderId: order.id,
-    orderName: order.name,
-    items: reservations.map(r => ({
-      itemId: r.itemId,
-      itemName: r.itemName,
-      quantity: r.quantity,
-      unit: r.unit
-    })),
-    notes: `Wydanie materiałów na produkcję - ${order.name}`,
-    createdBy: 'System'
-  };
-  
-  window.warehouseTransactions = window.warehouseTransactions || [];
-  window.warehouseTransactions.push(transaction);
-  
-  // Oznacz zlecenie jako wydane
-  order.materialsIssued = true;
-  order.materialsIssuedAt = new Date().toISOString();
-  order.materialsIssuedBy = window.getOrCreateWarehouseManager();
-  
-  // Zapisz
-  save();
-  localStorage.setItem('warehouseReservations', JSON.stringify(window.warehouseReservations));
-  localStorage.setItem('warehouseTransactions', JSON.stringify(window.warehouseTransactions));
-  
-  // Odśwież widoki
-  renderWarehouseOrders();
-  renderTransactions();
-  
-  alert(`✅ Materiały wydane na produkcję!\n\nDokument WZ: ${transaction.documentNumber}\nPozycji: ${reservations.length}\n\nZlecenie gotowe do rozpoczęcia produkcji.`);
 };
 
 // Renderuj zadania magazyniera - NOWA WERSJA z grupowaniem po zleceniach
 window.renderWarehouseTasks = function() {
-  console.log('[renderWarehouseTasks] Function called');
-  
   const list = document.getElementById('wh-tasks-list');
-  if (!list) {
-    console.log('[renderWarehouseTasks] List element not found!');
-    return;
-  }
+  if (!list) return;
   
   // Zapamiętaj otwarte szczegóły
   const openDetails = [];
@@ -10374,63 +9553,17 @@ window.renderWarehouseTasks = function() {
     }
   });
   
-  // Wypełnij dropdown pracowników
-  if (typeof window.populateWarehouseEmployeeFilter === 'function') {
-    window.populateWarehouseEmployeeFilter();
-  }
-  
   const tasks = window.warehouseTasks || [];
-  console.log('[renderWarehouseTasks] Total tasks:', tasks.length);
+  const activeTasks = tasks.filter(t => t.status !== 'cancelled');
   
-  let filteredTasks = tasks.filter(t => t.status !== 'cancelled');
-  console.log('[renderWarehouseTasks] Active tasks (not cancelled):', filteredTasks.length);
-  
-  // Zastosuj filtry
-  const filter = window._warehouseTasksFilter || { status: 'all', employeeId: null };
-  console.log('[renderWarehouseTasks] Filter:', filter);
-  
-  // Filtruj według statusu
-  if (filter.status === 'pending') {
-    filteredTasks = filteredTasks.filter(t => t.status === 'pending');
-  } else if (filter.status === 'urgent') {
-    filteredTasks = filteredTasks.filter(t => {
-      const isUrgent = new Date(t.dueDate) < new Date();
-      return isUrgent && t.status !== 'completed';
-    });
-  } else if (filter.status === 'completed') {
-    filteredTasks = filteredTasks.filter(t => t.status === 'completed');
-  }
-  
-  // Filtruj według pracownika
-  if (filter.employeeId) {
-    console.log('[renderWarehouseTasks] Filtering by employee:', filter.employeeId);
-    console.log('[renderWarehouseTasks] Tasks before employee filter:', filteredTasks.length);
-    
-    // Debuguj: pokaż ID pracowników w zadaniach
-    filteredTasks.forEach((t, idx) => {
-      console.log(`  Task ${idx}: assignedToId="${t.assignedToId}", itemName="${t.itemName}"`);
-    });
-    
-    if (filter.employeeId === '_unassigned') {
-      filteredTasks = filteredTasks.filter(t => !t.assignedToId);
-    } else {
-      filteredTasks = filteredTasks.filter(t => t.assignedToId === filter.employeeId);
-    }
-    
-    console.log('[renderWarehouseTasks] Tasks after employee filter:', filteredTasks.length);
-  }
-  
-  console.log('[renderWarehouseTasks] Filtered tasks after all filters:', filteredTasks.length);
-  
-  if (filteredTasks.length === 0) {
-    console.log('[renderWarehouseTasks] No tasks to display');
-    list.innerHTML = '<div style="text-align:center;padding:40px;color:#999">Brak zadań dla magazyniera spełniających kryteria filtrowania</div>';
+  if (activeTasks.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:#999">Brak zadań dla magazyniera</div>';
     return;
   }
   
   // Grupuj zadania po zleceniach
   const grouped = {};
-  filteredTasks.forEach(task => {
+  activeTasks.forEach(task => {
     if (!grouped[task.orderId]) {
       grouped[task.orderId] = {
         orderId: task.orderId,
@@ -10539,13 +9672,6 @@ window.renderWarehouseTasks = function() {
         taskDescription = `Ilość: ${task.quantity} ${task.unit || 'szt.'}`;
       }
       
-      // Znajdź przypisanego pracownika
-      const assignedEmployee = task.assignedToId 
-        ? (state.employees || []).find(e => e.id === task.assignedToId)
-        : null;
-      const assignedName = assignedEmployee ? assignedEmployee.name : 'Nieprzypisane';
-      const assignedColor = assignedEmployee ? '#3b82f6' : '#9ca3af';
-      
       return `
         <div style="background:#f9fafb;border-left:3px solid ${borderColor};padding:12px;margin-bottom:8px;border-radius:4px">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
@@ -10558,12 +9684,6 @@ window.renderWarehouseTasks = function() {
               </div>
               <div style="font-size:12px;color:#9ca3af;margin-top:6px">
                 📅 Termin: ${dueDate}
-              </div>
-              <div style="font-size:12px;margin-top:6px;display:flex;align-items:center;gap:6px">
-                <span style="color:${assignedColor};font-weight:600">👤 ${assignedName}</span>
-                <button class="btn small" onclick="assignWarehouseTask('${task.id}')" style="font-size:11px;padding:2px 8px">
-                  🔄 Zmień
-                </button>
               </div>
             </div>
             <div style="display:flex;flex-direction:column;gap:6px;min-width:120px">
@@ -10709,107 +9829,10 @@ window.cancelWarehouseTask = function(taskId) {
   }
 };
 
-// Przypisz pracownika do zadania magazynowego
-window.assignWarehouseTask = function(taskId) {
-  const task = window.warehouseTasks.find(t => t.id === taskId);
-  if (!task) return;
-  
-  const employees = state.employees || [];
-  if (employees.length === 0) {
-    alert('⚠️ Brak pracowników w systemie. Dodaj pracowników w zakładce "Pracownicy".');
-    return;
-  }
-  
-  // Przygotuj listę pracowników
-  const employeeList = employees
-    .map((emp, idx) => `${idx + 1}. ${emp.name}`)
-    .join('\n');
-  
-  const currentAssigned = task.assignedToId 
-    ? employees.find(e => e.id === task.assignedToId)?.name || 'Nieprzypisane'
-    : 'Nieprzypisane';
-  
-  const selectedNum = prompt(
-    `Przypisz pracownika do zadania:\n"${task.itemName || 'Zadanie'}"\n\n` +
-    `Aktualnie przypisany: ${currentAssigned}\n\n` +
-    `Wybierz numer pracownika:\n${employeeList}\n\n` +
-    `Lub wpisz 0, aby odznaczyć przypisanie.`
-  );
-  
-  if (selectedNum === null) return; // Anulowano
-  
-  const num = parseInt(selectedNum);
-  
-  if (num === 0) {
-    // Usuń przypisanie
-    task.assignedToId = null;
-    localStorage.setItem('warehouseTasks', JSON.stringify(window.warehouseTasks));
-    alert('✓ Usunięto przypisanie pracownika');
-    window._keepDetailsOpen = true;
-    renderWarehouseTasks();
-  } else if (num >= 1 && num <= employees.length) {
-    // Przypisz pracownika
-    const selectedEmployee = employees[num - 1];
-    task.assignedToId = selectedEmployee.id;
-    localStorage.setItem('warehouseTasks', JSON.stringify(window.warehouseTasks));
-    alert(`✓ Przypisano zadanie do: ${selectedEmployee.name}`);
-    window._keepDetailsOpen = true;
-    renderWarehouseTasks();
-  } else {
-    alert('⚠️ Nieprawidłowy numer pracownika');
-  }
-};
-
-// Zapisz aktualny filtr
-if (!window._warehouseTasksFilter) {
-  window._warehouseTasksFilter = {
-    status: 'all',
-    employeeId: null
-  };
-}
-
-// Filtruj zadania według statusu
+// Filtruj zadania
 window.filterWarehouseTasks = function(filter) {
-  window._warehouseTasksFilter.status = filter;
+  // TODO: implementacja filtrowania
   renderWarehouseTasks();
-};
-
-// Filtruj zadania według pracownika
-window.filterWarehouseTasksByEmployee = function() {
-  const select = document.getElementById('wh-employee-filter');
-  window._warehouseTasksFilter.employeeId = select.value || null;
-  renderWarehouseTasks();
-};
-
-// Wypełnij dropdown pracowników
-window.populateWarehouseEmployeeFilter = function() {
-  const select = document.getElementById('wh-employee-filter');
-  if (!select) return;
-  
-  const employees = state.employees || [];
-  const currentValue = select.value;
-  
-  select.innerHTML = '<option value="">👤 Wszyscy pracownicy</option>';
-  
-  // Dodaj opcję "Nieprzypisane"
-  const unassignedOption = document.createElement('option');
-  unassignedOption.value = '_unassigned';
-  unassignedOption.textContent = '⚠️ Nieprzypisane';
-  select.appendChild(unassignedOption);
-  
-  // Dodaj pracowników
-  employees.forEach(emp => {
-    const option = document.createElement('option');
-    option.value = emp.id;
-    option.textContent = emp.name;
-    console.log('[populateWarehouseEmployeeFilter] Adding employee:', emp.name, 'ID:', emp.id, 'role:', emp.role);
-    select.appendChild(option);
-  });
-  
-  // Przywróć wartość
-  if (currentValue) {
-    select.value = currentValue;
-  }
 };
 
 function useReservation(resId) {
@@ -12834,9 +11857,8 @@ function renderWarehouse() {
       </thead>
       <tbody>
         ${filteredItems.map((item, index) => {
-          const isNegative = item.quantity < 0;
-          const isLowStock = !isNegative && item.minStock && item.quantity <= item.minStock;
-          const rowStyle = isNegative ? 'background:#7f1d1d' : (isLowStock ? 'background:#c0392b' : (index % 2 === 0 ? 'background:#34495e' : 'background:#2c3e50'));
+          const isLowStock = item.minStock && item.quantity <= item.minStock;
+          const rowStyle = isLowStock ? 'background:#c0392b' : (index % 2 === 0 ? 'background:#34495e' : 'background:#2c3e50');
           
           // Lokalizacja
           let locationStr = '-';
@@ -12848,17 +11870,13 @@ function renderWarehouse() {
             locationStr = parts.join(' • ');
           }
           
-          const quantityColor = isNegative ? '#fca5a5' : (isLowStock ? '#ffeb3b' : '#ffffff');
-          const statusLabel = isNegative ? '<div style="font-size:12px;color:#fca5a5 !important;font-weight:700;margin-top:2px">🔴 STAN UJEMNY - ZAMÓW</div>' : 
-                             (isLowStock ? '<div style="font-size:12px;color:#ffeb3b !important;font-weight:700;margin-top:2px">⚠️ DO ZAMÓWIENIA</div>' : '');
-          
           return `
             <tr style="${rowStyle};border-bottom:1px solid #1a252f">
               <td style="padding:12px">
                 <div style="font-weight:600;font-size:15px;color:#ffffff !important">${item.name}</div>
-                ${statusLabel}
+                ${isLowStock ? '<div style="font-size:12px;color:#ffeb3b !important;font-weight:700;margin-top:2px">⚠️ DO ZAMÓWIENIA</div>' : ''}
               </td>
-              <td style="padding:12px;text-align:center;font-weight:700;font-size:15px;color:${quantityColor} !important">${item.quantity}</td>
+              <td style="padding:12px;text-align:center;font-weight:700;font-size:15px;color:${isLowStock ? '#ffeb3b' : '#ffffff'} !important">${item.quantity}</td>
               <td style="padding:12px;text-align:center;font-size:14px;color:#ffffff !important">${item.unit}</td>
               <td style="padding:12px;text-align:right;font-weight:600;font-size:14px;color:#ffffff !important">${item.price.toFixed(2)}</td>
               <td style="padding:12px;text-align:center;font-size:14px;color:#ffffff !important">${item.minStock || '-'}</td>
@@ -13048,7 +12066,7 @@ if (document.readyState === 'loading') {
 // ============================================
 window._taskGroupsCollapsed = window._taskGroupsCollapsed || {};
 
-window.renderTasksGrouped = function(tasks, groupBy) {
+function renderTasksGrouped(tasks, groupBy) {
   const list = qs('#tasks-list');
   if (!list) return;
   
@@ -13074,7 +12092,7 @@ window.renderTasksGrouped = function(tasks, groupBy) {
         break;
       }
       case 'assignee': {
-        const empId = t.assignee || (Array.isArray(t.assignees) ? t.assignees[0] : null) || t.employeeId || 'none';
+        const empId = t.assignee || (Array.isArray(t.assignees) ? t.assignees[0] : null) || 'none';
         const employee = (state.employees || []).find(e => e.id === (empId && empId.id ? empId.id : empId));
         const resolvedId = employee ? employee.id : (empId && empId.id ? empId.id : empId);
         groupKey = `assignee:${resolvedId || 'none'}`;
@@ -13119,11 +12137,7 @@ window.renderTasksGrouped = function(tasks, groupBy) {
     groupHeader.addEventListener('click', (e) => {
       e.stopPropagation();
       window._taskGroupsCollapsed[groupId] = !window._taskGroupsCollapsed[groupId];
-      // Re-render z zachowaniem stanu grupowania
-      const fOrd = qs('#tasks-filter-order')?.value || ''; 
-      const fSt = qs('#tasks-filter-status')?.value || '';
-      const filteredTasks = (state.tasks || []).filter(t => (!fOrd || t.orderId === fOrd) && (!fSt || (t.status || '') === fSt));
-      window.renderTasksGrouped(filteredTasks, groupBy);
+      renderTasks(); // Re-render z zachowaniem stanu
     });
     
     list.appendChild(groupHeader);
@@ -13136,7 +12150,7 @@ window.renderTasksGrouped = function(tasks, groupBy) {
       });
     }
   });
-};
+}
 
 function createTaskCard(t) {
   const d = document.createElement('div');
@@ -13144,21 +12158,6 @@ function createTaskCard(t) {
   d.style.marginLeft = '20px';
   
   const syncBadge = (tt)=>{ try{ if(tt._syncPending) return `<span class="task-sync-status pending" title="Czekaj na synchronizację">⏳</span>`; if(tt._syncError) return `<span class="task-sync-status error" title="Błąd synchronizacji">⚠️</span>`; if(tt._lastSync) return `<span class="task-sync-status ok" title="Ostatnia synchronizacja: ${new Date(tt._lastSync).toLocaleString()}">✔️</span>`; return `<span class="task-sync-status unknown" title="Brak synchronizacji">—</span>`; }catch(e){return''} };
-  
-  const assignmentInfo = (tt) => {
-    try {
-      const assignees = tt.assignees || (tt.assignee ? [tt.assignee] : (tt.employeeId ? [tt.employeeId] : []));
-      if(!assignees || assignees.length === 0) {
-        return `<span class="muted" style="font-size:12px">⚠️ Nieprzypisane</span>`;
-      }
-      const employeeId = typeof assignees[0] === 'object' ? assignees[0].id : assignees[0];
-      const employee = (state.employees || []).find(e => e.id === employeeId);
-      const empName = employee ? employee.name : employeeId;
-      return `<span style="font-size:12px">👤 ${empName}</span>`;
-    } catch(e) {
-      return '';
-    }
-  };
   
   const sb = syncBadge(t);
   const startP = t.startPlanned ? new Date(t.startPlanned).toLocaleString() : '-';
@@ -13174,7 +12173,6 @@ function createTaskCard(t) {
           ${orderName}
           ${t.processName ? ` • Proces: ${t.processName} (${t.opIndex + 1}/${(state.processes.find(p=>p.id===t.processId)?.operations||[]).length})` : ''}
         </span>
-        <div>${assignmentInfo(t)}</div>
         <div class="muted">Status: ${t.status || 'todo'} • Plan: ${plannedDur} • Real: ${Math.round(t.elapsedMin || 0)}m ${typeof t.slackMs==='number'?('• Slack: '+Math.round(t.slackMs/60000)+'m'):''} ${t.critical?'• CRITICAL':''}</div>
         <div class="muted">StartP: ${startP} • EndP: ${endP}</div>
         <div class="muted">${t.startedBy?('Rozpoczął: '+t.startedBy):''} ${t.closedBy?('Zamknął: '+t.closedBy):''} ${t.startedAt?(' • start: '+(new Date(t.startedAt)).toLocaleTimeString()):''}</div>

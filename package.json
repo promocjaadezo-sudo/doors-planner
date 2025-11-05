@@ -9,8 +9,6 @@
     "test:unit": "node state/tests/run-tests-node.js",
     "test:unit:watch": "node state/tests/watch-tests.js",
     "test:unit:menu": "powershell -ExecutionPolicy Bypass -File state/tests/test-menu.ps1",
-    "test:grouping": "node tests/run-grouping-sync-tests.js",
-    "test:all": "npm run test:unit && npm run test:grouping",
     "lint": "eslint tests/e2e playwright.config.ts scripts/test-server.js --ext .ts,.js"
   },
   "devDependencies": {

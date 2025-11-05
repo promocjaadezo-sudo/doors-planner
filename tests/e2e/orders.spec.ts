@@ -215,6 +215,72 @@ test('order persists across reloads and updates local storage', async ({ page })
   await expect(page.locator('#ord-tb')).toContainText(updatedClient);
 });
 
+test('order deletion removes order and related tasks from UI and storage', async ({ page }) => {
+  const orderName = `Zlecenie do usunięcia ${Date.now()}`;
+  const clientName = 'Klient Testowy';
+
+  await gotoOrdersPage(page);
+
+  // Create an order
+  await page.fill('#o-name', orderName);
+  await page.fill('#o-client', clientName);
+  await page.fill('#o-model', 'Model X');
+  await page.fill('#o-qty', '2');
+  await page.locator('#order-form').getByRole('button', { name: /Zapisz zlecenie/i }).click();
+
+  // Verify order appears in the table
+  const ordersTable = page.locator('#ord-tb');
+  await expect(ordersTable).toContainText(orderName);
+  await expect(ordersTable).toContainText(clientName);
+
+  // Get the order ID
+  const orderId = await page.evaluate((name) => {
+    const state = (window as any).state;
+    const order = state.orders?.find((o: any) => o.name === name);
+    return order?.id;
+  }, orderName);
+
+  expect(orderId).toBeDefined();
+
+  // Verify order exists in storage
+  const { state: stateBefore } = await getPersistedState(page);
+  expect(stateBefore?.orders).toBeDefined();
+  expect(stateBefore.orders.some((o: any) => o.id === orderId)).toBe(true);
+
+  // Delete the order
+  const deleteButton = page.locator(`#ord-tb tr`).filter({ hasText: orderName }).getByRole('button', { name: /Usuń/i });
+  await deleteButton.click();
+
+  // Verify order is removed from UI immediately
+  await expect(ordersTable).not.toContainText(orderName);
+
+  // Verify order is removed from state
+  await page.waitForFunction((id) => {
+    const state = (window as any).state;
+    return !state.orders?.some((o: any) => o.id === id);
+  }, orderId);
+
+  // Verify order is removed from storage
+  const { state: stateAfter } = await getPersistedState(page);
+  expect(stateAfter?.orders).toBeDefined();
+  expect(stateAfter.orders.some((o: any) => o.id === orderId)).toBe(false);
+
+  // Verify pending deletions tracking
+  const pendingDeletions = await page.evaluate(() => {
+    return (window as any).state._pendingDeletions?.orders || [];
+  });
+  expect(pendingDeletions).toContain(orderId);
+
+  // Reload page and verify order stays deleted
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await openOrdersTab(page);
+
+  await expect(page.locator('#ord-tb')).not.toContainText(orderName);
+
+  const { state: stateAfterReload } = await getPersistedState(page);
+  expect(stateAfterReload.orders.some((o: any) => o.id === orderId)).toBe(false);
+});
+
 test('handover from orders view creates warehouse task and keeps actions read-only', async ({ page }) => {
   await gotoOrdersPage(page);
   const ids = await seedHandoverScenario(page);
