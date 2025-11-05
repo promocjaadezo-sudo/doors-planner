@@ -2294,6 +2294,10 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         if(t.dataset.od) {
           const id = t.dataset.od;
           
+          // Dodaj do listy oczekujących usunięć (zapobiega przywracaniu przez loadFromDB)
+          if (!state._pendingDeletions) state._pendingDeletions = { orders: [], tasks: [], after: [] };
+          if (!state._pendingDeletions.orders.includes(id)) state._pendingDeletions.orders.push(id);
+          
           // Usuń z lokalnego state
           state.orders = state.orders.filter(x => x.id !== id); 
           state.tasks = state.tasks.filter(t => t.orderId !== id); 
@@ -2318,17 +2322,23 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
             
             // 2. Następnie pełny zapis aktualnego stanu
             window.FirebaseSyncQueue.enqueue('save', { state }, 10);
+            
+            // 3. Po zakończeniu synchronizacji, usuń z listy oczekujących usunięć
+            setTimeout(() => {
+              if (state._pendingDeletions && state._pendingDeletions.orders) {
+                state._pendingDeletions.orders = state._pendingDeletions.orders.filter(oid => oid !== id);
+                save();
+              }
+            }, 5000); // 5 sekund powinno wystarczyć na synchronizację
           }
           
-          // Wymuszenie odświeżenia wszystkich widoków
-          setTimeout(() => {
-            renderOrderPage(); 
-            renderTasks(); 
-            renderASPage(); 
-            renderDash(window.state||state); 
-            renderGantt();
-            updateTasksBadge();
-          }, 50);
+          // Natychmiastowe odświeżenie wszystkich widoków (bez opóźnienia)
+          renderOrderPage(); 
+          renderTasks(); 
+          renderASPage(); 
+          renderDash(window.state||state); 
+          renderGantt();
+          updateTasksBadge();
           break;
         }
         if(t.dataset.oed) {
@@ -6650,6 +6660,8 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
 
       const skipped = [];
       const updated = [];
+      const pendingDeletions = state._pendingDeletions || { orders: [], tasks: [], after: [] };
+      
       Object.entries(remoteCollections).forEach(([key, collection])=>{
         const remoteLen = Array.isArray(collection) ? collection.length : (collection && typeof collection === 'object' ? Object.keys(collection).length : 0);
         const localLen = Array.isArray(localCollections[key]) ? localCollections[key].length : (localCollections[key] && typeof localCollections[key] === 'object' ? Object.keys(localCollections[key]).length : 0);
@@ -6661,7 +6673,19 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         }
 
         console.log(`📝 Aktualizuję kolekcję '${key}': lokalna=${localLen}, zdalna=${remoteLen}`);
-        state[key] = Array.isArray(collection) ? collection.slice() : (collection ? JSON.parse(JSON.stringify(collection)) : Array.isArray(state[key]) ? [] : {});
+        
+        // Filtruj elementy oczekujące na usunięcie (zapobiega przywracaniu usuniętych elementów)
+        let filteredCollection = Array.isArray(collection) ? collection.slice() : (collection ? JSON.parse(JSON.stringify(collection)) : Array.isArray(state[key]) ? [] : {});
+        
+        if (Array.isArray(filteredCollection) && pendingDeletions[key] && pendingDeletions[key].length > 0) {
+          const beforeFilter = filteredCollection.length;
+          filteredCollection = filteredCollection.filter(item => !pendingDeletions[key].includes(item.id));
+          if (beforeFilter > filteredCollection.length) {
+            console.log(`🚫 Odfiltrowano ${beforeFilter - filteredCollection.length} elementów oczekujących na usunięcie z kolekcji '${key}'`);
+          }
+        }
+        
+        state[key] = filteredCollection;
         updated.push(key);
       });
 
