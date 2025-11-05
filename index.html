@@ -610,27 +610,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
       <div><label>Model</label><input id="o-model" placeholder="Model / wariant"></div>
       <div><label>Ilość</label><input id="o-qty" type="number" min="1" value="1"></div>
       <div><label>Data przyjęcia</label><input id="o-start" type="date"></div>
-      <div style="grid-column:1/-1">
-        <label>Koniec produkcji</label>
-        <div style="display:flex;gap:8px;align-items:center">
-          <select id="o-weeks" style="flex:1">
-            <option value="">— tygodnie —</option>
-            <option value="2">2 tygodnie</option>
-            <option value="3">3 tygodnie</option>
-            <option value="4">4 tygodnie</option>
-            <option value="5">5 tygodni</option>
-            <option value="6">6 tygodni</option>
-            <option value="7">7 tygodni</option>
-            <option value="8">8 tygodni</option>
-            <option value="9">9 tygodni</option>
-            <option value="10">10 tygodni</option>
-            <option value="11">11 tygodni</option>
-            <option value="12">12 tygodni</option>
-          </select>
-          <span style="color:#666">lub</span>
-          <input id="o-end" type="date" style="flex:1">
-        </div>
-      </div>
+      <div><label>Termin produkcji</label><input id="o-end" type="date"></div>
       <div style="grid-column:1/-1"><label>Uwagi</label><textarea id="o-notes" rows="2" placeholder="Dodatkowe informacje, wymagania, kontakt..."></textarea></div>
       <div><label>Termin montażu</label><input id="o-install" type="date"></div>
       <div><label>Adres montażu</label><input id="o-addr" placeholder="ulica nr, miejscowość"></div>
@@ -758,47 +738,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
 
   <div class="card hidden" id="p-emp">
     <div class="row" style="justify-content:space-between"><h3>Pracownicy</h3><button class="btn" id="emp-add">Dodaj</button></div>
-    
-    <!-- Formularz dodawania pracownika -->
-    <div id="emp-form-container" class="hidden" style="margin:16px 0;padding:16px;background:#f0f9ff;border:2px solid #3b82f6;border-radius:8px">
-      <div style="font-weight:600;font-size:16px;color:#1e40af;margin-bottom:12px">➕ Nowy pracownik</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 100px 100px 1fr;gap:12px;align-items:end">
-        <div>
-          <label for="emp-form-name" style="display:block;font-size:13px;color:#475569;margin-bottom:4px">Imię i nazwisko *</label>
-          <input type="text" id="emp-form-name" placeholder="np. Jan Kowalski" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px">
-        </div>
-        <div>
-          <label for="emp-form-role" style="display:block;font-size:13px;color:#475569;margin-bottom:4px">Rola / Stanowisko</label>
-          <select id="emp-form-role" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px">
-            <option value="">— Wybierz rolę —</option>
-            <option value="Magazynier">📦 Magazynier</option>
-            <option value="Produkcja">🔧 Produkcja</option>
-            <option value="Montaż">🏗️ Montaż</option>
-            <option value="Handlowiec">💼 Handlowiec</option>
-            <option value="Kierownik">👔 Kierownik</option>
-            <option value="Inne">➕ Inne</option>
-          </select>
-        </div>
-        <div>
-          <label for="emp-form-cap" style="display:block;font-size:13px;color:#475569;margin-bottom:4px">Cap %</label>
-          <input type="number" id="emp-form-cap" value="100" min="0" max="100" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px">
-        </div>
-        <div>
-          <label for="emp-form-hours" style="display:block;font-size:13px;color:#475569;margin-bottom:4px">h/d</label>
-          <input type="number" id="emp-form-hours" value="8" min="1" max="24" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px">
-        </div>
-        <div>
-          <label for="emp-form-phone" style="display:block;font-size:13px;color:#475569;margin-bottom:4px">Telefon</label>
-          <input type="tel" id="emp-form-phone" placeholder="np. 123-456-789" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px">
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
-        <button class="btn green" id="emp-form-save">✓ Zapisz</button>
-        <button class="btn" id="emp-form-cancel">✕ Anuluj</button>
-      </div>
-    </div>
-    
-    <div class="table"><table><thead><tr><th>Imię i nazwisko</th><th>Rola</th><th>Telefon</th><th>cap%</th><th>h/d</th><th>Akcje</th></tr></thead><tbody id="emp-tb"></tbody></table></div>
+    <div class="table"><table><thead><tr><th>Imię i nazwisko</th><th>cap%</th><th>h/d</th><th>Akcje</th></tr></thead><tbody id="emp-tb"></tbody></table></div>
   </div>
 
   <div class="card hidden" id="p-as">
@@ -872,13 +812,8 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
     </div>
     
     <!-- Zakładki magazynu -->
-    <div class="row" style="gap:8px;margin-bottom:16px;border-bottom:1px solid var(--b);padding-bottom:8px;flex-wrap:wrap">
+    <div class="row" style="gap:8px;margin-bottom:16px;border-bottom:1px solid var(--b);padding-bottom:8px">
       <button class="btn" id="wh-tab-items" onclick="switchWarehouseTab('items')">📋 Pozycje</button>
-      <button class="btn" id="wh-tab-orders" onclick="switchWarehouseTab('orders')">📦 Zlecenia do realizacji</button>
-      <button class="btn" id="wh-tab-monitoring" onclick="switchWarehouseTab('monitoring')" style="position:relative">
-        📊 Monitoring wykonania
-        <span id="monitoring-badge" style="display:none;position:absolute;top:-8px;right:-8px;background:#dc2626;color:white;border-radius:12px;padding:2px 8px;font-size:12px;font-weight:bold;min-width:20px;text-align:center"></span>
-      </button>
       <button class="btn" id="wh-tab-transactions" onclick="switchWarehouseTab('transactions')">📝 Przychód/Rozchód</button>
       <button class="btn" id="wh-tab-reservations" onclick="switchWarehouseTab('reservations')">🔒 Rezerwacje</button>
       <button class="btn" id="wh-tab-tasks" onclick="switchWarehouseTab('tasks')" style="position:relative">
@@ -886,10 +821,6 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
         <span id="tasks-badge" style="display:none;position:absolute;top:-8px;right:-8px;background:#dc2626;color:white;border-radius:12px;padding:2px 8px;font-size:12px;font-weight:bold;min-width:20px;text-align:center"></span>
       </button>
       <button class="btn" id="wh-tab-templates" onclick="switchWarehouseTab('templates')">📑 Szablony materiałowe</button>
-      <button class="btn" id="wh-tab-mrp" onclick="switchWarehouseTab('mrp')" style="position:relative">
-        🛒 MRP / Zakupy
-        <span id="mrp-badge" style="display:none;position:absolute;top:-8px;right:-8px;background:#dc2626;color:white;border-radius:12px;padding:2px 8px;font-size:12px;font-weight:bold;min-width:20px;text-align:center"></span>
-      </button>
       <button class="btn primary" id="shopping-list-btn" onclick="window.showShoppingList()" style="background:#f59e0b;margin-left:auto;position:relative">
         🛒 Lista zakupów
         <span id="shopping-badge" style="display:none;position:absolute;top:-8px;right:-8px;background:#dc2626;color:white;border-radius:12px;padding:2px 8px;font-size:12px;font-weight:bold;min-width:20px;text-align:center"></span>
@@ -904,30 +835,6 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
       <div class="list" id="wh-list">
         <div style="text-align:center;padding:40px;color:#999">Brak pozycji w magazynie. Kliknij "Dodaj pozycję".</div>
       </div>
-    </div>
-    
-    <!-- Widok: Zlecenia do realizacji (MAGAZYNIER) -->
-    <div id="wh-view-orders" class="hidden">
-      <div style="margin-bottom:16px;padding:12px;background:#dbeafe;border-left:4px solid #3b82f6;border-radius:4px">
-        <div style="font-weight:600;font-size:16px;color:#1e40af;margin-bottom:4px">📦 Zlecenia do przygotowania</div>
-        <div style="font-size:14px;color:#64748b">Sprawdź materiały, obciąż magazyn i wydaj na produkcję</div>
-      </div>
-      <div class="row" style="gap:8px;margin-bottom:16px">
-        <button class="btn" onclick="filterWarehouseOrders('all')">Wszystkie</button>
-        <button class="btn amber" onclick="filterWarehouseOrders('pending')">🟡 Oczekujące</button>
-        <button class="btn blue" onclick="filterWarehouseOrders('prepared')">🔵 Przygotowane</button>
-        <button class="btn green" onclick="filterWarehouseOrders('issued')">✅ Wydane</button>
-      </div>
-      <div class="list" id="wh-orders-list"></div>
-    </div>
-    
-    <!-- Widok: Monitoring wykonania (ANALIZA) -->
-    <div id="wh-view-monitoring" class="hidden">
-      <div style="margin-bottom:16px;padding:12px;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:4px">
-        <div style="font-weight:600;font-size:16px;color:#92400e;margin-bottom:4px">📊 Monitoring wykonania zadań magazynowych</div>
-        <div style="font-size:14px;color:#78350f">Analiza terminowości wykonania zadań przez magazyniera</div>
-      </div>
-      <div id="wh-monitoring-content"></div>
     </div>
     
     <!-- Widok: Przychód/Rozchód -->
@@ -959,17 +866,11 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
         <div style="font-weight:600;font-size:16px;color:#1e40af;margin-bottom:4px">✓ Zadania magazyniera</div>
         <div style="font-size:14px;color:#64748b">Lista zadań związanych z zamówieniami, przyjęciem i wydaniem materiałów</div>
       </div>
-      <div class="row" style="gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <div class="row" style="gap:8px;margin-bottom:16px">
         <button class="btn" onclick="filterWarehouseTasks('all')">Wszystkie</button>
         <button class="btn" onclick="filterWarehouseTasks('pending')">⏳ Do zrobienia</button>
         <button class="btn" onclick="filterWarehouseTasks('urgent')">🔴 Pilne</button>
         <button class="btn green" onclick="filterWarehouseTasks('completed')">✅ Zakończone</button>
-        <button class="btn orange" onclick="window.syncWarehouseTasks(); renderWarehouseTasks(); alert('✓ Zadania przypisane do aktualnego magazyniera')">🔄 Przypisz ponownie</button>
-        <div style="flex:1;min-width:200px">
-          <select id="wh-employee-filter" onchange="filterWarehouseTasksByEmployee()" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px">
-            <option value="">👤 Wszyscy pracownicy</option>
-          </select>
-        </div>
       </div>
       <div class="list" id="wh-tasks-list"></div>
     </div>
@@ -984,128 +885,36 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
       </div>
       <div class="list" id="wh-templates-list"></div>
     </div>
-    
-    <!-- Widok: MRP / Zakupy -->
-    <div id="wh-view-mrp" class="hidden">
-      <div style="margin-bottom:16px;padding:12px;background:#dbeafe;border-left:4px solid #3b82f6;border-radius:4px">
-        <div style="font-weight:600;font-size:16px;color:#1e40af;margin-bottom:4px">🛒 Planowanie Potrzeb Materiałowych (MRP)</div>
-        <div style="font-size:14px;color:#64748b">Zarządzaj zamówieniami zakupowymi — druk, e-mail, SMS do kierowcy</div>
-      </div>
-      
-      <!-- Przyciski akcji -->
-      <div class="row" style="gap:8px;margin-bottom:16px;flex-wrap:wrap">
-        <button class="btn green" onclick="showPurchaseOrderModal()">➕ Nowe zamówienie</button>
-        <button class="btn blue" onclick="scanForPurchaseNeeds()">🔍 Analiza MRP (auto)</button>
-        <button class="btn orange" onclick="exportPurchaseOrdersToCSV()">📊 Eksportuj CSV</button>
-        <select id="po-status-filter" onchange="renderPurchaseOrders()" style="margin-left:auto;min-width:150px">
-          <option value="">Wszystkie statusy</option>
-          <option value="draft">Szkice</option>
-          <option value="sent">Wysłane</option>
-          <option value="confirmed">Potwierdzone</option>
-          <option value="received">Odebrane</option>
-        </select>
-        <select id="po-type-filter" onchange="renderPurchaseOrders()" style="min-width:150px">
-          <option value="">Wszystkie typy</option>
-          <option value="standard">Standardowe</option>
-          <option value="small">Drobne zakupy</option>
-        </select>
-      </div>
-      
-      <!-- Dashboard MRP (kafelki statusowe) -->
-      <div class="grid3" style="margin-bottom:16px">
-        <div class="card" style="text-align:center;background:#fef3c7;border-left:4px solid #f59e0b">
-          <div style="font-size:28px;font-weight:bold;color:#92400e" id="mrp-low-stock-count">0</div>
-          <div style="font-size:14px;color:#78350f">🔴 Poniżej progu</div>
-        </div>
-        <div class="card" style="text-align:center;background:#dbeafe;border-left:4px solid #3b82f6">
-          <div style="font-size:28px;font-weight:bold;color:#1e40af" id="mrp-pending-orders">0</div>
-          <div style="font-size:14px;color:#1e40af">📦 Zamówienia oczekujące</div>
-        </div>
-        <div class="card" style="text-align:center;background:#dcfce7;border-left:4px solid #16a34a">
-          <div style="font-size:28px;font-weight:bold;color:#166534" id="mrp-deliveries-week">0</div>
-          <div style="font-size:14px;color:#166534">🚚 Dostawy w tym tygodniu</div>
-        </div>
-      </div>
-      
-      <!-- Lista zamówień zakupowych -->
-      <div class="list" id="purchase-orders-list">
-        <div style="text-align:center;padding:40px;color:#94a3b8">
-          <div style="font-size:48px;margin-bottom:12px">📦</div>
-          <div style="font-size:18px;font-weight:600;margin-bottom:8px">Brak zamówień zakupowych</div>
-          <div style="font-size:14px">Kliknij "Nowe zamówienie" aby utworzyć pierwsze zamówienie</div>
-        </div>
-      </div>
-    </div>
   </div>
 
   <div class="card hidden" id="p-sync">
     <div class="row" style="justify-content:space-between;margin-bottom:16px">
-      <h3>🔄 Synchronizacja Firebase Real-time</h3>
+      <h3>🔄 Synchronizacja z pracownikami</h3>
     </div>
-
-    <!-- Status synchronizacji -->
-    <div class="card" style="background: rgba(37, 99, 235, 0.1); margin-bottom: 16px;">
-      <h4>📡 Status połączenia</h4>
-      <div style="display: flex; align-items: center; gap: 12px; margin: 8px 0;">
-        <span id="sync-indicator" style="font-size: 24px;">🔴</span>
-        <div>
-          <div id="sync-text" style="font-weight: 600; color: #ffffff;">Rozłączono</div>
-          <div style="font-size: 12px; color: #94a3b8;">
-            Ostatnia synchronizacja: <span id="last-sync-time">Nigdy</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Statystyki synchronizacji -->
-    <div class="grid3" style="margin-bottom: 16px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
       <div class="card" style="text-align: center;">
-        <div style="font-size: 32px; margin-bottom: 4px;">📤</div>
-        <div id="sync-uploaded" style="font-size: 24px; font-weight: 700; color: var(--acc);">0</div>
-        <div style="font-size: 12px; color: #94a3b8;">Wysłano do Firebase</div>
+        <h4>📤 Eksport zadań</h4>
+        <p style="color: #94a3b8; font-size: 14px; margin: 8px 0;">
+          Wyeksportuj zadania produkcyjne dla aplikacji pracowników
+        </p>
+        <button class="btn green" onclick="exportTasksForWorkers()">📤 Eksportuj zadania</button>
       </div>
       <div class="card" style="text-align: center;">
-        <div style="font-size: 32px; margin-bottom: 4px;">📥</div>
-        <div id="sync-downloaded" style="font-size: 24px; font-weight: 700; color: var(--ok);">0</div>
-        <div style="font-size: 12px; color: #94a3b8;">Pobrano z Firebase</div>
-      </div>
-      <div class="card" style="text-align: center;">
-        <div style="font-size: 32px; margin-bottom: 4px;">⚡</div>
-        <div id="sync-pending" style="font-size: 24px; font-weight: 700; color: var(--warn);">0</div>
-        <div style="font-size: 12px; color: #94a3b8;">Oczekujących zmian</div>
+        <h4>📥 Import potwierdzeń</h4>
+        <p style="color: #94a3b8; font-size: 14px; margin: 8px 0;">
+          Zaimportuj potwierdzenia wykonania zadań od pracowników
+        </p>
+        <button class="btn blue" onclick="importWorkerConfirmations()">📥 Importuj potwierdzenia</button>
       </div>
     </div>
-
-    <!-- Przyciski kontrolne -->
-    <div class="row" style="gap: 8px; margin-bottom: 16px;">
-      <button class="btn green" onclick="startRealtimeSync()" id="btn-start-sync">
-        ▶️ Włącz auto-sync
-      </button>
-      <button class="btn amber" onclick="stopRealtimeSync()" id="btn-stop-sync" disabled>
-        ⏸️ Wstrzymaj
-      </button>
-      <button class="btn blue" onclick="forceSyncNow()">
-        � Synchronizuj teraz
-      </button>
-    </div>
-
-    <!-- Instrukcje -->
-    <div style="padding: 12px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border-left: 4px solid #10b981;">
-      <h4 style="margin: 0 0 8px 0; color: #10b981;">✅ Jak to działa:</h4>
-      <ul style="margin: 0; padding-left: 20px; color: #94a3b8; font-size: 14px; line-height: 1.8;">
-        <li><strong>Auto-sync:</strong> Wszystkie zmiany synchronizują się automatycznie z Firebase</li>
-        <li><strong>Worker-app:</strong> Pracownicy widzą zadania i aktualizacje w czasie rzeczywistym</li>
-        <li><strong>Dwukierunkowy:</strong> Zmiany od pracowników trafiają do Planera natychmiast</li>
-        <li><strong>Offline:</strong> Zmiany synchronizują się gdy internet będzie dostępny</li>
-      </ul>
-    </div>
-
-    <!-- Logi synchronizacji -->
-    <div style="margin-top: 16px;">
-      <h4>📋 Ostatnie zdarzenia:</h4>
-      <div id="sync-logs" style="max-height: 200px; overflow-y: auto; background: #111827; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px;">
-        <div style="color: #94a3b8;">Brak zdarzeń...</div>
-      </div>
+    <div style="margin-top: 16px; padding: 12px; background: rgba(37, 99, 235, 0.1); border-radius: 8px; border-left: 4px solid #2563eb;">
+      <h4 style="margin: 0 0 8px 0; color: #2563eb;">📱 Instrukcja użycia:</h4>
+      <ol style="margin: 0; padding-left: 20px; color: #94a3b8; font-size: 14px;">
+        <li>Otwórz aplikację <code>worker-app.html</code> na urządzeniu pracownika</li>
+        <li>Wyeksportuj zadania i prześlij plik na urządzenie</li>
+        <li>Pracownik potwierdza wykonanie zadań w aplikacji</li>
+        <li>Zaimportuj potwierdzenia z powrotem do systemu głównego</li>
+      </ol>
     </div>
   </div>
 
@@ -1312,30 +1121,6 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
       <div style="grid-column:1/4;margin-top:8px">
         <label style="display:block;font-size:13px;margin-bottom:4px">Święta / dodatkowe dni wolne (YYYY-MM-DD, po przecinku)</label>
         <textarea id="sched-holidays" rows="2" placeholder="2025-11-01,2025-12-25" style="width:100%;resize:vertical"></textarea>
-      </div>
-      <div style="grid-column:1/4;margin-top:16px">
-        <fieldset style="border:1px solid #334155;padding:12px;border-radius:4px">
-          <legend style="padding:0 6px;font-size:14px;font-weight:600">⏱️Czas przygotowania materiałów</legend>
-          <div style="font-size:12px;color:#64748b;margin-bottom:12px">
-            Materiały główne to podstawowe surowce (np. płyty, profile). Podzespoły to komponenty (np. klamki, zawiasy) - mogą być przygotowane bliżej startu produkcji.
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div>
-              <label style="display:block;font-size:13px;margin-bottom:4px;font-weight:500">
-                📦 Materiały główne (dni przed START_DATE)
-              </label>
-              <input type="number" id="set-main-materials-days" min="1" max="14" value="3" style="width:100%">
-              <div style="font-size:11px;color:#64748b;margin-top:4px">Domyślnie: 3 dni robocze przed rozpoczęciem produkcji</div>
-            </div>
-            <div>
-              <label style="display:block;font-size:13px;margin-bottom:4px;font-weight:500">
-                🔩 Podzespoły (dni przed START_DATE)
-              </label>
-              <input type="number" id="set-component-materials-days" min="0" max="14" value="1" style="width:100%">
-              <div style="font-size:11px;color:#64748b;margin-top:4px">Domyślnie: 1 dzień roboczy przed rozpoczęciem produkcji</div>
-            </div>
-          </div>
-        </fieldset>
       </div>
     </div>
   <div class="list" style="margin-top:8px">
@@ -1665,7 +1450,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     }
 
     // Check for duplicate names (optional)
-    const existingOrder = state.orders.find(o => o.name && o.name.toLowerCase() === name.toLowerCase() && o.id !== qs('#o-id').value);
+    const existingOrder = state.orders.find(o => o.name.toLowerCase() === name.toLowerCase() && o.id !== qs('#o-id').value);
     if (existingOrder) errors.push('Zamówienie o tej nazwie już istnieje');
 
     return errors;
@@ -1683,7 +1468,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     if (hoursPerDay <= 0 || hoursPerDay > 24) errors.push('Godziny pracy dziennie muszą być między 1 a 24');
 
     // Check for duplicate names
-    const existingEmp = state.employees.find(e => e.name && e.name.toLowerCase() === name.toLowerCase() && e.id !== qs('#emp-id').value);
+    const existingEmp = state.employees.find(e => e.name.toLowerCase() === name.toLowerCase() && e.id !== qs('#emp-id').value);
     if (existingEmp) errors.push('Pracownik o tym imieniu i nazwisku już istnieje');
 
     return errors;
@@ -2204,24 +1989,14 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     if(raw) {
       const loadedData = JSON.parse(raw);
       console.log('📦 LOAD: Dane z localStorage (długość):', raw.length, 'znaków');
-      
-      // KRYTYCZNE: Sprawdź timestamp - jeśli dane są stare (>7 dni), NIE ładuj ich
-      const loadedTimestamp = loadedData.lastModified || 0;
-      const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-      
-      if (loadedTimestamp > sevenDaysAgo) {
-        Object.assign(state, loadedData);
-        console.log('✅ LOAD: Dane załadowane z localStorage:', {
-          employees: state.employees?.length || 0,
-          operations: state.operationsCatalog?.length || 0,
-          processes: state.processes?.length || 0,
-          orders: state.orders?.length || 0,
-          tasks: state.tasks?.length || 0,
-          lastModified: new Date(loadedTimestamp).toLocaleString('pl-PL')
-        });
-      } else {
-        console.warn('⚠️ LOAD: Dane w localStorage są stare (ostatnia modyfikacja:', new Date(loadedTimestamp).toLocaleString('pl-PL'), ') - POMIJAM ładowanie!');
-      }
+      Object.assign(state, loadedData);
+      console.log('✅ LOAD: Dane załadowane z localStorage:', {
+        employees: state.employees?.length || 0,
+        operations: state.operationsCatalog?.length || 0,
+        processes: state.processes?.length || 0,
+        orders: state.orders?.length || 0,
+        tasks: state.tasks?.length || 0
+      });
     } else {
       console.log('⚠️ LOAD: Brak danych w localStorage (klucz: ' + storeKey + '), używam domyślne');
     }
@@ -2342,9 +2117,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   // ensure settings object exists and default autoCleanup = true
   state.settings = state.settings || {};
   if (typeof state.settings.autoCleanup === 'undefined') state.settings.autoCleanup = true;
-  // ensure warehouse material preparation time settings exist
-  if (typeof state.settings.mainMaterialsDays === 'undefined') state.settings.mainMaterialsDays = 3;
-  if (typeof state.settings.componentMaterialsDays === 'undefined') state.settings.componentMaterialsDays = 1;
   // expose state for debugging and console access
   try{ window.state = state; }catch(e){console.warn('unable to expose state', e);}
 
@@ -2374,13 +2146,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         }
         
         console.log('📦 INIT: Firebase SDK załadowany');
-        
-        // 2.5. Ustaw window.db (KRYTYCZNE dla real-time sync)
-        if (!window.db && firebase.firestore) {
-          window.db = firebase.firestore();
-          window.firebaseLoaded = true;
-          console.log('✅ INIT: window.db ustawione');
-        }
         
         // 3. Zaloguj się anonimowo
         console.log('🔐 INIT: Loguję się anonimowo...');
@@ -2425,23 +2190,22 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       }
     }
     
-    // Uruchom automatyczne łączenie z małym opóźnieniem
-    setTimeout(() => {
+    // Uruchom automatyczne łączenie natychmiast po inicjalizacji
+    (async () => {
       // KROK 1: Włącz kolejkę PRZED jakimkolwiek połączeniem z Firebase
       if (window.FirebaseSyncQueue) {
         window.FirebaseSyncQueue.enable();
         console.log('🔄 INIT: Kolejka synchronizacji włączona (pre-connect)');
       }
-      
+
       // KROK 2: Teraz połącz z Firebase
-      autoConnectFirebase().then(success => {
-        if (success) {
-          console.log('🎉 INIT: Automatyczne łączenie z Firebase zakończone sukcesem!');
-        } else {
-          console.log('⚠️ INIT: Automatyczne łączenie z Firebase nie powiodło się - sprawdź konfigurację');
-        }
-      });
-    }, 1000); // 1 sekunda na inicjalizację DOM
+      const success = await autoConnectFirebase();
+      if (success) {
+        console.log('🎉 INIT: Automatyczne łączenie z Firebase zakończone sukcesem!');
+      } else {
+        console.log('⚠️ INIT: Automatyczne łączenie z Firebase nie powiodło się - sprawdź konfigurację');
+      }
+    })();
     
   } else {
     console.log('📦 INIT: Tryb localStorage - używam lokalnych danych');
@@ -2756,78 +2520,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         if(t.dataset.empDel) { state.employees = state.employees.filter(x => x.id !== t.dataset.empDel); save(); renderEmployees(); break; }
         if(t.dataset.empEd) {
           const e = state.employees.find(x => x.id === t.dataset.empEd); if (!e) return;
-          
-          // Pytaj o imię
-          const n = prompt('Imię i nazwisko:', e.name);
-          if (n === null) break; // Anulowano
-          if (!n || !n.trim()) {
-            alert('⚠️ Imię i nazwisko nie może być puste');
-            break;
-          }
-          e.name = n.trim();
-          
-          // Pytaj o rolę
-          const currentRole = e.role || '';
-          const roleOptions = ['', 'Magazynier', 'Produkcja', 'Montaż', 'Handlowiec', 'Kierownik', 'Inne'];
-          const rolePrompt = 'Wybierz rolę (wpisz numer lub zostaw puste):\n\n' +
-            '0 - Brak roli\n' +
-            '1 - 📦 Magazynier\n' +
-            '2 - 🔧 Produkcja\n' +
-            '3 - 🏗️ Montaż\n' +
-            '4 - 💼 Handlowiec\n' +
-            '5 - 👔 Kierownik\n' +
-            '6 - ➕ Inne\n\n' +
-            `Aktualna rola: ${currentRole || '(brak)'}`;
-          
-          const roleChoice = prompt(rolePrompt, '');
-          if (roleChoice !== null) {
-            const roleIndex = parseInt(roleChoice);
-            if (!isNaN(roleIndex) && roleIndex >= 0 && roleIndex < roleOptions.length) {
-              e.role = roleOptions[roleIndex] || null;
-            }
-          }
-          
-          // Pytaj o telefon
-          const currentPhone = e.phone || '';
-          const phoneInput = prompt('Telefon:', currentPhone);
-          if (phoneInput !== null) {
-            e.phone = phoneInput.trim() || null;
-          }
-          
-          // Pytaj o Cap%
-          const currentCap = e.cap || 100;
-          const capInput = prompt('Cap% (0-100):', currentCap);
-          if (capInput !== null) {
-            const cap = parseInt(capInput);
-            if (!isNaN(cap) && cap >= 0 && cap <= 100) {
-              e.cap = cap;
-            } else {
-              alert('⚠️ Cap% musi być liczbą od 0 do 100');
-            }
-          }
-          
-          // Pytaj o godziny dziennie
-          const currentHours = e.hoursPerDay || 8;
-          const hoursInput = prompt('Godziny dziennie (1-24):', currentHours);
-          if (hoursInput !== null) {
-            const hours = parseInt(hoursInput);
-            if (!isNaN(hours) && hours >= 1 && hours <= 24) {
-              e.hoursPerDay = hours;
-            } else {
-              alert('⚠️ Godziny muszą być liczbą od 1 do 24');
-            }
-          }
-          
-          save(); 
-          renderEmployees(); 
-          
-          // Jeśli zmieniono na magazyniera, synchronizuj zadania
-          if (e.role === 'Magazynier' && typeof window.syncWarehouseTasks === 'function') {
-            console.log('[emp-edit] Magazynier zaktualizowany, synchronizuję zadania...');
-            window.syncWarehouseTasks();
-          }
-          
-          break;
+          const n = prompt('Nowe imię', e.name) || e.name; e.name = n; save(); renderEmployees(); break;
         }
         if(t.dataset.assign) {
           // Assign task to employee with conflict detection
@@ -3045,9 +2738,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   try{ const ac = qs('#set-auto-cleanup'); if(ac) ac.checked = (state.settings && state.settings.autoCleanup !== false); }catch(e){}
   // sync spellcheck enforce checkbox UI with state on load
   try{ const sc = qs('#set-spellcheck-enforce'); if(sc) sc.checked = !!state.storage.spellcheckEnforce; }catch(e){}
-  // sync warehouse material preparation time settings UI with state on load
-  try{ const mm = qs('#set-main-materials-days'); if(mm) mm.value = state.settings.mainMaterialsDays || 3; }catch(e){}
-  try{ const cm = qs('#set-component-materials-days'); if(cm) cm.value = state.settings.componentMaterialsDays || 1; }catch(e){}
 
   // persist autosave checkbox changes
   const autosaveEl = qs('#set-autosave-assign'); if(autosaveEl){ autosaveEl.addEventListener('change', (ev)=>{ state.storage.autoSaveAssign = !!ev.target.checked; save(); }); }
@@ -3061,9 +2751,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   const autoCleanupEl = qs('#set-auto-cleanup'); if(autoCleanupEl){ autoCleanupEl.addEventListener('change', (ev)=>{ state.settings.autoCleanup = !!ev.target.checked; save(); }); }
   // persist spellcheck enforce changes
   const spellEl = qs('#set-spellcheck-enforce'); if(spellEl){ spellEl.addEventListener('change', (ev)=>{ state.storage.spellcheckEnforce = !!ev.target.checked; save(); if(ev.target.checked) enableSpellAndLang(); else disableSpellAndLang(); }); }
-  // persist warehouse material preparation time changes
-  const mainMatEl = qs('#set-main-materials-days'); if(mainMatEl){ mainMatEl.addEventListener('change', (ev)=>{ const v = parseInt(ev.target.value||'3',10) || 3; state.settings.mainMaterialsDays = Math.max(1, Math.min(14, v)); save(); console.log('⚙️ Materiały główne: deadline ' + v + ' dni przed START'); }); }
-  const compMatEl = qs('#set-component-materials-days'); if(compMatEl){ compMatEl.addEventListener('change', (ev)=>{ const v = parseInt(ev.target.value||'1',10) || 1; state.settings.componentMaterialsDays = Math.max(0, Math.min(14, v)); save(); console.log('⚙️ Podzespoły: deadline ' + v + ' dni przed START'); }); }
 
   // in-page confirmation modal (promise-based)
   function confirmModal(message){
@@ -3196,11 +2883,11 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       }
   const genBtn = o.tasksGenerated ? '' : `<button class=\"btn\" data-ogen=\"${o.id}\">Gen. zadania</button>`;
   const replanOneBtn = `<button class=\"btn amber\" data-replan-order=\"${o.id}\" title=\"Resetuj i przelicz tylko zadania tego zlecenia\">Replan</button>`;
-  // UKRYTO: Handlowiec nie zarządza materiałami - przycisk Checklist przeniesiony do Magazynu
-  // const checklistBtn = o.processId ? `<button class=\"btn blue\" data-checklist=\"${o.id}\" title=\"Pokaż checklistę materiałów\">📋 Checklist</button>` : '';
+  const checklistBtn = o.processId ? `<button class=\"btn blue\" data-checklist=\"${o.id}\" title=\"Pokaż checklistę materiałów\">📋 Checklist</button>` : '';
   
-  // Status materiałów - tylko informacyjnie (bez przycisku zarządzania)
+  // Oblicz status materiałów dla zlecenia
   let materialsStatus = '-';
+  let materialsBtn = '';
   if (o.materialChecklist && o.materialChecklist.length > 0) {
     const warehouseItems = window.warehouseItems || [];
     const reservations = window.warehouseReservations || [];
@@ -3232,16 +2919,15 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     } else {
       materialsStatus = '⚠️ Braki';
     }
-    // UKRYTO: Przycisk "Materiały" - zarządzanie przeniesione do zakładki Magazyn
-    // materialsBtn = `<button class=\"btn blue\" onclick=\"window.showOrderMaterials('${o.id}')\" title=\"Pokaż materiały i wydaj z magazynu\">📦 Materiały</button>`;
+    materialsBtn = `<button class=\"btn blue\" onclick=\"window.showOrderMaterials('${o.id}')\" title=\"Pokaż materiały i wydaj z magazynu\">📦 Materiały</button>`;
   }
   
   tr.innerHTML=`<td>${o.name||'-'}</td><td>${o.client||'-'}</td><td>${o.model||'-'}</td><td>${o.quantity||'-'}</td>
                     <td>${o.startDate||'-'}</td><td>${o.endDate||'-'}</td><td>${o.installDate||'-'}</td><td>${place||'-'}</td>
                     <td>${bar} <div class="muted" style="font-size:12px;margin-top:4px">${pct}% (${pr.done}/${pr.total})</div></td>
                     <td>${leadH}</td>
-                    <td>${materialsStatus}</td>
-  <td><div class="row"><button class="btn" data-oed="${o.id}">Edytuj</button>${genBtn}${replanOneBtn}<button class="btn red" data-od="${o.id}">Usuń</button></div></td>`;
+                    <td>${materialsStatus}<br>${materialsBtn}</td>
+  <td style="min-width: 200px"><div class="row"><button class="btn" data-oed="${o.id}">Edytuj</button>${genBtn}${checklistBtn}${replanOneBtn}<button class="btn red" data-od="${o.id}">Usuń</button></div></td>`;
       host.appendChild(tr);
     });
   }
@@ -3369,43 +3055,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         processId:qs('#o-proc').value||'',leadEmployeeId:qs('#o-lead').value||''};
       if(id){
         const existing = state.orders.find(x=>x.id===id);
-        if(existing){ 
-          Object.assign(existing, orderObj); 
-          (window.logDev||console.log)('[order-form] updated', id); 
-          
-          // Regeneruj zadania produkcyjne
-          try{
-            // Usuń stare zadania dla tego zlecenia
-            const oldTasksCount = (state.tasks||[]).length;
-            state.tasks = (state.tasks||[]).filter(t => t.orderId !== id);
-            const removedCount = oldTasksCount - state.tasks.length;
-            (window.logDev||console.log)('[order-form] removed old tasks:', removedCount);
-            
-            // Aktualizuj zadanie montażowe
-            const afterTask = (state.after||[]).find(a => a.order === id);
-            if(afterTask){
-              afterTask.desc = orderObj.notes || '';
-              afterTask.installDate = orderObj.installDate || '';
-              afterTask.phone = orderObj.phone || '';
-              afterTask.postalCode = orderObj.postalCode || '';
-              afterTask.address = orderObj.address || '';
-              afterTask.leadEmployeeId = orderObj.leadEmployeeId || '';
-              (window.logDev||console.log)('[order-form] updated montaż task');
-            }
-            
-            // Wygeneruj nowe zadania
-            if(window.scheduleCore){
-              const gen = window.scheduleCore.generateTasksForOrder(orderObj, state);
-              if(gen && gen.length){
-                state.tasks = (state.tasks||[]).concat(gen);
-                if(typeof updateScheduleConfigFromUI === 'function'){ updateScheduleConfigFromUI(); }
-                window.scheduleCore.generateSchedule(state);
-                orderObj.tasksGenerated = true;
-                (window.logDev||console.log)('[order-form] regenerated tasks', gen.length);
-              }
-            }
-          }catch(e){ console.warn('[order-form] regenerate tasks error', e.message); }
-        }
+        if(existing){ Object.assign(existing, orderObj); (window.logDev||console.log)('[order-form] updated', id); }
       } else {
         orderObj.tasksGenerated = false;
         state.orders.push(orderObj);
@@ -3423,7 +3073,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
             phone: orderObj.phone || '',
             postalCode: orderObj.postalCode || '',
             address: orderObj.address || '',
-            leadEmployeeId: orderObj.leadEmployeeId || '',
             employeeIds: [],
             hours: 0
           };
@@ -3730,9 +3379,19 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     state.PROC_TMP=[]; save(); ev.target.reset(); renderProcPage();
   });
 
+  function updateTaskFilters(){
+    const selOrd=qs('#tasks-filter-order'); 
+    if(selOrd){ 
+      selOrd.innerHTML='<option value="">Wszystkie zlecenia</option>'+ (state.orders||[]).map(o=>`<option value="${o.id}">${o.name}</option>`).join(''); 
+    }
+  }
+
   function renderTasks(){
     const list=qs('#tasks-list'); if(!list) return; list.innerHTML='';
-    const selOrd=qs('#tasks-filter-order'); if(selOrd){ selOrd.innerHTML='<option value="">Wszystkie zlecenia</option>'+ (state.orders||[]).map(o=>`<option value="${o.id}">${o.name}</option>`).join(''); }
+
+    // Aktualizuj filtry przy każdym renderowaniu
+    updateTaskFilters();
+
     const fOrd=qs('#tasks-filter-order')?.value||''; const fSt=qs('#tasks-filter-status')?.value||'';
     const groupBy=qs('#tasks-group-by')?.value||'';
     const rows=(state.tasks||[]).filter(t=>(!fOrd||t.orderId===fOrd)&&(!fSt||(t.status||'')===fSt));
@@ -3775,8 +3434,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     // helper for assignment info with score
     const assignmentInfo = (tt) => {
       try {
-        // Support multiple formats: assignees, assignee, employeeId (for montaż tasks)
-        const assignees = tt.assignees || (tt.assignee ? [tt.assignee] : (tt.employeeId ? [tt.employeeId] : []));
+        const assignees = tt.assignees || (tt.assignee ? [tt.assignee] : []);
         if(!assignees || assignees.length === 0) {
           return `<span class="muted" style="font-size:12px">⚠️ Nieprzypisane</span>`;
         }
@@ -4092,7 +3750,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     }
   }
 
-  window.generateTasksByWorker = function(){
+  function generateTasksByWorker(){
     showReportsProgress(true, 'Przetwarzanie danych pracowników...', 20);
     
     setTimeout(() => {
@@ -4193,11 +3851,11 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='tasks_by_employee.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   }
 
-  const tasksGenBtn = qs('#tasks-gen-by-emp'); if(tasksGenBtn){ tasksGenBtn.addEventListener('click', ()=>{ window.generateTasksByWorker(); }); }
+  const tasksGenBtn = qs('#tasks-gen-by-emp'); if(tasksGenBtn){ tasksGenBtn.addEventListener('click', ()=>{ generateTasksByWorker(); }); }
   const tasksExportAllBtn = qs('#tasks-export-csv-by-emp'); if(tasksExportAllBtn){ tasksExportAllBtn.addEventListener('click', ()=>{ exportCSVAllByWorker(); }); }
   const tasksShowByEmpBtn = qs('#tasks-show-by-emp'); if(tasksShowByEmpBtn){ tasksShowByEmpBtn.addEventListener('click', ()=>{
     state.uiShowTasksByEmpTable = !state.uiShowTasksByEmpTable;
-    if(state.uiShowTasksByEmpTable){ tasksShowByEmpBtn.textContent = 'Ukryj podział'; window.generateTasksByWorker(); }
+    if(state.uiShowTasksByEmpTable){ tasksShowByEmpBtn.textContent = 'Ukryj podział'; generateTasksByWorker(); }
     else { tasksShowByEmpBtn.textContent = 'Pokaż podział'; const byW = qs('#tasks-by-worker'); if(byW) byW.innerHTML = ''; }
   }); }
   const tasksFilterOrder = qs('#tasks-filter-order'); if(tasksFilterOrder){ tasksFilterOrder.addEventListener('change', ()=>{ renderTasks(); }); }
@@ -4292,18 +3950,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     });
   }
 
-  function renderEmployees(){ 
-    const tb=qs('#emp-tb'); 
-    tb.innerHTML=''; 
-    (state.employees||[]).forEach(e=>{ 
-      const tr=document.createElement('tr'); 
-      const roleText = e.role ? e.role : '<span style="color:#94a3b8">—</span>';
-      const roleIcon = e.role === 'Magazynier' ? '📦' : e.role === 'Produkcja' ? '🔧' : e.role === 'Montaż' ? '🏗️' : e.role === 'Handlowiec' ? '💼' : e.role === 'Kierownik' ? '👔' : '';
-      const phoneText = e.phone ? e.phone : '<span style="color:#94a3b8">—</span>';
-      tr.innerHTML='<td>'+e.name+'</td><td>'+roleIcon+' '+roleText+'</td><td>'+phoneText+'</td><td>'+(e.cap||100)+'</td><td>'+(e.hoursPerDay||8)+'</td><td><button class="btn" data-emp-ed="'+e.id+'">Edytuj</button> <button class="btn red" data-emp-del="'+e.id+'">Usuń</button></td>'; 
-      tb.appendChild(tr); 
-    }); 
-  }
+  function renderEmployees(){ const tb=qs('#emp-tb'); tb.innerHTML=''; (state.employees||[]).forEach(e=>{ const tr=document.createElement('tr'); tr.innerHTML='<td>'+e.name+'</td><td>'+(e.cap||100)+'</td><td>'+(e.hoursPerDay||8)+'</td><td><button class="btn" data-emp-ed="'+e.id+'">Edytuj</button> <button class="btn red" data-emp-del="'+e.id+'">Usuń</button></td>'; tb.appendChild(tr); } ); }
 
   // Function to restore authentic data
   function restoreAuthenticData() {
@@ -5975,131 +5622,19 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     if(capacityExportBtn){ capacityExportBtn.addEventListener('click', () => exportCapacityAnalysis()); }
 
     qs('#emp-add').addEventListener('click',()=>{
-      // Pokaż formularz dodawania pracownika
-      const formContainer = document.getElementById('emp-form-container');
-      const nameInput = document.getElementById('emp-form-name');
-      const roleSelect = document.getElementById('emp-form-role');
-      
-      if (formContainer) {
-        formContainer.classList.remove('hidden');
-        nameInput.value = '';
-        roleSelect.value = '';
-        nameInput.focus();
+      const name = prompt('Imię i nazwisko');
+      if (!name || !name.trim()) return;
+
+      const trimmedName = name.trim();
+      if (trimmedName.length < 2) {
+        alert('Imię i nazwisko musi mieć co najmniej 2 znaki');
+        return;
       }
+
+      state.employees.push({id:uid(),name:trimmedName,cap:100,hoursPerDay:8});
+      save();
+      renderEmployees();
     });
-    
-    // Zapisz nowego pracownika
-    const empFormSave = document.getElementById('emp-form-save');
-    if (empFormSave) {
-      empFormSave.addEventListener('click', () => {
-        const nameInput = document.getElementById('emp-form-name');
-        const roleSelect = document.getElementById('emp-form-role');
-        const capInput = document.getElementById('emp-form-cap');
-        const hoursInput = document.getElementById('emp-form-hours');
-        const phoneInput = document.getElementById('emp-form-phone');
-        const formContainer = document.getElementById('emp-form-container');
-        
-        const name = nameInput.value.trim();
-        const role = roleSelect.value;
-        const cap = parseInt(capInput.value) || 100;
-        const hoursPerDay = parseInt(hoursInput.value) || 8;
-        const phone = phoneInput.value.trim();
-        
-        if (!name) {
-          alert('⚠️ Podaj imię i nazwisko pracownika');
-          nameInput.focus();
-          return;
-        }
-        
-        if (name.length < 2) {
-          alert('⚠️ Imię i nazwisko musi mieć co najmniej 2 znaki');
-          nameInput.focus();
-          return;
-        }
-        
-        if (cap < 0 || cap > 100) {
-          alert('⚠️ Cap% musi być między 0 a 100');
-          capInput.focus();
-          return;
-        }
-        
-        if (hoursPerDay < 1 || hoursPerDay > 24) {
-          alert('⚠️ Godziny dziennie muszą być między 1 a 24');
-          hoursInput.focus();
-          return;
-        }
-        
-        // Sprawdź czy pracownik już istnieje
-        const existing = state.employees.find(e => 
-          e.name && e.name.toLowerCase() === name.toLowerCase()
-        );
-        
-        if (existing) {
-          alert('⚠️ Pracownik o tym imieniu już istnieje w systemie');
-          nameInput.focus();
-          return;
-        }
-        
-        // Dodaj pracownika
-        const newEmployee = {
-          id: uid(),
-          name: name,
-          role: role || null,
-          phone: phone || null,
-          cap: cap,
-          hoursPerDay: hoursPerDay
-        };
-        
-        console.log('[emp-add] Creating new employee with ID:', newEmployee.id, 'name:', newEmployee.name, 'role:', newEmployee.role);
-        
-        state.employees.push(newEmployee);
-        save();
-        renderEmployees();
-        
-        console.log('[emp-add] Employee saved to state.employees. Total employees:', state.employees.length);
-        
-        // Ukryj formularz i wyczyść
-        formContainer.classList.add('hidden');
-        nameInput.value = '';
-        roleSelect.value = '';
-        capInput.value = '100';
-        hoursInput.value = '8';
-        phoneInput.value = '';
-        
-        // Komunikat
-        const roleText = role ? ` (${role})` : '';
-        alert(`✓ Dodano pracownika: ${name}${roleText}`);
-        
-        // Jeśli to magazynier, automatycznie przypisz zadania
-        if (role === 'Magazynier' && typeof window.syncWarehouseTasks === 'function') {
-          console.log('[emp-add] Magazynier dodany z ID:', newEmployee.id, '- synchronizuję zadania...');
-          window.syncWarehouseTasks();
-        }
-      });
-    }
-    
-    // Anuluj dodawanie
-    const empFormCancel = document.getElementById('emp-form-cancel');
-    if (empFormCancel) {
-      empFormCancel.addEventListener('click', () => {
-        const formContainer = document.getElementById('emp-form-container');
-        const nameInput = document.getElementById('emp-form-name');
-        const roleSelect = document.getElementById('emp-form-role');
-        const capInput = document.getElementById('emp-form-cap');
-        const hoursInput = document.getElementById('emp-form-hours');
-        const phoneInput = document.getElementById('emp-form-phone');
-        
-        if (formContainer) {
-          formContainer.classList.add('hidden');
-          // Wyczyść formularz
-          nameInput.value = '';
-          roleSelect.value = '';
-          capInput.value = '100';
-          hoursInput.value = '8';
-          phoneInput.value = '';
-        }
-      });
-    }
   }
 
   document.addEventListener('DOMContentLoaded', function() {
@@ -6610,13 +6145,10 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         ? empIds.map(eid => (state.employees||[]).find(e=>e.id===eid)?.name || eid).join(', ')
         : '-';
       const hoursText = a.hours ? `${a.hours}h` : '-';
-      // Get lead employee name (handlowiec)
-      const leadEmp = a.leadEmployeeId ? (state.employees||[]).find(e=>e.id===a.leadEmployeeId) : null;
-      const leadName = leadEmp ? leadEmp.name : '';
       d.innerHTML=`<div class="row" style="justify-content:space-between"><div><b>${a.type}</b> • ${a.status} • ${orderObj.name||a.order||''}
       <div class="muted">Montaż: ${a.installDate||'-'} • wyjazd: ${a.departTime||'-'} • wizyta: ${a.visitTime||'-'} • czas: ${hoursText}</div>
       <div class="muted">Adres: ${address || '-'} • Kod: ${placeCode || '-'} • Tel: ${phoneNumber || '-'}</div>
-      <div class="muted">Montażyści: ${empNames}${leadName ? ' • <b>Prowadzący (kontakt):</b> ' + leadName : ''}</div>
+      <div class="muted">Pracownicy: ${empNames}</div>
       <div class="muted">${a.desc||''}</div></div><div><button class="btn" data-as-ed="${a.id}">Edytuj</button> <button class="btn red" data-as-del="${a.id}">Usuń</button></div></div>`;
       host.appendChild(d);
     });
@@ -6848,15 +6380,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     });
   }
   async function ensureFirebase(){
-    if(window.firebase&&firebase.apps&&firebase.apps.length){
-      // Upewnij się, że window.db jest ustawione
-      if (!window.db && firebase.firestore) {
-        window.db = firebase.firestore();
-        window.firebaseLoaded = true;
-        console.log('✅ window.db ustawione (cached Firebase)');
-      }
-      return true;
-    }
+    if(window.firebase&&firebase.apps&&firebase.apps.length){return true;}
     try{
       const cfg=state.storage.fbConfig||{}; if(!cfg.apiKey) throw new Error('Brak config');
       
@@ -6871,12 +6395,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       await loadScript('https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js');
       await loadScript('https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js');
       if(!firebase.apps.length){firebase.initializeApp(cfg);}
-      
-      // KRYTYCZNE: Ustaw window.db dla real-time sync
-      window.db = firebase.firestore();
-      window.firebaseLoaded = true;
-      console.log('✅ window.db ustawione (nowy Firebase)');
-      
       return true;
     }catch(e){
       console.warn('Firebase load/init error:',e.message);
@@ -6889,8 +6407,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     }
   }
   function fbRoot(){return firebase.firestore().collection('planner').doc(state.storage.appId).collection('users').doc(state.storage.userId);}
-  window.fbRoot = fbRoot; // Export globally for helper functions
-  
   async function saveToDB(customState){
     if(state.storage.mode!=='firebase'){qs('#set-info').textContent='Tryb localStorage (offline)';return;}
     const ok=await ensureFirebase(); if(!ok){return;}
@@ -6990,79 +6506,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   
   // Export saveToDB globally for use in other functions
   window.saveToDB = saveToDB;
-  
-  // ============================================
-  // HELPER FUNCTIONS FOR REAL-TIME SYNC
-  // ============================================
-  
-  // Save employees to Firebase
-  async function saveEmployeesToFirebase() {
-    const ok = await ensureFirebase();
-    if (!ok) throw new Error('Firebase not ready');
-    
-    const batch = firebase.firestore().batch();
-    const r = fbRoot();
-    const employees = state.employees || [];
-    
-    console.log('🔍 DEBUG: fbRoot path:', r.path);
-    console.log('🔍 DEBUG: employees count:', employees.length);
-    
-    employees.forEach(emp => {
-      if (emp && emp.id) {
-        const payload = JSON.parse(JSON.stringify(emp));
-        const docPath = r.collection('employees').doc(emp.id).path;
-        console.log('📝 Saving employee to:', docPath);
-        batch.set(r.collection('employees').doc(emp.id), payload, { merge: true });
-      }
-    });
-    
-    await batch.commit();
-    console.log(`✅ Zapisano ${employees.length} pracowników do Firebase`);
-  }
-  window.saveEmployeesToFirebase = saveEmployeesToFirebase;
-  
-  // Save tasks to Firebase
-  async function saveTasksToFirebase() {
-    const ok = await ensureFirebase();
-    if (!ok) throw new Error('Firebase not ready');
-    
-    const batch = firebase.firestore().batch();
-    const r = fbRoot();
-    const tasks = state.tasks || [];
-    
-    tasks.forEach(task => {
-      if (task && task.id) {
-        const payload = JSON.parse(JSON.stringify(task));
-        batch.set(r.collection('tasks').doc(task.id), payload, { merge: true });
-      }
-    });
-    
-    await batch.commit();
-    console.log(`✅ Zapisano ${tasks.length} zadań do Firebase`);
-  }
-  window.saveTasksToFirebase = saveTasksToFirebase;
-  
-  // Save orders to Firebase
-  async function saveOrdersToFirebase() {
-    const ok = await ensureFirebase();
-    if (!ok) throw new Error('Firebase not ready');
-    
-    const batch = firebase.firestore().batch();
-    const r = fbRoot();
-    const orders = state.orders || [];
-    
-    orders.forEach(order => {
-      if (order && order.id) {
-        const payload = JSON.parse(JSON.stringify(order));
-        batch.set(r.collection('orders').doc(order.id), payload, { merge: true });
-      }
-    });
-    
-    await batch.commit();
-    console.log(`✅ Zapisano ${orders.length} zamówień do Firebase`);
-  }
-  window.saveOrdersToFirebase = saveOrdersToFirebase;
-  
   // Save single task document to Firestore (merge)
   async function _saveTaskToDB_once(taskId){
     const ok = await ensureFirebase(); if(!ok) throw new Error('Firebase not ready');
@@ -7242,6 +6685,10 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         console.warn('[firebase] loadFromDB: pominięto puste kolekcje', skipped);
       }
       qs('#set-info').textContent = skipped.length ? '✅ Wczytano dane z Firebase (pominięto puste kolekcje).' : '✅ Wczytano dane z Firebase.';
+      
+      // Aktualizuj filtry zadań po załadowaniu danych
+      try{ updateTaskFilters(); }catch(e){ console.warn('updateTaskFilters error', e); }
+      
       if(state.page==='order') renderOrderPage(); if(state.page==='tasks') renderTasks(); if(state.page==='opcat') renderOps();
   if(state.page==='proc') renderProcPage(); if(state.page==='emp') renderEmployees(); if(state.page==='as') renderASPage(); renderDash(); renderGantt();
       return { updatedCollections: updated, skippedCollections: skipped };
@@ -7253,12 +6700,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   qs('#set-test').addEventListener('click',async()=>{
     try{
   state.storage.mode=qs('#set-mode').value; state.storage.appId=qs('#set-appid').value.trim(); state.storage.userId=qs('#set-userid').value.trim();
-  
-  // Export appId and userId to localStorage for Worker-app access
-  localStorage.setItem('planner-app-id', state.storage.appId);
-  localStorage.setItem('planner-user-id', state.storage.userId);
-  console.log('📤 Exported to localStorage for Worker-app:', { appId: state.storage.appId, userId: state.storage.userId });
-  
   if(typeof updateScheduleConfigFromUI === 'function'){ updateScheduleConfigFromUI(); }
   try{ if(window.scheduleCore){ window.scheduleCore.generateSchedule(state); } }catch(e){ console.warn('regen schedule', e.message); }
   renderGantt();
@@ -8323,17 +7764,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     document.body.appendChild(modal);
   }
 
-  // Helper function to close modal
-  function closeModal() {
-    const modal = document.getElementById('custom-modal');
-    if (modal) {
-      modal.remove();
-    }
-  }
-
-  // Make closeModal available globally
-  window.closeModal = closeModal;
-
   // Enable/disable browser spellcheck and set language (pl) for user-editable fields
   (function(){
   try{
@@ -8529,17 +7959,17 @@ function initWarehouse(){
   if(section) section.classList.remove('hidden');
   // konfiguracja przycisków
   try { setupWarehouseButtons(); } catch(e){ console.warn('[warehouse] setup buttons error', e); }
-  
-  // Ustaw domyślną zakładkę na 'items' i renderuj
-  setTimeout(() => {
-    try {
-      switchWarehouseTab('items');
-      console.log('[warehouse] default tab (items) activated');
-    } catch(e) {
-      console.warn('[warehouse] failed to activate default tab', e);
-    }
-  }, 100);
-  
+  // pierwsze renderowanie
+  if(window.simpleWarehouse){
+    try { window.simpleWarehouse.render(); } catch(e){ console.warn('[warehouse] first render error', e); }
+  } else {
+    console.warn('[warehouse] simpleWarehouse not yet ready, retry in 500ms');
+    setTimeout(()=>{
+      if(window.simpleWarehouse){
+        try { window.simpleWarehouse.render(); } catch(e){ console.warn('[warehouse] delayed render error', e); }
+      }
+    },500);
+  }
   __warehouseInitialized = true;
   console.log('[warehouse] initialized');
 }
@@ -8592,22 +8022,6 @@ function loadWarehouseFromStorage() {
     window.materialTemplates = JSON.parse(templates);
   } else {
     window.materialTemplates = [];
-  }
-  
-  // Zamówienia zakupowe (MRP)
-  const purchaseOrders = localStorage.getItem('purchaseOrders');
-  if (purchaseOrders) {
-    window.purchaseOrders = JSON.parse(purchaseOrders);
-  } else {
-    window.purchaseOrders = [];
-  }
-  
-  // Dostawcy (suppliers)
-  const suppliers = localStorage.getItem('suppliers');
-  if (suppliers) {
-    window.suppliers = JSON.parse(suppliers);
-  } else {
-    window.suppliers = [];
   }
   
   // Lista zakupów
@@ -8862,7 +8276,7 @@ function updateShoppingListBadge() {
 // Przełączanie zakładek magazynu
 function switchWarehouseTab(tab) {
   // Ukryj wszystkie widoki
-  const views = ['items', 'orders', 'monitoring', 'transactions', 'reservations', 'tasks', 'templates', 'mrp'];
+  const views = ['items', 'transactions', 'reservations', 'tasks', 'templates'];
   views.forEach(v => {
     const viewEl = document.getElementById(`wh-view-${v}`);
     const tabBtn = document.getElementById(`wh-tab-${v}`);
@@ -8879,10 +8293,6 @@ function switchWarehouseTab(tab) {
   // Renderuj odpowiednią zawartość
   if (tab === 'items') {
     renderWarehouse();
-  } else if (tab === 'orders') {
-    renderWarehouseOrders();
-  } else if (tab === 'monitoring') {
-    renderWarehouseMonitoring();
   } else if (tab === 'transactions') {
     renderTransactions();
   } else if (tab === 'reservations') {
@@ -8891,9 +8301,6 @@ function switchWarehouseTab(tab) {
     renderWarehouseTasks();
   } else if (tab === 'templates') {
     renderTemplates();
-  } else if (tab === 'mrp') {
-    renderPurchaseOrders();
-    updateMrpDashboard();
   }
 }
 
@@ -10005,117 +9412,29 @@ if (!window.warehouseTasks) {
   window.warehouseTasks = JSON.parse(localStorage.getItem('warehouseTasks') || '[]');
 }
 
-// Znajdź pracownika z rolą "Magazynier" do automatycznego przypisywania zadań
-window.getOrCreateWarehouseManager = function() {
-  if (!window.state || !window.state.employees) {
-    console.warn('[getOrCreateWarehouseManager] No state or employees array');
-    return null;
-  }
-  
-  // Szukaj pracownika z rolą "Magazynier"
-  let manager = window.state.employees.find(emp => emp.role === 'Magazynier');
-  
-  // Jeśli nie znaleziono, szukaj po nazwie (case-insensitive)
-  if (!manager) {
-    manager = window.state.employees.find(emp => 
-      emp.name && emp.name.toLowerCase().includes('magazyn')
-    );
-  }
-  
-  // Jeśli nadal nie ma, zwróć null (użytkownik musi dodać ręcznie)
-  if (!manager) {
-    console.log('[getOrCreateWarehouseManager] No warehouse manager found. Please add employee with role "Magazynier"');
-    return null;
-  }
-  
-  console.log('[getOrCreateWarehouseManager] Manager found:', manager.name, manager.id, 'role:', manager.role);
-  return manager.id;
-};
-
   // Synchronizuj zadania magazynowe ze zleceniami (wywoływane po każdym zapisie stanu)
 window.syncWarehouseTasks = function() {
-  console.log('[syncWarehouseTasks] Start synchronization');
-  
-  if (!window.state || !window.state.orders) {
-    console.log('[syncWarehouseTasks] No state or orders available');
-    return;
-  }
-  
-  console.log('[syncWarehouseTasks] Found', window.state.orders.length, 'orders');
+  if (!window.state || !window.state.orders) return;
   
   // Dla każdego aktywnego zlecenia sprawdź materiały
   window.state.orders.forEach(order => {
     if (order.materialChecklist && order.materialChecklist.length > 0) {
-      console.log('[syncWarehouseTasks] Processing order', order.name, 'with', order.materialChecklist.length, 'materials');
       generateWarehouseTasksForOrder(order);
     }
   });
-  
-  console.log('[syncWarehouseTasks] Total warehouse tasks:', window.warehouseTasks.length);
-  
-  // Automatycznie przypisz nieprzypisane zadania do magazyniera
-  const warehouseManagerId = window.getOrCreateWarehouseManager();
-  console.log('[syncWarehouseTasks] Retrieved warehouse manager ID:', warehouseManagerId);
-  
-  if (warehouseManagerId) {
-    let assignedCount = 0;
-    let reassignedCount = 0;
-    console.log('[syncWarehouseTasks] Total tasks before assignment:', window.warehouseTasks.length);
-    
-    // Pobierz listę aktualnych ID pracowników
-    const currentEmployeeIds = (window.state.employees || []).map(e => e.id);
-    console.log('[syncWarehouseTasks] Current employee IDs:', currentEmployeeIds);
-    
-    window.warehouseTasks.forEach((task, idx) => {
-      console.log(`[syncWarehouseTasks] Task ${idx}: ID=${task.id}, assignedToId="${task.assignedToId}", status=${task.status}, itemName="${task.itemName}"`);
-      
-      // Przypadek 1: Zadanie bez przypisania
-      if (!task.assignedToId && task.status !== 'cancelled' && task.status !== 'completed') {
-        console.log(`[syncWarehouseTasks] Assigning unassigned task ${idx} to manager ID:`, warehouseManagerId);
-        task.assignedToId = warehouseManagerId;
-        assignedCount++;
-      }
-      // Przypadek 2: Zadanie przypisane do nieistniejącego pracownika
-      else if (task.assignedToId && !currentEmployeeIds.includes(task.assignedToId) && task.status !== 'cancelled' && task.status !== 'completed') {
-        console.log(`[syncWarehouseTasks] Reassigning task ${idx} from deleted employee "${task.assignedToId}" to manager ID:`, warehouseManagerId);
-        task.assignedToId = warehouseManagerId;
-        reassignedCount++;
-      }
-    });
-    
-    if (assignedCount > 0 || reassignedCount > 0) {
-      console.log('[syncWarehouseTasks] Auto-assigned', assignedCount, 'new tasks and reassigned', reassignedCount, 'orphaned tasks to warehouse manager ID:', warehouseManagerId);
-      localStorage.setItem('warehouseTasks', JSON.stringify(window.warehouseTasks));
-    } else {
-      console.log('[syncWarehouseTasks] No tasks to assign or reassign');
-    }
-  } else {
-    console.warn('[syncWarehouseTasks] No warehouse manager ID found - tasks will remain unassigned');
-  }
   
   // Aktualizuj badge
   if (typeof window.updateTasksBadge === 'function') {
     window.updateTasksBadge();
   }
-};
-
-// Generuj automatyczne zadania dla zlecenia
+};// Generuj automatyczne zadania dla zlecenia
 window.generateWarehouseTasksForOrder = function(order) {
   if (!order || !order.id) return;
-  
-  console.log('[generateWarehouseTasksForOrder] Processing order:', order.name);
   
   const orderStartDate = order.startDate ? new Date(order.startDate) : null;
   const materialsNeeded = order.materialChecklist || [];
   
-  console.log('[generateWarehouseTasksForOrder] Materials needed:', materialsNeeded.length);
-  console.log('[generateWarehouseTasksForOrder] Warehouse items available:', (window.warehouseItems || []).length);
-  
   if (materialsNeeded.length === 0) return;
-  
-  // Znajdź lub utwórz magazyniera (automatyczne przypisanie zadań)
-  const warehouseManagerId = window.getOrCreateWarehouseManager();
-  console.log('[generateWarehouseTasksForOrder] Warehouse manager ID:', warehouseManagerId);
   
   // Oblicz daty ostrzeżeń (3 dni przed start produkcji)
   const warningDate = orderStartDate ? new Date(orderStartDate) : new Date();
@@ -10126,8 +9445,6 @@ window.generateWarehouseTasksForOrder = function(order) {
     const warehouseItem = (window.warehouseItems || []).find(w => w.id === material.itemId);
     const inStock = warehouseItem ? warehouseItem.quantity : 0;
     const needed = material.quantity || 0;
-    
-    console.log('[generateWarehouseTasksForOrder] Material:', material.itemName, '- inStock:', inStock, 'needed:', needed);
     
     if (inStock < needed) {
       // Brakuje materiału - utwórz zadanie zamówienia
@@ -10147,8 +9464,7 @@ window.generateWarehouseTasksForOrder = function(order) {
         dueDate: warningDate.toISOString(),
         createdAt: new Date().toISOString(),
         createdBy: 'System',
-        assignedTo: 'Magazynier', // Tekst legacy
-        assignedToId: warehouseManagerId // Automatyczne przypisanie do magazyniera
+        assignedTo: 'Magazynier'
       };
       
       // Sprawdź czy nie ma już takiego zadania
@@ -10160,1060 +9476,19 @@ window.generateWarehouseTasksForOrder = function(order) {
       );
       
       if (!existingTask) {
-        console.log('[generateWarehouseTasksForOrder] Creating new task for material:', material.itemName);
         window.warehouseTasks.push(task);
-      } else {
-        console.log('[generateWarehouseTasksForOrder] Task already exists for material:', material.itemName);
       }
     }
   });
   
   // Zapisz zadania
   localStorage.setItem('warehouseTasks', JSON.stringify(window.warehouseTasks));
-  console.log('[generateWarehouseTasksForOrder] Saved to localStorage, total tasks:', window.warehouseTasks.length);
-};
-
-// ============ SYSTEM ZLECEŃ DO REALIZACJI (MAGAZYNIER) ============
-
-// Globalny filtr zleceń magazynowych
-window._warehouseOrdersFilter = window._warehouseOrdersFilter || 'all';
-
-// Filtrowanie zleceń
-window.filterWarehouseOrders = function(status) {
-  window._warehouseOrdersFilter = status;
-  renderWarehouseOrders();
-};
-
-// Renderuj zlecenia do realizacji
-window.renderWarehouseOrders = function() {
-  console.log('[renderWarehouseOrders] Function called');
-  
-  const list = document.getElementById('wh-orders-list');
-  if (!list) {
-    console.log('[renderWarehouseOrders] List element not found!');
-    return;
-  }
-  
-  const orders = (window.state.orders || []).filter(o => o.processId); // Tylko zlecenia z procesem
-  
-  if (orders.length === 0) {
-    list.innerHTML = '<div style="text-align:center;padding:40px;color:#999">Brak zleceń z przypisanymi procesami</div>';
-    return;
-  }
-  
-  // Filtruj według statusu
-  const filter = window._warehouseOrdersFilter;
-  let filteredOrders = orders;
-  
-  if (filter === 'pending') {
-    filteredOrders = orders.filter(o => !o.materialsPrepared && !o.materialsIssued);
-  } else if (filter === 'prepared') {
-    filteredOrders = orders.filter(o => o.materialsPrepared && !o.materialsIssued);
-  } else if (filter === 'issued') {
-    filteredOrders = orders.filter(o => o.materialsIssued);
-  }
-  
-  if (filteredOrders.length === 0) {
-    list.innerHTML = '<div style="text-align:center;padding:40px;color:#999">Brak zleceń dla wybranego filtru</div>';
-    return;
-  }
-  
-  // Renderuj każde zlecenie
-  list.innerHTML = filteredOrders.map(order => renderWarehouseOrderCard(order)).join('');
-};
-
-// Renderuj kartę pojedynczego zlecenia
-function renderWarehouseOrderCard(order) {
-  // Pobierz ustawienia deadline z Settings
-  const mainMaterialsDays = (window.state && window.state.settings && window.state.settings.mainMaterialsDays) || 3;
-  const componentMaterialsDays = (window.state && window.state.settings && window.state.settings.componentMaterialsDays) || 1;
-  
-  // Oblicz termin dla magazyniera na podstawie typu materiałów
-  const startDate = order.startDate ? new Date(order.startDate) : null;
-  const checklist = order.warehouseMaterialChecklist || [];
-  const hasMainMaterials = checklist.some(item => item.materialType === 'main' || !item.materialType);
-  
-  // Użyj najwcześniejszego deadline (główne materiały mają priorytet)
-  const daysToSubtract = hasMainMaterials ? mainMaterialsDays : componentMaterialsDays;
-  const deadline = startDate ? new Date(startDate) : new Date();
-  deadline.setDate(deadline.getDate() - daysToSubtract);
-  
-  const now = new Date();
-  const daysUntilDeadline = startDate ? Math.ceil((deadline - now) / (1000 * 60 * 60 * 24)) : 0;
-  
-  // Status czasowy
-  let timeStatus = '';
-  let timeClass = '';
-  if (order.materialsIssued) {
-    timeStatus = '✅ Wydano';
-    timeClass = 'green';
-  } else if (daysUntilDeadline < 0) {
-    timeStatus = `🔴 Opóźnienie ${Math.abs(daysUntilDeadline)} dni`;
-    timeClass = 'red';
-  } else if (daysUntilDeadline <= 1) {
-    timeStatus = `🟡 Zostało ${daysUntilDeadline} dni`;
-    timeClass = 'amber';
-  } else {
-    timeStatus = `🟢 Zostało ${daysUntilDeadline} dni`;
-    timeClass = 'green';
-  }
-  
-  // Pobierz proces i szablon
-  const process = (window.state.processes || []).find(p => p.id === order.processId);
-  const template = process && process.materialTemplateId ? 
-    (window.materialTemplates || []).find(t => t.id === process.materialTemplateId) : null;
-  
-  if (!template) {
-    return `
-      <div class="card" style="background:#fee;border-left:4px solid #dc2626">
-        <div style="font-weight:600;font-size:16px;color:#dc2626">⚠️ ${order.name}</div>
-        <div style="font-size:14px;color:#7f1d1d;margin-top:8px">Proces nie ma przypisanego szablonu materiałowego</div>
-      </div>
-    `;
-  }
-  
-  return `
-    <div class="card" style="border-left:4px solid #3b82f6">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
-        <div>
-          <div style="font-weight:600;font-size:18px;color:#ffffff">${order.name}</div>
-          <div style="font-size:13px;color:#94a3b8;margin-top:4px">
-            Klient: ${order.client || '-'} | Model: ${order.model || '-'} | Ilość: ${order.quantity || 1}
-          </div>
-        </div>
-        <div class="pill ${timeClass}" style="font-size:13px">${timeStatus}</div>
-      </div>
-      
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;font-size:13px">
-        <div>
-          <div style="color:#94a3b8">Start produkcji:</div>
-          <div style="font-weight:600">${order.startDate || '-'}</div>
-        </div>
-        <div>
-          <div style="color:#94a3b8">Termin magazynier:</div>
-          <div style="font-weight:600">${deadline.toLocaleDateString('pl-PL')}</div>
-        </div>
-        <div>
-          <div style="color:#94a3b8">Szablon:</div>
-          <div style="font-weight:600">${template.name}</div>
-        </div>
-      </div>
-      
-      <div class="row" style="gap:8px">
-        <button class="btn blue" onclick="showOrderMaterialsPreparation('${order.id}')">📋 Checklist materiałów</button>
-        ${order.materialsPrepared && !order.materialsIssued ? 
-          `<button class="btn green" onclick="issueOrderMaterials('${order.id}')">📤 Wydaj na produkcję</button>` : ''}
-        ${order.materialsIssued ? 
-          `<div class="pill green">✅ Wydano ${order.materialsIssuedAt ? new Date(order.materialsIssuedAt).toLocaleDateString('pl-PL') : ''}</div>` : ''}
-      </div>
-    </div>
-  `;
-}
-
-// Pokaż przygotowanie materiałów dla zlecenia
-window.showOrderMaterialsPreparation = function(orderId) {
-  const order = (window.state.orders || []).find(o => o.id === orderId);
-  if (!order) {
-    alert('Nie znaleziono zlecenia');
-    return;
-  }
-  
-  const process = (window.state.processes || []).find(p => p.id === order.processId);
-  if (!process || !process.materialTemplateId) {
-    alert('Proces nie ma przypisanego szablonu materiałowego');
-    return;
-  }
-  
-  const template = (window.materialTemplates || []).find(t => t.id === process.materialTemplateId);
-  if (!template) {
-    alert('Nie znaleziono szablonu materiałowego');
-    return;
-  }
-  
-  // Inicjalizuj checklistę w zleceniu jeśli nie istnieje
-  if (!order.warehouseMaterialChecklist) {
-    order.warehouseMaterialChecklist = (template.materials || []).map((m, idx) => ({
-      itemId: m.itemId,
-      itemName: m.itemName,
-      quantity: m.quantity,
-      unit: m.unit,
-      materialType: m.materialType || 'main', // Kopiuj typ materiału z szablonu
-      checked: true, // Domyślnie wszystkie zaznaczone
-      checkedAt: null,
-      checkedBy: null
-    }));
-    save();
-  }
-  
-  // Pobierz materiały z checklisty zlecenia
-  const materials = order.warehouseMaterialChecklist || [];
-  const warehouseItems = window.warehouseItems || [];
-  
-  // Tworzenie interaktywnej checklisty z checkboxami
-  const checklistHtml = materials.map((material, idx) => {
-    const isChecked = material.checked !== false; // Domyślnie zaznaczone
-    const whItem = warehouseItems.find(w => w.id === material.itemId);
-    const inStock = whItem ? whItem.quantity : 0;
-    const needed = material.quantity * (order.quantity || 1); // Przemnóż przez ilość w zleceniu
-    const available = inStock >= needed;
-    const shortage = Math.max(0, needed - inStock);
-    
-    const statusColor = available ? '#16a34a' : (inStock > 0 ? '#f59e0b' : '#dc2626');
-    const statusIcon = available ? '✅' : (inStock > 0 ? '⚠️' : '❌');
-    const statusText = available ? 'Dostępne' : (inStock > 0 ? `Brak ${shortage} ${material.unit}` : 'Brak w magazynie');
-    
-    const checkboxStyle = isChecked 
-      ? 'background:#16a34a;border:2px solid #16a34a;color:white' 
-      : 'background:#374151;border:2px solid #6b7280;color:transparent';
-    
-    const rowOpacity = isChecked ? '1' : '0.5';
-    const rowStyle = available ? '#0f172a' : '#1f1f2e';
-    
-    const materialTypeLabel = material.materialType === 'component' ? '🔩 Podzespół' : '📦 Główny';
-    const materialTypeColor = material.materialType === 'component' ? '#6366f1' : '#f59e0b';
-    
-    return `
-      <div style="display:flex;align-items:center;gap:12px;padding:12px;border-bottom:1px solid #334155;background:${rowStyle};opacity:${rowOpacity};transition:all 0.2s" 
-           onclick="toggleWarehouseMaterialItem('${orderId}', ${idx})">
-        <div style="width:28px;height:28px;min-width:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;cursor:pointer;transition:all 0.2s;${checkboxStyle}">
-          ${isChecked ? '✓' : ''}
-        </div>
-        <div style="font-size:20px;width:32px;text-align:center">${statusIcon}</div>
-        <div style="flex:1;cursor:pointer">
-          <div style="display:flex;align-items:center;gap:8px">
-            <div style="font-weight:600;font-size:15px;color:#ffffff;${!isChecked ? 'text-decoration:line-through' : ''}">${material.itemName}</div>
-            <span style="padding:2px 8px;background:${materialTypeColor};color:white;border-radius:12px;font-size:11px;font-weight:600">${materialTypeLabel}</span>
-          </div>
-          <div style="font-size:13px;color:#94a3b8;margin-top:2px">
-            Potrzebne: <strong>${needed} ${material.unit}</strong> | 
-            W magazynie: <strong style="color:${statusColor}">${inStock} ${material.unit}</strong>
-          </div>
-        </div>
-        <div style="padding:4px 12px;background:${statusColor};color:white;border-radius:16px;font-size:12px;font-weight:600">
-          ${statusText}
-        </div>
-      </div>
-    `;
-  }).join('');
-  
-  const checkedMaterials = materials.filter(m => m.checked !== false);
-  const allAvailable = checkedMaterials.every(m => {
-    const whItem = warehouseItems.find(w => w.id === m.itemId);
-    const inStock = whItem ? whItem.quantity : 0;
-    const needed = m.quantity * (order.quantity || 1);
-    return inStock >= needed;
-  });
-  
-  const content = `
-    <div style="margin-bottom:16px;padding:12px;background:#dbeafe;border-left:4px solid #3b82f6;border-radius:4px;color:#1e40af">
-      <div style="font-weight:600;margin-bottom:4px">Zlecenie: ${order.name}</div>
-      <div style="font-size:13px">Szablon: ${template.name} | Ilość: ${order.quantity || 1} szt.</div>
-      <div style="font-size:13px;margin-top:6px;font-weight:600">
-        ✓ Zaznaczone: ${checkedMaterials.length} / ${materials.length} pozycji
-      </div>
-    </div>
-    
-    <div style="padding:8px 12px;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:4px;margin-bottom:12px;color:#92400e">
-      <div style="font-weight:600;font-size:13px">💡 Kliknij na wiersz aby zaznaczyć/odznaczyć materiał</div>
-      <div style="font-size:12px;margin-top:2px">Tylko zaznaczone materiały zostaną obciążone i zarezerwowane</div>
-    </div>
-    
-    <div style="max-height:400px;overflow-y:auto;border:1px solid #334155;border-radius:8px;margin-bottom:16px">
-      ${checklistHtml}
-    </div>
-    
-    <div style="padding:12px;background:${allAvailable ? '#dcfce7' : '#fef3c7'};border-radius:8px;border:1px solid ${allAvailable ? '#86efac' : '#fcd34d'}">
-      <div style="font-weight:600;color:${allAvailable ? '#15803d' : '#92400e'}">
-        ${allAvailable ? '✅ Wszystkie zaznaczone materiały dostępne' : '⚠️ Niektóre zaznaczone materiały niedostępne'}
-      </div>
-      <div style="font-size:13px;color:${allAvailable ? '#166534' : '#78350f'};margin-top:4px">
-        ${allAvailable ? 
-          'Możesz obciążyć magazyn i przygotować zaznaczone materiały do wydania' : 
-          'Brakujące materiały zostaną zamówione automatycznie. Magazyn zostanie obciążony (stan ujemny na czerwono).'}
-      </div>
-    </div>
-  `;
-  
-  const buttons = [
-    {
-      text: order.materialsPrepared ? '✅ Materiały już przygotowane' : `📦 Obciąż magazyn (${checkedMaterials.length} poz.)`,
-      disabled: order.materialsPrepared || checkedMaterials.length === 0,
-      action: () => {
-        if (checkedMaterials.length === 0) {
-          alert('⚠️ Zaznacz przynajmniej jeden materiał!');
-          return;
-        }
-        if (confirm(`Czy na pewno obciążyć magazyn dla zlecenia "${order.name}"?\n\nZaznaczone materiały: ${checkedMaterials.length} / ${materials.length}\n\nOperacja:\n- Zmniejszy stany magazynowe\n- Utworzy rezerwacje\n- Oznaczy zlecenie jako przygotowane\n\nBrakujące materiały: automatyczne zamówienie`)) {
-          prepareOrderMaterials(orderId);
-          window.dialogInstance.close();
-        }
-      }
-    },
-    { text: 'Anuluj', action: () => window.dialogInstance.close() }
-  ];
-  
-  showModal(`📋 Materiały - ${order.name}`, content, buttons);
-};
-
-// Toggle zaznaczenia materiału w checkliście magazynowej
-window.toggleWarehouseMaterialItem = function(orderId, itemIdx) {
-  const order = (window.state.orders || []).find(o => o.id === orderId);
-  if (!order || !order.warehouseMaterialChecklist) return;
-  
-  const item = order.warehouseMaterialChecklist[itemIdx];
-  if (!item) return;
-  
-  // Przełącz zaznaczenie
-  item.checked = !item.checked;
-  item.checkedAt = new Date().toISOString();
-  item.checkedBy = window.getOrCreateWarehouseManager();
-  
-  save();
-  
-  // Odśwież modal
-  showOrderMaterialsPreparation(orderId);
-};
-
-// Przygotuj materiały - obciąż magazyn (tylko zaznaczone)
-function prepareOrderMaterials(orderId) {
-  const order = (window.state.orders || []).find(o => o.id === orderId);
-  if (!order) return;
-  
-  if (!order.warehouseMaterialChecklist) {
-    alert('Brak checklisty materiałów dla tego zlecenia');
-    return;
-  }
-  
-  // TYLKO ZAZNACZONE MATERIAŁY
-  const materials = order.warehouseMaterialChecklist.filter(m => m.checked !== false);
-  
-  if (materials.length === 0) {
-    alert('⚠️ Nie zaznaczono żadnych materiałów!');
-    return;
-  }
-  
-  const warehouseItems = window.warehouseItems || [];
-  window.warehouseReservations = window.warehouseReservations || [];
-  window.warehouseTasks = window.warehouseTasks || [];
-  
-  let reservedCount = 0;
-  let orderedCount = 0;
-  
-  materials.forEach(material => {
-    const whItem = warehouseItems.find(w => w.id === material.itemId);
-    const needed = material.quantity * (order.quantity || 1);
-    
-    if (!whItem) {
-      // Materiał nie istnieje - dodaj do magazynu z zerem
-      const newItem = {
-        id: material.itemId,
-        name: material.itemName,
-        unit: material.unit,
-        quantity: 0,
-        minStock: 0
-      };
-      warehouseItems.push(newItem);
-      window.warehouseItems = warehouseItems;
-    }
-    
-    const item = warehouseItems.find(w => w.id === material.itemId);
-    const inStock = item.quantity;
-    
-    // Utwórz rezerwację (nawet jeśli stan ujemny)
-    const reservation = {
-      id: `res-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      itemId: material.itemId,
-      itemName: material.itemName,
-      quantity: needed,
-      unit: material.unit,
-      orderId: order.id,
-      orderName: order.name,
-      status: 'active',
-      createdAt: new Date().toISOString(),
-      createdBy: 'System'
-    };
-    window.warehouseReservations.push(reservation);
-    reservedCount++;
-    
-    // Zmniejsz stan magazynowy (może być ujemny)
-    item.quantity -= needed;
-    
-    // Jeśli brak - utwórz zadanie zamówienia
-    if (inStock < needed) {
-      const shortage = needed - inStock;
-      const task = {
-        id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        type: 'order_material',
-        orderId: order.id,
-        orderName: order.name,
-        itemId: material.itemId,
-        itemName: material.itemName,
-        unit: material.unit,
-        quantityNeeded: needed,
-        quantityInStock: inStock,
-        quantityToOrder: shortage,
-        status: 'pending',
-        priority: 'urgent',
-        dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // +5 dni
-        createdAt: new Date().toISOString(),
-        createdBy: 'System',
-        assignedToId: window.getOrCreateWarehouseManager()
-      };
-      window.warehouseTasks.push(task);
-      orderedCount++;
-    }
-  });
-  
-  // Oznacz zlecenie jako przygotowane
-  order.materialsPrepared = true;
-  order.materialsPreparedAt = new Date().toISOString();
-  order.materialsPreparedBy = window.getOrCreateWarehouseManager();
-  
-  // Zapisz
-  save();
-  localStorage.setItem('warehouseReservations', JSON.stringify(window.warehouseReservations));
-  localStorage.setItem('warehouseTasks', JSON.stringify(window.warehouseTasks));
-  
-  // Odśwież widoki
-  renderWarehouseOrders();
-  renderWarehouse();
-  updateTasksBadge();
-  
-  alert(`✅ Magazyn obciążony!\n\n📦 Zarezerwowano: ${reservedCount} pozycji\n🛒 Utworzono zamówienia: ${orderedCount} pozycji\n\nSprawdź stany magazynowe w zakładce "Pozycje"`);
-}
-
-// Wydaj materiały na produkcję
-window.issueOrderMaterials = function(orderId) {
-  const order = (window.state.orders || []).find(o => o.id === orderId);
-  if (!order) {
-    alert('Nie znaleziono zlecenia');
-    return;
-  }
-  
-  if (!order.materialsPrepared) {
-    alert('⚠️ Materiały nie zostały jeszcze przygotowane!\n\nNajpierw obciąż magazyn.');
-    return;
-  }
-  
-  if (order.materialsIssued) {
-    alert('⚠️ Materiały dla tego zlecenia zostały już wydane!');
-    return;
-  }
-  
-  const confirmMsg = `Czy na pewno wydać materiały na produkcję dla zlecenia "${order.name}"?\n\nOperacja:\n- Utworzy dokument WZ\n- Oznacz zlecenie jako gotowe do produkcji\n- Zwolni rezerwacje`;
-  
-  if (!confirm(confirmMsg)) return;
-  
-  // Znajdź rezerwacje dla tego zlecenia
-  const reservations = (window.warehouseReservations || []).filter(r => r.orderId === orderId && r.status === 'active');
-  
-  // Zmień status rezerwacji na "used"
-  reservations.forEach(r => r.status = 'used');
-  
-  // Utwórz dokument WZ
-  const transaction = {
-    id: `wz-${Date.now()}`,
-    type: 'out',
-    documentNumber: `WZ/${new Date().getFullYear()}/${Date.now()}`,
-    date: new Date().toISOString(),
-    orderId: order.id,
-    orderName: order.name,
-    items: reservations.map(r => ({
-      itemId: r.itemId,
-      itemName: r.itemName,
-      quantity: r.quantity,
-      unit: r.unit
-    })),
-    notes: `Wydanie materiałów na produkcję - ${order.name}`,
-    createdBy: 'System'
-  };
-  
-  window.warehouseTransactions = window.warehouseTransactions || [];
-  window.warehouseTransactions.push(transaction);
-  
-  // Oznacz zlecenie jako wydane
-  order.materialsIssued = true;
-  order.materialsIssuedAt = new Date().toISOString();
-  order.materialsIssuedBy = window.getOrCreateWarehouseManager();
-  
-  // Zapisz
-  save();
-  localStorage.setItem('warehouseReservations', JSON.stringify(window.warehouseReservations));
-  localStorage.setItem('warehouseTransactions', JSON.stringify(window.warehouseTransactions));
-  
-  // Odśwież widoki
-  renderWarehouseOrders();
-  renderTransactions();
-  
-  alert(`✅ Materiały wydane na produkcję!\n\nDokument WZ: ${transaction.documentNumber}\nPozycji: ${reservations.length}\n\nZlecenie gotowe do rozpoczęcia produkcji.`);
-};
-
-// Drukuj/wyślij dokument WZ (DUŻA CZCIONKA DLA MAGAZYNIERKI)
-window.printIssuanceDocument = function(orderId) {
-  const order = (window.state.orders || []).find(o => o.id === orderId);
-  if (!order || !order.materialsIssued) {
-    alert('Nie znaleziono dokumentu wydania dla tego zlecenia');
-    return;
-  }
-  
-  // Znajdź transakcję WZ dla tego zlecenia
-  const transaction = (window.warehouseTransactions || []).find(t => t.orderId === orderId && t.type === 'out');
-  if (!transaction) {
-    alert('Nie znaleziono dokumentu WZ dla tego zlecenia');
-    return;
-  }
-  
-  // Znajdź rezerwacje/materiały
-  const materials = transaction.items || [];
-  
-  // Tworzenie dokumentu HTML do druku (DUŻA CZCIONKA)
-  const printWindow = window.open('', '_blank');
-  const doc = printWindow.document;
-  
-  const now = new Date().toLocaleString('pl-PL');
-  const issuedDate = new Date(order.materialsIssuedAt).toLocaleString('pl-PL');
-  const issuedBy = order.materialsIssuedBy || 'Magazynier';
-  
-  doc.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="UTF-8">
-      <title>Dokument WZ - ${transaction.documentNumber}</title>
-      <style>
-        @media print {
-          @page { margin: 2cm; }
-          body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-        }
-        body {
-          font-family: Arial, sans-serif;
-          padding: 40px;
-          line-height: 1.6;
-          background: white;
-          color: #000;
-        }
-        .header {
-          text-align: center;
-          margin-bottom: 40px;
-          border-bottom: 4px solid #000;
-          padding-bottom: 30px;
-        }
-        .header h1 {
-          font-size: 42px;
-          font-weight: 900;
-          margin: 0 0 15px 0;
-          letter-spacing: 2px;
-        }
-        .header .doc-number {
-          font-size: 32px;
-          font-weight: 700;
-          color: #2563eb;
-          margin: 10px 0;
-        }
-        .info-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 25px;
-          margin-bottom: 40px;
-          font-size: 20px;
-        }
-        .info-item {
-          padding: 20px;
-          background: #f3f4f6;
-          border-left: 6px solid #2563eb;
-          border-radius: 8px;
-        }
-        .info-label {
-          font-weight: 700;
-          font-size: 18px;
-          color: #374151;
-          margin-bottom: 8px;
-        }
-        .info-value {
-          font-size: 24px;
-          font-weight: 900;
-          color: #000;
-        }
-        .materials-table {
-          width: 100%;
-          border-collapse: collapse;
-          margin: 30px 0;
-          font-size: 20px;
-        }
-        .materials-table th {
-          background: #1f2937;
-          color: white;
-          padding: 20px;
-          text-align: left;
-          font-size: 22px;
-          font-weight: 800;
-          border: 2px solid #000;
-        }
-        .materials-table td {
-          padding: 18px 20px;
-          border: 2px solid #d1d5db;
-          font-size: 20px;
-          font-weight: 600;
-        }
-        .materials-table tbody tr:nth-child(even) {
-          background: #f9fafb;
-        }
-        .materials-table tbody tr:hover {
-          background: #e5e7eb;
-        }
-        .summary {
-          margin-top: 40px;
-          padding: 25px;
-          background: #dbeafe;
-          border: 3px solid #2563eb;
-          border-radius: 10px;
-          font-size: 22px;
-        }
-        .summary-label {
-          font-weight: 700;
-          font-size: 20px;
-        }
-        .summary-value {
-          font-weight: 900;
-          font-size: 26px;
-          color: #1e40af;
-        }
-        .signatures {
-          margin-top: 60px;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 60px;
-          font-size: 20px;
-        }
-        .signature-box {
-          border-top: 3px solid #000;
-          padding-top: 15px;
-          text-align: center;
-        }
-        .signature-label {
-          font-weight: 700;
-          font-size: 22px;
-          margin-top: 10px;
-        }
-        .footer {
-          margin-top: 60px;
-          text-align: center;
-          font-size: 18px;
-          color: #6b7280;
-          border-top: 2px solid #d1d5db;
-          padding-top: 25px;
-        }
-        .print-btn {
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          padding: 15px 30px;
-          font-size: 20px;
-          font-weight: 700;
-          background: #2563eb;
-          color: white;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .print-btn:hover {
-          background: #1d4ed8;
-        }
-        @media print {
-          .print-btn { display: none; }
-        }
-      </style>
-    </head>
-    <body>
-      <button class="print-btn" onclick="window.print()">🖨️ DRUKUJ</button>
-      
-      <div class="header">
-        <h1>📦 DOKUMENT WYDANIA MATERIAŁÓW</h1>
-        <div class="doc-number">WZ: ${transaction.documentNumber}</div>
-        <div style="font-size:20px;color:#6b7280;margin-top:15px">Wygenerowano: ${now}</div>
-      </div>
-      
-      <div class="info-grid">
-        <div class="info-item">
-          <div class="info-label">ZLECENIE PRODUKCYJNE</div>
-          <div class="info-value">${order.name}</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">DATA WYDANIA</div>
-          <div class="info-value">${issuedDate}</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">WYDAŁ</div>
-          <div class="info-value">${issuedBy}</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">START PRODUKCJI</div>
-          <div class="info-value">${order.START_DATE ? new Date(order.START_DATE).toLocaleDateString('pl-PL') : '-'}</div>
-        </div>
-      </div>
-      
-      <h2 style="font-size:28px;font-weight:800;margin:40px 0 20px 0;border-bottom:3px solid #000;padding-bottom:15px">
-        📋 LISTA WYDANYCH MATERIAŁÓW
-      </h2>
-      
-      <table class="materials-table">
-        <thead>
-          <tr>
-            <th style="width:60px">LP.</th>
-            <th>NAZWA MATERIAŁU</th>
-            <th style="width:180px;text-align:center">ILOŚĆ</th>
-            <th style="width:120px;text-align:center">JEDNOSTKA</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${materials.map((mat, idx) => `
-            <tr>
-              <td style="text-align:center;font-weight:800">${idx + 1}</td>
-              <td style="font-weight:700">${mat.itemName}</td>
-              <td style="text-align:center;font-weight:900;font-size:24px">${mat.quantity}</td>
-              <td style="text-align:center;font-weight:700">${mat.unit}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-      
-      <div class="summary">
-        <span class="summary-label">Łączna liczba pozycji:</span>
-        <span class="summary-value">${materials.length} pozycji</span>
-      </div>
-      
-      <div class="signatures">
-        <div class="signature-box">
-          <div style="height:80px"></div>
-          <div class="signature-label">Podpis wydającego<br>(Magazynier)</div>
-        </div>
-        <div class="signature-box">
-          <div style="height:80px"></div>
-          <div class="signature-label">Podpis odbierającego<br>(Produkcja)</div>
-        </div>
-      </div>
-      
-      <div class="footer">
-        Dokument wygenerowany automatycznie przez system planowania produkcji<br>
-        ${order.notes || ''}
-      </div>
-    </body>
-    </html>
-  `);
-  
-  doc.close();
-  
-  // Auto-print po załadowaniu
-  printWindow.onload = function() {
-    setTimeout(() => {
-      printWindow.focus();
-      printWindow.print();
-    }, 500);
-  };
-};
-
-// Monitoring wykonania zadań magazynowych + zleceń produkcyjnych
-window.renderWarehouseMonitoring = function() {
-  console.log('[renderWarehouseMonitoring] Function called');
-  
-  const container = document.getElementById('wh-monitoring-content');
-  if (!container) {
-    console.log('[renderWarehouseMonitoring] Container not found!');
-    return;
-  }
-  
-  const tasks = window.warehouseTasks || [];
-  const orders = (window.state && window.state.orders) || [];
-  const now = Date.now();
-  
-  // Pobierz ustawienia deadline z Settings
-  const mainMaterialsDays = (window.state && window.state.settings && window.state.settings.mainMaterialsDays) || 3;
-  const componentMaterialsDays = (window.state && window.state.settings && window.state.settings.componentMaterialsDays) || 1;
-  
-  // Grupuj zlecenia według statusu przygotowania materiałów
-  const ordersOverdue = [];   // Przeterminowane zlecenia (deadline < now && !materialsPrepared)
-  const ordersToday = [];     // Na dziś (deadline = dzisiaj && !materialsPrepared)
-  const ordersUpcoming = [];  // Nadchodzące (!materialsPrepared)
-  const ordersPrepared = [];  // Przygotowane (materialsPrepared && !materialsIssued)
-  const ordersIssued = [];    // Wydane (materialsIssued)
-  
-  orders.forEach(order => {
-    if (!order.START_DATE) return; // Pomijamy zlecenia bez daty startu
-    
-    const startDate = new Date(order.START_DATE);
-    const checklist = order.warehouseMaterialChecklist || [];
-    const hasMainMaterials = checklist.some(item => item.materialType === 'main' || !item.materialType);
-    const daysToSubtract = hasMainMaterials ? mainMaterialsDays : componentMaterialsDays;
-    
-    const deadline = new Date(startDate);
-    deadline.setDate(deadline.getDate() - daysToSubtract);
-    const deadlineDay = new Date(deadline).setHours(0, 0, 0, 0);
-    const todayDay = new Date(now).setHours(0, 0, 0, 0);
-    
-    if (order.materialsIssued) {
-      ordersIssued.push(order);
-    } else if (order.materialsPrepared) {
-      ordersPrepared.push(order);
-    } else {
-      // Nie przygotowane - grupuj po deadline
-      if (deadline.getTime() < now) {
-        ordersOverdue.push(order);
-      } else if (deadlineDay === todayDay) {
-        ordersToday.push(order);
-      } else {
-        ordersUpcoming.push(order);
-      }
-    }
-  });
-  
-  // Grupuj zadania według statusu i deadline
-  const overdue = [];  // Przeterminowane (deadline < now && !completed)
-  const today = [];    // Na dziś (deadline dzisiaj && !completed)
-  const upcoming = []; // Nadchodzące (deadline > dziś && !completed)
-  const completed = []; // Wykonane (completed)
-  
-  tasks.forEach(task => {
-    if (task.completed) {
-      completed.push(task);
-    } else {
-      const deadline = new Date(task.deadline);
-      const deadlineDay = new Date(deadline).setHours(0, 0, 0, 0);
-      const todayDay = new Date(now).setHours(0, 0, 0, 0);
-      
-      if (deadline.getTime() < now) {
-        overdue.push(task);
-      } else if (deadlineDay === todayDay) {
-        today.push(task);
-      } else {
-        upcoming.push(task);
-      }
-    }
-  });
-  
-  // Aktualizuj badge z liczbą przeterminowanych (zadania + zlecenia)
-  const badge = document.getElementById('monitoring-badge');
-  if (badge) {
-    const totalOverdue = overdue.length + ordersOverdue.length;
-    if (totalOverdue > 0) {
-      badge.textContent = totalOverdue;
-      badge.style.display = 'block';
-    } else {
-      badge.style.display = 'none';
-    }
-  }
-  
-  // Funkcja renderująca kartę zadania (ZWIĘKSZONE FONTY DLA MAGAZYNIERKI) - TEKST BIAŁY
-  function renderTaskCard(task, statusColor) {
-    const deadline = new Date(task.deadline);
-    const employee = window.state.employees.find(e => e.id === task.assignedToId);
-    const employeeName = employee ? employee.name : 'Nieprzypisany';
-    
-    // Completed info - tekst biały dla czytelności
-    const completedInfo = task.completed 
-      ? `<div style="font-size:16px;color:#ffffff;margin-top:6px;font-weight:600">✅ Wykonane: ${new Date(task.completedAt).toLocaleString('pl-PL')}</div>
-         <div style="font-size:15px;color:#ffffff;font-weight:500">przez: ${task.completedBy || employeeName}</div>`
-      : '';
-    
-    // Late info - zachowujemy czerwony akcent dla spóźnień
-    const lateInfo = task.completed && task.completedAt > task.deadline
-      ? `<div style="font-size:15px;color:#ff6b6b;margin-top:4px;font-weight:700">⚠️ Spóźnione o ${Math.round((task.completedAt - task.deadline) / (1000 * 60 * 60))}h</div>`
-      : task.completed
-      ? `<div style="font-size:15px;color:#a7f3d0;margin-top:4px;font-weight:600">✓ Na czas</div>`
-      : '';
-    
-    return `
-      <div class="card" style="border-left:6px solid ${statusColor};padding:20px;background:#091024;color:#ffffff;border-radius:10px">
-        <div style="display:flex;justify-content:space-between;align-items:start">
-          <div style="flex:1">
-            <div style="font-weight:700;font-size:20px;color:#ffffff;line-height:1.3">${task.description}</div>
-            <div style="font-size:16px;color:#e6eef8;margin-top:8px;font-weight:500">⏰ Termin: ${isNaN(deadline.getTime()) ? 'Brak daty' : deadline.toLocaleString('pl-PL')}</div>
-            <div style="font-size:16px;color:#e6eef8;margin-top:4px;font-weight:500">👤 Przypisany: ${employeeName}</div>
-            ${completedInfo}
-            ${lateInfo}
-          </div>
-          <div style="text-align:right">
-            <div style="font-weight:700;font-size:18px;color:${statusColor}">${task.type === 'order' ? '📦 Zamówienie' : '📋 Zadanie'}</div>
-            ${task.quantity ? `<div style="font-size:16px;color:#e6eef8;margin-top:6px;font-weight:600">${task.quantity} ${task.unit || 'szt'}</div>` : ''}
-          </div>
-        </div>
-      </div>`;
-  }
-  
-  // Funkcja renderująca kartę zlecenia produkcyjnego z materiałami (ZWIĘKSZONE FONTY)
-  function renderOrderCard(order, statusColor, statusLabel) {
-    const process = window.state.processes.find(p => p.id === order.processId);
-    const processName = process ? process.name : 'Nieznany proces';
-    const template = (window.warehouseTemplates || []).find(t => t.id === order.templateId);
-    
-    // Oblicz deadline na podstawie START_DATE i typu materiałów
-    const startDate = order.START_DATE ? new Date(order.START_DATE) : null;
-    let deadlineInfo = '';
-    
-    if (startDate) {
-      // Sprawdź czy są materiały główne vs podzespoły w checkliście
-      const checklist = order.warehouseMaterialChecklist || [];
-      const hasMainMaterials = checklist.some(item => item.materialType === 'main' || !item.materialType);
-      const hasComponents = checklist.some(item => item.materialType === 'component');
-      
-      // Użyj najwcześniejszego deadline (główne materiały mają priorytet)
-      const daysToSubtract = hasMainMaterials ? mainMaterialsDays : componentMaterialsDays;
-      const deadline = new Date(startDate);
-      deadline.setDate(deadline.getDate() - daysToSubtract);
-      
-      const daysUntil = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
-      const deadlineColor = daysUntil < 0 ? '#dc2626' : (daysUntil <= 1 ? '#f59e0b' : '#10b981');
-      deadlineInfo = `<div style="font-size:17px;color:${deadlineColor};margin-top:8px;font-weight:700">⏱️ Deadline: ${deadline.toLocaleDateString('pl-PL')} (${daysUntil > 0 ? `za ${daysUntil}d` : `${Math.abs(daysUntil)}d temu`})</div>`;
-    }
-    
-    const materialsInfo = order.warehouseMaterialChecklist 
-      ? `<div style="font-size:16px;color:#374151;margin-top:6px;font-weight:600">📋 Materiały: ${order.warehouseMaterialChecklist.filter(m => m.checked !== false).length} poz.</div>`
-      : '';
-    
-    const preparedInfo = order.materialsPrepared 
-      ? `<div style="font-size:16px;color:#3b82f6;margin-top:6px;font-weight:600">🔵 Obciążono magazyn: ${new Date(order.materialsPreparedAt || Date.now()).toLocaleDateString('pl-PL')}</div>`
-      : '';
-    
-    const issuedInfo = order.materialsIssued
-      ? `<div style="font-size:17px;color:#059669;margin-top:8px;font-weight:700">✅ Wydano na produkcję: ${new Date(order.materialsIssuedAt || Date.now()).toLocaleDateString('pl-PL')}</div>`
-      : '';
-    
-    // Przycisk drukowania (tylko dla wydanych)
-    const printBtn = order.materialsIssued
-      ? `<button class="btn green" onclick="printIssuanceDocument('${order.id}')" style="margin-top:12px;font-size:16px;padding:12px 20px;font-weight:600">🖨️ Drukuj dokument WZ</button>`
-      : '';
-    
-    return `
-      <div class="card" style="border-left:6px solid ${statusColor};padding:20px">
-        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
-          <div style="flex:1">
-            <div style="font-weight:700;font-size:22px;color:#0f172a;line-height:1.3">🏭 ${order.name}</div>
-            <div style="font-size:17px;color:#475569;margin-top:6px;font-weight:600">${processName}</div>
-            <div style="font-size:17px;color:#475569;margin-top:4px;font-weight:600">🚀 START produkcji: ${startDate ? startDate.toLocaleDateString('pl-PL') : 'Nie ustawiono'}</div>
-            ${deadlineInfo}
-            ${materialsInfo}
-            ${preparedInfo}
-            ${issuedInfo}
-            ${printBtn}
-          </div>
-          <div style="text-align:right">
-            <div style="font-weight:700;font-size:19px;color:${statusColor};padding:8px 16px;background:${statusColor}22;border-radius:8px">${statusLabel}</div>
-            ${template ? `<div style="font-size:15px;color:#64748b;margin-top:8px;font-weight:500">📝 ${template.name}</div>` : ''}
-          </div>
-        </div>
-      </div>`;
-  }
-  
-  // Buduj HTML
-  let html = '';
-  
-  // Sekcja: Przeterminowane (WIĘKSZE NAGŁÓWKI)
-  const totalOverdueCount = ordersOverdue.length + overdue.length;
-  if (totalOverdueCount > 0) {
-    html += `
-      <div style="margin-bottom:32px">
-        <div style="font-weight:800;font-size:24px;color:#dc2626;margin-bottom:16px;display:flex;align-items:center;gap:12px;padding:16px;background:#fee2e2;border-radius:12px;border-left:8px solid #dc2626">
-          🔴 PRZETERMINOWANE
-          <span style="background:#dc2626;color:white;padding:8px 16px;border-radius:16px;font-size:20px;font-weight:700">${totalOverdueCount}</span>
-        </div>
-        <div class="list" style="gap:12px">
-          ${ordersOverdue.map(o => renderOrderCard(o, '#dc2626', '🔴 Przeterminowane')).join('')}
-          ${overdue.map(t => renderTaskCard(t, '#dc2626')).join('')}
-        </div>
-      </div>`;
-  }
-  
-  // Sekcja: Na dziś (WIĘKSZE NAGŁÓWKI)
-  const totalTodayCount = ordersToday.length + today.length;
-  if (totalTodayCount > 0) {
-    html += `
-      <div style="margin-bottom:32px">
-        <div style="font-weight:800;font-size:24px;color:#f59e0b;margin-bottom:16px;display:flex;align-items:center;gap:12px;padding:16px;background:#fef3c7;border-radius:12px;border-left:8px solid #f59e0b">
-          🟡 NA DZIŚ
-          <span style="background:#f59e0b;color:white;padding:8px 16px;border-radius:16px;font-size:20px;font-weight:700">${totalTodayCount}</span>
-        </div>
-        <div class="list" style="gap:12px">
-          ${ordersToday.map(o => renderOrderCard(o, '#f59e0b', '🟡 Na dziś')).join('')}
-          ${today.map(t => renderTaskCard(t, '#f59e0b')).join('')}
-        </div>
-      </div>`;
-  }
-  
-  // Sekcja: Nadchodzące (WIĘKSZE NAGŁÓWKI)
-  const totalUpcomingCount = ordersUpcoming.length + upcoming.length;
-  if (totalUpcomingCount > 0) {
-    html += `
-      <div style="margin-bottom:32px">
-        <div style="font-weight:800;font-size:24px;color:#10b981;margin-bottom:16px;display:flex;align-items:center;gap:12px;padding:16px;background:#d1fae5;border-radius:12px;border-left:8px solid #10b981">
-          🟢 NADCHODZĄCE
-          <span style="background:#10b981;color:white;padding:8px 16px;border-radius:16px;font-size:20px;font-weight:700">${totalUpcomingCount}</span>
-        </div>
-        <div class="list" style="gap:12px">
-          ${ordersUpcoming.map(o => renderOrderCard(o, '#10b981', '🟢 Do przygotowania')).join('')}
-          ${upcoming.map(t => renderTaskCard(t, '#10b981')).join('')}
-        </div>
-      </div>`;
-  }
-  
-  // Sekcja: W trakcie przygotowania (WIĘKSZE NAGŁÓWKI)
-  if (ordersPrepared.length > 0) {
-    html += `
-      <div style="margin-bottom:32px">
-        <div style="font-weight:800;font-size:24px;color:#3b82f6;margin-bottom:16px;display:flex;align-items:center;gap:12px;padding:16px;background:#dbeafe;border-radius:12px;border-left:8px solid #3b82f6">
-          🔵 PRZYGOTOWANE - DO WYDANIA
-          <span style="background:#3b82f6;color:white;padding:8px 16px;border-radius:16px;font-size:20px;font-weight:700">${ordersPrepared.length}</span>
-        </div>
-        <div class="list" style="gap:12px">
-          ${ordersPrepared.map(o => renderOrderCard(o, '#3b82f6', '🔵 Do wydania')).join('')}
-        </div>
-      </div>`;
-  }
-  
-  // Sekcja: Wykonane (WIĘKSZE NAGŁÓWKI)
-  const totalCompletedCount = ordersIssued.length + completed.length;
-  if (totalCompletedCount > 0) {
-    const onTime = completed.filter(t => t.completedAt <= t.deadline).length;
-    const late = completed.filter(t => t.completedAt > t.deadline).length;
-    
-    html += `
-      <div style="margin-bottom:32px">
-        <div style="font-weight:800;font-size:24px;color:#059669;margin-bottom:16px;display:flex;align-items:center;gap:12px;padding:16px;background:#d1fae5;border-radius:12px;border-left:8px solid #059669">
-          ✅ WYKONANE
-          <span style="background:#059669;color:white;padding:8px 16px;border-radius:16px;font-size:20px;font-weight:700">${totalCompletedCount}</span>
-          ${completed.length > 0 ? `<span style="font-size:17px;color:#374151;font-weight:600">
-            (Zadania na czas: ${onTime}, Spóźnione: ${late})
-          </span>` : ''}
-        </div>
-        <div class="list" style="gap:12px">
-          ${ordersIssued.map(o => renderOrderCard(o, '#059669', '✅ Wydano na produkcję')).join('')}
-          ${completed.map(t => renderTaskCard(t, '#059669')).join('')}
-        </div>
-      </div>`;
-  }
-  
-  // Jeśli brak zadań i zleceń (DUŻA CZCIONKA)
-  if (tasks.length === 0 && orders.length === 0) {
-    html = `
-      <div class="card" style="text-align:center;padding:60px;background:#f8fafc">
-        <div style="font-size:80px;margin-bottom:20px">📊</div>
-        <div style="font-size:28px;font-weight:700;color:#334155">Brak zadań magazynowych i zleceń</div>
-        <div style="font-size:20px;margin-top:16px;color:#64748b;font-weight:500">Zadania i zlecenia pojawią się tutaj gdy zostaną utworzone</div>
-      </div>`;
-  }
-  
-  container.innerHTML = html;
-  console.log(`[renderWarehouseMonitoring] Rendered: Orders(${ordersOverdue.length}+${ordersToday.length}+${ordersUpcoming.length}+${ordersPrepared.length}+${ordersIssued.length}), Tasks(${overdue.length}+${today.length}+${upcoming.length}+${completed.length})`);
 };
 
 // Renderuj zadania magazyniera - NOWA WERSJA z grupowaniem po zleceniach
 window.renderWarehouseTasks = function() {
-  console.log('[renderWarehouseTasks] Function called');
-  
   const list = document.getElementById('wh-tasks-list');
-  if (!list) {
-    console.log('[renderWarehouseTasks] List element not found!');
-    return;
-  }
+  if (!list) return;
   
   // Zapamiętaj otwarte szczegóły
   const openDetails = [];
@@ -11223,63 +9498,17 @@ window.renderWarehouseTasks = function() {
     }
   });
   
-  // Wypełnij dropdown pracowników
-  if (typeof window.populateWarehouseEmployeeFilter === 'function') {
-    window.populateWarehouseEmployeeFilter();
-  }
-  
   const tasks = window.warehouseTasks || [];
-  console.log('[renderWarehouseTasks] Total tasks:', tasks.length);
+  const activeTasks = tasks.filter(t => t.status !== 'cancelled');
   
-  let filteredTasks = tasks.filter(t => t.status !== 'cancelled');
-  console.log('[renderWarehouseTasks] Active tasks (not cancelled):', filteredTasks.length);
-  
-  // Zastosuj filtry
-  const filter = window._warehouseTasksFilter || { status: 'all', employeeId: null };
-  console.log('[renderWarehouseTasks] Filter:', filter);
-  
-  // Filtruj według statusu
-  if (filter.status === 'pending') {
-    filteredTasks = filteredTasks.filter(t => t.status === 'pending');
-  } else if (filter.status === 'urgent') {
-    filteredTasks = filteredTasks.filter(t => {
-      const isUrgent = new Date(t.dueDate) < new Date();
-      return isUrgent && t.status !== 'completed';
-    });
-  } else if (filter.status === 'completed') {
-    filteredTasks = filteredTasks.filter(t => t.status === 'completed');
-  }
-  
-  // Filtruj według pracownika
-  if (filter.employeeId) {
-    console.log('[renderWarehouseTasks] Filtering by employee:', filter.employeeId);
-    console.log('[renderWarehouseTasks] Tasks before employee filter:', filteredTasks.length);
-    
-    // Debuguj: pokaż ID pracowników w zadaniach
-    filteredTasks.forEach((t, idx) => {
-      console.log(`  Task ${idx}: assignedToId="${t.assignedToId}", itemName="${t.itemName}"`);
-    });
-    
-    if (filter.employeeId === '_unassigned') {
-      filteredTasks = filteredTasks.filter(t => !t.assignedToId);
-    } else {
-      filteredTasks = filteredTasks.filter(t => t.assignedToId === filter.employeeId);
-    }
-    
-    console.log('[renderWarehouseTasks] Tasks after employee filter:', filteredTasks.length);
-  }
-  
-  console.log('[renderWarehouseTasks] Filtered tasks after all filters:', filteredTasks.length);
-  
-  if (filteredTasks.length === 0) {
-    console.log('[renderWarehouseTasks] No tasks to display');
-    list.innerHTML = '<div style="text-align:center;padding:40px;color:#999">Brak zadań dla magazyniera spełniających kryteria filtrowania</div>';
+  if (activeTasks.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:#999">Brak zadań dla magazyniera</div>';
     return;
   }
   
   // Grupuj zadania po zleceniach
   const grouped = {};
-  filteredTasks.forEach(task => {
+  activeTasks.forEach(task => {
     if (!grouped[task.orderId]) {
       grouped[task.orderId] = {
         orderId: task.orderId,
@@ -11388,13 +9617,6 @@ window.renderWarehouseTasks = function() {
         taskDescription = `Ilość: ${task.quantity} ${task.unit || 'szt.'}`;
       }
       
-      // Znajdź przypisanego pracownika
-      const assignedEmployee = task.assignedToId 
-        ? (state.employees || []).find(e => e.id === task.assignedToId)
-        : null;
-      const assignedName = assignedEmployee ? assignedEmployee.name : 'Nieprzypisane';
-      const assignedColor = assignedEmployee ? '#3b82f6' : '#9ca3af';
-      
       return `
         <div style="background:#f9fafb;border-left:3px solid ${borderColor};padding:12px;margin-bottom:8px;border-radius:4px">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
@@ -11407,12 +9629,6 @@ window.renderWarehouseTasks = function() {
               </div>
               <div style="font-size:12px;color:#9ca3af;margin-top:6px">
                 📅 Termin: ${dueDate}
-              </div>
-              <div style="font-size:12px;margin-top:6px;display:flex;align-items:center;gap:6px">
-                <span style="color:${assignedColor};font-weight:600">👤 ${assignedName}</span>
-                <button class="btn small" onclick="assignWarehouseTask('${task.id}')" style="font-size:11px;padding:2px 8px">
-                  🔄 Zmień
-                </button>
               </div>
             </div>
             <div style="display:flex;flex-direction:column;gap:6px;min-width:120px">
@@ -11558,107 +9774,10 @@ window.cancelWarehouseTask = function(taskId) {
   }
 };
 
-// Przypisz pracownika do zadania magazynowego
-window.assignWarehouseTask = function(taskId) {
-  const task = window.warehouseTasks.find(t => t.id === taskId);
-  if (!task) return;
-  
-  const employees = state.employees || [];
-  if (employees.length === 0) {
-    alert('⚠️ Brak pracowników w systemie. Dodaj pracowników w zakładce "Pracownicy".');
-    return;
-  }
-  
-  // Przygotuj listę pracowników
-  const employeeList = employees
-    .map((emp, idx) => `${idx + 1}. ${emp.name}`)
-    .join('\n');
-  
-  const currentAssigned = task.assignedToId 
-    ? employees.find(e => e.id === task.assignedToId)?.name || 'Nieprzypisane'
-    : 'Nieprzypisane';
-  
-  const selectedNum = prompt(
-    `Przypisz pracownika do zadania:\n"${task.itemName || 'Zadanie'}"\n\n` +
-    `Aktualnie przypisany: ${currentAssigned}\n\n` +
-    `Wybierz numer pracownika:\n${employeeList}\n\n` +
-    `Lub wpisz 0, aby odznaczyć przypisanie.`
-  );
-  
-  if (selectedNum === null) return; // Anulowano
-  
-  const num = parseInt(selectedNum);
-  
-  if (num === 0) {
-    // Usuń przypisanie
-    task.assignedToId = null;
-    localStorage.setItem('warehouseTasks', JSON.stringify(window.warehouseTasks));
-    alert('✓ Usunięto przypisanie pracownika');
-    window._keepDetailsOpen = true;
-    renderWarehouseTasks();
-  } else if (num >= 1 && num <= employees.length) {
-    // Przypisz pracownika
-    const selectedEmployee = employees[num - 1];
-    task.assignedToId = selectedEmployee.id;
-    localStorage.setItem('warehouseTasks', JSON.stringify(window.warehouseTasks));
-    alert(`✓ Przypisano zadanie do: ${selectedEmployee.name}`);
-    window._keepDetailsOpen = true;
-    renderWarehouseTasks();
-  } else {
-    alert('⚠️ Nieprawidłowy numer pracownika');
-  }
-};
-
-// Zapisz aktualny filtr
-if (!window._warehouseTasksFilter) {
-  window._warehouseTasksFilter = {
-    status: 'all',
-    employeeId: null
-  };
-}
-
-// Filtruj zadania według statusu
+// Filtruj zadania
 window.filterWarehouseTasks = function(filter) {
-  window._warehouseTasksFilter.status = filter;
+  // TODO: implementacja filtrowania
   renderWarehouseTasks();
-};
-
-// Filtruj zadania według pracownika
-window.filterWarehouseTasksByEmployee = function() {
-  const select = document.getElementById('wh-employee-filter');
-  window._warehouseTasksFilter.employeeId = select.value || null;
-  renderWarehouseTasks();
-};
-
-// Wypełnij dropdown pracowników
-window.populateWarehouseEmployeeFilter = function() {
-  const select = document.getElementById('wh-employee-filter');
-  if (!select) return;
-  
-  const employees = state.employees || [];
-  const currentValue = select.value;
-  
-  select.innerHTML = '<option value="">👤 Wszyscy pracownicy</option>';
-  
-  // Dodaj opcję "Nieprzypisane"
-  const unassignedOption = document.createElement('option');
-  unassignedOption.value = '_unassigned';
-  unassignedOption.textContent = '⚠️ Nieprzypisane';
-  select.appendChild(unassignedOption);
-  
-  // Dodaj pracowników
-  employees.forEach(emp => {
-    const option = document.createElement('option');
-    option.value = emp.id;
-    option.textContent = emp.name;
-    console.log('[populateWarehouseEmployeeFilter] Adding employee:', emp.name, 'ID:', emp.id, 'role:', emp.role);
-    select.appendChild(option);
-  });
-  
-  // Przywróć wartość
-  if (currentValue) {
-    select.value = currentValue;
-  }
 };
 
 function useReservation(resId) {
@@ -11736,10 +9855,6 @@ function showTemplateModal(templateId = null) {
           ).join('')}
         </select>
         <input type="number" class="template-mat-qty" value="${mat.quantity}" min="0.01" step="0.01" placeholder="Ilość" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:4px">
-        <select class="template-mat-type" style="padding:8px;border:1px solid #ccc;border-radius:4px;min-width:130px">
-          <option value="main" ${(mat.materialType === 'main' || !mat.materialType) ? 'selected' : ''}>📦 Główny</option>
-          <option value="component" ${mat.materialType === 'component' ? 'selected' : ''}>🔩 Podzespół</option>
-        </select>
         <button class="btn red small" onclick="removeTemplateMaterial(${idx})">✕</button>
       </div>
     `;
@@ -11777,10 +9892,8 @@ function showTemplateModal(templateId = null) {
         document.querySelectorAll('#template-materials-list > div[data-mat-idx]').forEach(row => {
           const select = row.querySelector('.template-mat-select');
           const qtyInput = row.querySelector('.template-mat-qty');
-          const typeSelect = row.querySelector('.template-mat-type');
           const itemIdx = parseInt(select.value);
           const quantity = parseFloat(qtyInput.value);
-          const materialType = typeSelect ? typeSelect.value : 'main'; // Domyślnie główny
           
           if (!isNaN(itemIdx) && !isNaN(quantity) && quantity > 0) {
             const item = window.warehouseItems[itemIdx];
@@ -11788,8 +9901,7 @@ function showTemplateModal(templateId = null) {
               itemId: item.id,  // ✅ Używamy prawdziwego ID z magazynu, nie indeksu!
               itemName: item.name,
               quantity: quantity,
-              unit: item.unit,
-              materialType: materialType  // 'main' lub 'component'
+              unit: item.unit
             });
           }
         });
@@ -11845,10 +9957,6 @@ function addTemplateMaterial() {
       ).join('')}
     </select>
     <input type="number" class="template-mat-qty" value="1" min="0.01" step="0.01" placeholder="Ilość" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:4px">
-    <select class="template-mat-type" style="padding:8px;border:1px solid #ccc;border-radius:4px;min-width:130px">
-      <option value="main" selected>📦 Główny</option>
-      <option value="component">🔩 Podzespół</option>
-    </select>
     <button class="btn red small" onclick="this.parentElement.remove()">✕</button>
   `;
   list.appendChild(newRow);
@@ -13507,320 +11615,119 @@ if (document.readyState === 'loading') {
 }
 
 // Funkcje synchronizacji z aplikacją pracowników
-// ============================================
-// FIREBASE REAL-TIME SYNCHRONIZATION MODULE
-// ============================================
-
-// Globalne zmienne dla real-time sync
-let realtimeSyncEnabled = false;
-let firebaseListeners = [];
-let syncStats = {
-  uploaded: 0,
-  downloaded: 0,
-  pending: 0
-};
-
-// Funkcja: Włącz synchronizację real-time
-function startRealtimeSync() {
-  // Sprawdź czy Firebase jest w pełni zainicjalizowany
-  if (!window.db || !window.firebaseLoaded) {
-    // Jeśli tryb Firebase aktywny, czekamy na inicjalizację
-    if (window.currentMode === 'firebase') {
-      addSyncLog('⏳ Oczekiwanie na połączenie Firebase...', 'info');
-      
-      // Spróbuj ponownie po 2 sekundach
-      setTimeout(() => {
-        if (window.db && window.firebaseLoaded) {
-          addSyncLog('✅ Firebase gotowy - uruchamiam sync', 'success');
-          startRealtimeSync();
-        } else {
-          alert('❌ Firebase nie jest połączony\n\nPrzełącz tryb na Firebase w ustawieniach.');
-        }
-      }, 2000);
-      return;
-    } else {
-      alert('❌ Firebase nie jest połączony\n\nPrzełącz tryb na Firebase w ustawieniach.');
-      return;
+function exportTasksForWorkers() {
+  // Przykładowe zadania - w rzeczywistości należy zebrać z systemu MRP
+  const sampleTasks = [
+    {
+      id: 1,
+      title: "Cięcie drzwi #1234",
+      model: "DREWNO-001",
+      quantity: 5,
+      unit: "szt",
+      deadline: "14:00",
+      status: "pending",
+      estimatedTime: 120,
+      priority: "high",
+      assignedTo: "Jan Kowalski"
+    },
+    {
+      id: 2,
+      title: "Montaż okuć #1235",
+      model: "DREWNO-002",
+      quantity: 3,
+      unit: "szt",
+      deadline: "16:00",
+      status: "pending",
+      estimatedTime: 90,
+      priority: "medium",
+      assignedTo: "Anna Nowak"
+    },
+    {
+      id: 3,
+      title: "Lakierowanie #1236",
+      model: "DREWNO-003",
+      quantity: 8,
+      unit: "szt",
+      deadline: "12:00",
+      status: "pending",
+      estimatedTime: 180,
+      priority: "high",
+      assignedTo: "Piotr Wiśniewski"
     }
-  }
+  ];
 
-  if (realtimeSyncEnabled) {
-    alert('ℹ️ Synchronizacja real-time jest już włączona');
-    return;
-  }
-
-  realtimeSyncEnabled = true;
-  addSyncLog('🚀 Włączanie synchronizacji real-time...', 'info');
-
-  try {
-    // Listener dla zadań (tasks)
-    const tasksListener = window.db.collection('tasks')
-      .onSnapshot((snapshot) => {
-        let changes = 0;
-        snapshot.docChanges().forEach((change) => {
-          if (change.type === 'added') {
-            addTaskFromFirebase(change.doc.data());
-            changes++;
-            addSyncLog(`📥 Nowe zadanie: ${change.doc.data().name || change.doc.id}`, 'success');
-          }
-          if (change.type === 'modified') {
-            updateTaskFromFirebase(change.doc.data());
-            changes++;
-            addSyncLog(`🔄 Zaktualizowano: ${change.doc.data().name || change.doc.id}`, 'info');
-          }
-          if (change.type === 'removed') {
-            removeTaskFromFirebase(change.doc.id);
-            changes++;
-            addSyncLog(`🗑️ Usunięto zadanie: ${change.doc.id}`, 'warning');
-          }
-        });
-        
-        if (changes > 0) {
-          syncStats.downloaded += changes;
-          updateSyncStats();
-          updateLastSyncTime();
-        }
-      }, (error) => {
-        addSyncLog(`❌ Błąd listenera zadań: ${error.message}`, 'error');
-        console.error('Tasks listener error:', error);
-      });
-
-    firebaseListeners.push(tasksListener);
-
-    // Listener dla pracowników (employees)
-    const employeesListener = window.db.collection('employees')
-      .onSnapshot((snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-          if (change.type === 'added' || change.type === 'modified') {
-            addSyncLog(`👥 Zaktualizowano pracownika: ${change.doc.data().name}`, 'info');
-          }
-        });
-        updateLastSyncTime();
-      });
-
-    firebaseListeners.push(employeesListener);
-
-    // Listener dla zamówień (orders)
-    const ordersListener = window.db.collection('orders')
-      .onSnapshot((snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-          if (change.type === 'added' || change.type === 'modified') {
-            addSyncLog(`📦 Zaktualizowano zamówienie: ${change.doc.data().client || change.doc.id}`, 'info');
-          }
-        });
-        updateLastSyncTime();
-      });
-
-    firebaseListeners.push(ordersListener);
-
-    // Aktualizacja UI
-    document.getElementById('sync-indicator').textContent = '🟢';
-    document.getElementById('sync-text').textContent = 'Połączono - Auto-sync aktywny';
-    document.getElementById('btn-start-sync').disabled = true;
-    document.getElementById('btn-stop-sync').disabled = false;
-    
-    addSyncLog('✅ Synchronizacja real-time włączona pomyślnie', 'success');
-    
-    // Pierwsza pełna synchronizacja
-    forceSyncNow();
-
-  } catch (error) {
-    addSyncLog(`❌ Błąd podczas włączania sync: ${error.message}`, 'error');
-    console.error('Start sync error:', error);
-    realtimeSyncEnabled = false;
-  }
-}
-
-// Funkcja: Wyłącz synchronizację real-time
-function stopRealtimeSync() {
-  if (!realtimeSyncEnabled) {
-    alert('ℹ️ Synchronizacja real-time nie jest włączona');
-    return;
-  }
-
-  realtimeSyncEnabled = false;
-  
-  // Zatrzymanie wszystkich listenerów
-  firebaseListeners.forEach(unsubscribe => {
-    try {
-      unsubscribe();
-    } catch (e) {
-      console.error('Error unsubscribing:', e);
-    }
-  });
-  firebaseListeners = [];
-  
-  // Aktualizacja UI
-  document.getElementById('sync-indicator').textContent = '🟡';
-  document.getElementById('sync-text').textContent = 'Wstrzymano';
-  document.getElementById('btn-start-sync').disabled = false;
-  document.getElementById('btn-stop-sync').disabled = true;
-  
-  addSyncLog('⏸️ Synchronizacja real-time wstrzymana', 'warning');
-}
-
-// Funkcja: Wymuś synchronizację teraz
-function forceSyncNow() {
-  if (!window.db) {
-    alert('❌ Firebase nie jest połączony');
-    return;
-  }
-
-  addSyncLog('🔄 Wymuszanie pełnej synchronizacji...', 'info');
-  
-  const promises = [];
-  
-  // Synchronizacja zadań
-  if (window.tasks && window.tasks.length > 0) {
-    promises.push(
-      saveTasksToFirebase().then(() => {
-        syncStats.uploaded += window.tasks.length;
-        addSyncLog(`📤 Wysłano ${window.tasks.length} zadań`, 'success');
-      })
-    );
-  }
-  
-  // Synchronizacja pracowników
-  if (window.employees && window.employees.length > 0) {
-    promises.push(
-      saveEmployeesToFirebase().then(() => {
-        addSyncLog(`📤 Wysłano ${window.employees.length} pracowników`, 'success');
-      })
-    );
-  }
-  
-  // Synchronizacja zamówień
-  if (window.orders && window.orders.length > 0) {
-    promises.push(
-      saveOrdersToFirebase().then(() => {
-        addSyncLog(`📤 Wysłano ${window.orders.length} zamówień`, 'success');
-      })
-    );
-  }
-
-  Promise.all(promises)
-    .then(() => {
-      updateSyncStats();
-      updateLastSyncTime();
-      addSyncLog('✅ Pełna synchronizacja zakończona pomyślnie', 'success');
-    })
-    .catch(error => {
-      addSyncLog(`❌ Błąd synchronizacji: ${error.message}`, 'error');
-      console.error('Force sync error:', error);
-    });
-}
-
-// Funkcja: Dodaj zadanie z Firebase
-function addTaskFromFirebase(taskData) {
-  if (!window.tasks) window.tasks = [];
-  
-  const exists = window.tasks.find(t => t.id === taskData.id);
-  if (!exists) {
-    window.tasks.push(taskData);
-    save();
-    if (typeof renderTasks === 'function') {
-      renderTasks();
-    }
-  }
-}
-
-// Funkcja: Zaktualizuj zadanie z Firebase
-function updateTaskFromFirebase(taskData) {
-  if (!window.tasks) window.tasks = [];
-  
-  const index = window.tasks.findIndex(t => t.id === taskData.id);
-  if (index !== -1) {
-    window.tasks[index] = { ...window.tasks[index], ...taskData };
-    save();
-    if (typeof renderTasks === 'function') {
-      renderTasks();
-    }
-  }
-}
-
-// Funkcja: Usuń zadanie z Firebase
-function removeTaskFromFirebase(taskId) {
-  if (!window.tasks) return;
-  
-  window.tasks = window.tasks.filter(t => t.id !== taskId);
-  save();
-  if (typeof renderTasks === 'function') {
-    renderTasks();
-  }
-}
-
-// Funkcja: Aktualizuj statystyki synchronizacji
-function updateSyncStats() {
-  document.getElementById('sync-uploaded').textContent = syncStats.uploaded;
-  document.getElementById('sync-downloaded').textContent = syncStats.downloaded;
-  document.getElementById('sync-pending').textContent = syncStats.pending;
-}
-
-// Funkcja: Aktualizuj czas ostatniej synchronizacji
-function updateLastSyncTime() {
-  const now = new Date().toLocaleString('pl-PL', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  });
-  document.getElementById('last-sync-time').textContent = now;
-}
-
-// Funkcja: Dodaj log synchronizacji
-function addSyncLog(message, type = 'info') {
-  const logsContainer = document.getElementById('sync-logs');
-  if (!logsContainer) return;
-  
-  const timestamp = new Date().toLocaleTimeString('pl-PL');
-  const colors = {
-    info: '#3b82f6',
-    success: '#10b981',
-    warning: '#f59e0b',
-    error: '#ef4444'
+  const exportData = {
+    exportDate: new Date().toISOString(),
+    tasks: sampleTasks,
+    version: "1.0",
+    system: "Doors Planner Admin"
   };
-  
-  const logEntry = document.createElement('div');
-  logEntry.style.color = colors[type] || colors.info;
-  logEntry.style.marginBottom = '4px';
-  logEntry.textContent = `[${timestamp}] ${message}`;
-  
-  // Dodaj na początku
-  if (logsContainer.firstChild && logsContainer.firstChild.textContent === 'Brak zdarzeń...') {
-    logsContainer.innerHTML = '';
-  }
-  
-  logsContainer.insertBefore(logEntry, logsContainer.firstChild);
-  
-  // Ogranicz do 50 wpisów
-  while (logsContainer.children.length > 50) {
-    logsContainer.removeChild(logsContainer.lastChild);
-  }
+
+  const jsonContent = JSON.stringify(exportData, null, 2);
+  const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'tasks-export.json');
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  alert('📤 Plik tasks-export.json został pobrany.\n\nPrzenieś go na urządzenie pracownika i zaimportuj w aplikacji Worker App.');
 }
 
-// Hook: Auto-sync przy każdym zapisie
-const originalSave = window.save;
-if (originalSave && typeof originalSave === 'function') {
-  window.save = function(...args) {
-    // Wywołaj oryginalny save
-    const result = originalSave.apply(this, args);
-    
-    // Jeśli real-time sync włączony i Firebase aktywny
-    if (realtimeSyncEnabled && window.currentMode === 'firebase' && window.db) {
-      // Synchronizuj w tle (nie blokuj UI)
-      setTimeout(() => {
-        if (typeof saveTasksToFirebase === 'function') {
-          saveTasksToFirebase().catch(err => {
-            console.error('Auto-sync error:', err);
+function importWorkerConfirmations() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+
+  input.onchange = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = JSON.parse(e.target.result);
+
+        if (data.confirmations && Array.isArray(data.confirmations)) {
+          let importedCount = 0;
+          let completedCount = 0;
+
+          data.confirmations.forEach(confirmation => {
+            console.log('Import potwierdzenia:', confirmation);
+            importedCount++;
+
+            if (confirmation.status === 'completed') {
+              completedCount++;
+            }
+
+            // Tutaj należy zaktualizować zadania w głównym systemie
+            // Na razie tylko logujemy
           });
+
+          alert(`✅ Zaimportowano ${importedCount} potwierdzeń zadań\n` +
+                `📊 Ukończonych zadań: ${completedCount}\n\n` +
+                `Szczegóły w konsoli przeglądarki.`);
+
+        } else if (data.tasks && Array.isArray(data.tasks)) {
+          // To może być plik eksportu zadań zamiast potwierdzeń
+          alert('To wygląda na plik eksportu zadań, a nie potwierdzeń.\n\n' +
+                'Użyj funkcji "Importuj zadania" w aplikacji Worker App.');
+        } else {
+          alert('❌ Nieprawidłowy format pliku.\n\n' +
+                'Oczekiwany format: {"confirmations": [...]}');
         }
-      }, 100);
-    }
-    
-    return result;
+      } catch (error) {
+        alert('❌ Błąd podczas parsowania pliku:\n' + error.message);
+      }
+    };
+
+    reader.readAsText(file);
   };
+
+  input.click();
 }
 
 function exportWarehouseToCSV() {
@@ -13895,9 +11802,8 @@ function renderWarehouse() {
       </thead>
       <tbody>
         ${filteredItems.map((item, index) => {
-          const isNegative = item.quantity < 0;
-          const isLowStock = !isNegative && item.minStock && item.quantity <= item.minStock;
-          const rowStyle = isNegative ? 'background:#7f1d1d' : (isLowStock ? 'background:#c0392b' : (index % 2 === 0 ? 'background:#34495e' : 'background:#2c3e50'));
+          const isLowStock = item.minStock && item.quantity <= item.minStock;
+          const rowStyle = isLowStock ? 'background:#c0392b' : (index % 2 === 0 ? 'background:#34495e' : 'background:#2c3e50');
           
           // Lokalizacja
           let locationStr = '-';
@@ -13909,19 +11815,15 @@ function renderWarehouse() {
             locationStr = parts.join(' • ');
           }
           
-          const quantityColor = isNegative ? '#fca5a5' : (isLowStock ? '#ffeb3b' : '#ffffff');
-          const statusLabel = isNegative ? '<div style="font-size:12px;color:#fca5a5 !important;font-weight:700;margin-top:2px">🔴 STAN UJEMNY - ZAMÓW</div>' : 
-                             (isLowStock ? '<div style="font-size:12px;color:#ffeb3b !important;font-weight:700;margin-top:2px">⚠️ DO ZAMÓWIENIA</div>' : '');
-          
           return `
             <tr style="${rowStyle};border-bottom:1px solid #1a252f">
               <td style="padding:12px">
                 <div style="font-weight:600;font-size:15px;color:#ffffff !important">${item.name}</div>
-                ${statusLabel}
+                ${isLowStock ? '<div style="font-size:12px;color:#ffeb3b !important;font-weight:700;margin-top:2px">⚠️ DO ZAMÓWIENIA</div>' : ''}
               </td>
-              <td style="padding:12px;text-align:center;font-weight:700;font-size:15px;color:${quantityColor} !important">${item.quantity}</td>
+              <td style="padding:12px;text-align:center;font-weight:700;font-size:15px;color:${isLowStock ? '#ffeb3b' : '#ffffff'} !important">${item.quantity}</td>
               <td style="padding:12px;text-align:center;font-size:14px;color:#ffffff !important">${item.unit}</td>
-              <td style="padding:12px;text-align:right;font-weight:600;font-size:14px;color:#ffffff !important">${item.unitPrice ? item.unitPrice.toFixed(2) : '-'}</td>
+              <td style="padding:12px;text-align:right;font-weight:600;font-size:14px;color:#ffffff !important">${item.price.toFixed(2)}</td>
               <td style="padding:12px;text-align:center;font-size:14px;color:#ffffff !important">${item.minStock || '-'}</td>
               <td style="padding:12px;font-size:14px;color:#ffffff !important">${locationStr}</td>
               <td style="padding:12px;text-align:center">
@@ -13954,14 +11856,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (searchInput) {
     searchInput.addEventListener('input', renderWarehouse);
   }
-  
-  // Renderuj magazyn jeśli sekcja magazynu jest aktywna
-  setTimeout(() => {
-    const warehouseSection = document.getElementById('p-wh');
-    if (warehouseSection && !warehouseSection.classList.contains('hidden')) {
-      renderWarehouse();
-    }
-  }, 100);
 });
 
 // Automatyczne renderowanie przy wejściu do zakładki
@@ -14117,7 +12011,7 @@ if (document.readyState === 'loading') {
 // ============================================
 window._taskGroupsCollapsed = window._taskGroupsCollapsed || {};
 
-window.renderTasksGrouped = function(tasks, groupBy) {
+function renderTasksGrouped(tasks, groupBy) {
   const list = qs('#tasks-list');
   if (!list) return;
   
@@ -14143,7 +12037,7 @@ window.renderTasksGrouped = function(tasks, groupBy) {
         break;
       }
       case 'assignee': {
-        const empId = t.assignee || (Array.isArray(t.assignees) ? t.assignees[0] : null) || t.employeeId || 'none';
+        const empId = t.assignee || (Array.isArray(t.assignees) ? t.assignees[0] : null) || 'none';
         const employee = (state.employees || []).find(e => e.id === (empId && empId.id ? empId.id : empId));
         const resolvedId = employee ? employee.id : (empId && empId.id ? empId.id : empId);
         groupKey = `assignee:${resolvedId || 'none'}`;
@@ -14188,11 +12082,7 @@ window.renderTasksGrouped = function(tasks, groupBy) {
     groupHeader.addEventListener('click', (e) => {
       e.stopPropagation();
       window._taskGroupsCollapsed[groupId] = !window._taskGroupsCollapsed[groupId];
-      // Re-render z zachowaniem stanu grupowania
-      const fOrd = qs('#tasks-filter-order')?.value || ''; 
-      const fSt = qs('#tasks-filter-status')?.value || '';
-      const filteredTasks = (state.tasks || []).filter(t => (!fOrd || t.orderId === fOrd) && (!fSt || (t.status || '') === fSt));
-      window.renderTasksGrouped(filteredTasks, groupBy);
+      renderTasks(); // Re-render z zachowaniem stanu
     });
     
     list.appendChild(groupHeader);
@@ -14205,7 +12095,7 @@ window.renderTasksGrouped = function(tasks, groupBy) {
       });
     }
   });
-};
+}
 
 function createTaskCard(t) {
   const d = document.createElement('div');
@@ -14213,21 +12103,6 @@ function createTaskCard(t) {
   d.style.marginLeft = '20px';
   
   const syncBadge = (tt)=>{ try{ if(tt._syncPending) return `<span class="task-sync-status pending" title="Czekaj na synchronizację">⏳</span>`; if(tt._syncError) return `<span class="task-sync-status error" title="Błąd synchronizacji">⚠️</span>`; if(tt._lastSync) return `<span class="task-sync-status ok" title="Ostatnia synchronizacja: ${new Date(tt._lastSync).toLocaleString()}">✔️</span>`; return `<span class="task-sync-status unknown" title="Brak synchronizacji">—</span>`; }catch(e){return''} };
-  
-  const assignmentInfo = (tt) => {
-    try {
-      const assignees = tt.assignees || (tt.assignee ? [tt.assignee] : (tt.employeeId ? [tt.employeeId] : []));
-      if(!assignees || assignees.length === 0) {
-        return `<span class="muted" style="font-size:12px">⚠️ Nieprzypisane</span>`;
-      }
-      const employeeId = typeof assignees[0] === 'object' ? assignees[0].id : assignees[0];
-      const employee = (state.employees || []).find(e => e.id === employeeId);
-      const empName = employee ? employee.name : employeeId;
-      return `<span style="font-size:12px">👤 ${empName}</span>`;
-    } catch(e) {
-      return '';
-    }
-  };
   
   const sb = syncBadge(t);
   const startP = t.startPlanned ? new Date(t.startPlanned).toLocaleString() : '-';
@@ -14243,7 +12118,6 @@ function createTaskCard(t) {
           ${orderName}
           ${t.processName ? ` • Proces: ${t.processName} (${t.opIndex + 1}/${(state.processes.find(p=>p.id===t.processId)?.operations||[]).length})` : ''}
         </span>
-        <div>${assignmentInfo(t)}</div>
         <div class="muted">Status: ${t.status || 'todo'} • Plan: ${plannedDur} • Real: ${Math.round(t.elapsedMin || 0)}m ${typeof t.slackMs==='number'?('• Slack: '+Math.round(t.slackMs/60000)+'m'):''} ${t.critical?'• CRITICAL':''}</div>
         <div class="muted">StartP: ${startP} • EndP: ${endP}</div>
         <div class="muted">${t.startedBy?('Rozpoczął: '+t.startedBy):''} ${t.closedBy?('Zamknął: '+t.closedBy):''} ${t.startedAt?(' • start: '+(new Date(t.startedAt)).toLocaleTimeString()):''}</div>
@@ -14483,1173 +12357,6 @@ window.addEventListener('offline', () => {
 });
 
 console.log('✅ [App] Real-time Sync integration loaded');
-
-// ============================================
-// MODUŁ MRP / ZAKUPY
-// ============================================
-
-// Renderowanie listy zamówień zakupowych
-function renderPurchaseOrders() {
-  if (!window.purchaseOrders) {
-    window.purchaseOrders = [];
-  }
-  
-  const statusFilter = document.getElementById('po-status-filter')?.value || '';
-  const typeFilter = document.getElementById('po-type-filter')?.value || '';
-  
-  let filtered = window.purchaseOrders;
-  
-  if (statusFilter) {
-    filtered = filtered.filter(po => po.status === statusFilter);
-  }
-  
-  if (typeFilter) {
-    filtered = filtered.filter(po => po.purchaseType === typeFilter);
-  }
-  
-  const container = document.getElementById('purchase-orders-list');
-  if (!container) return;
-  
-  if (filtered.length === 0) {
-    container.innerHTML = `
-      <div style="text-align:center;padding:40px;color:#94a3b8">
-        <div style="font-size:48px;margin-bottom:12px">📦</div>
-        <div style="font-size:18px;font-weight:600;margin-bottom:8px">Brak zamówień zakupowych</div>
-        <div style="font-size:14px">Kliknij "Nowe zamówienie" aby utworzyć pierwsze zamówienie</div>
-      </div>
-    `;
-    return;
-  }
-  
-  // Grupuj według statusu
-  const groups = {
-    draft: filtered.filter(po => po.status === 'draft'),
-    sent: filtered.filter(po => po.status === 'sent'),
-    confirmed: filtered.filter(po => po.status === 'confirmed'),
-    received: filtered.filter(po => po.status === 'received')
-  };
-  
-  let html = '';
-  
-  // Szkice
-  if (groups.draft.length > 0) {
-    html += `<h4 style="color:#94a3b8;margin:16px 0 12px">📝 Szkice (${groups.draft.length})</h4>`;
-    html += groups.draft.map(po => renderPurchaseOrderCard(po)).join('');
-  }
-  
-  // Wysłane
-  if (groups.sent.length > 0) {
-    html += `<h4 style="color:#3b82f6;margin:16px 0 12px">📤 Wysłane (${groups.sent.length})</h4>`;
-    html += groups.sent.map(po => renderPurchaseOrderCard(po)).join('');
-  }
-  
-  // Potwierdzone
-  if (groups.confirmed.length > 0) {
-    html += `<h4 style="color:#f59e0b;margin:16px 0 12px">✅ Potwierdzone (${groups.confirmed.length})</h4>`;
-    html += groups.confirmed.map(po => renderPurchaseOrderCard(po)).join('');
-  }
-  
-  // Odebrane
-  if (groups.received.length > 0) {
-    html += `<h4 style="color:#16a34a;margin:16px 0 12px">📦 Odebrane (${groups.received.length})</h4>`;
-    html += groups.received.map(po => renderPurchaseOrderCard(po)).join('');
-  }
-  
-  container.innerHTML = html;
-}
-
-// Renderowanie karty zamówienia zakupowego
-function renderPurchaseOrderCard(po) {
-  const statusColors = {
-    draft: '#94a3b8',
-    sent: '#3b82f6',
-    confirmed: '#f59e0b',
-    received: '#16a34a'
-  };
-  
-  const statusLabels = {
-    draft: '📝 Szkic',
-    sent: '📤 Wysłane',
-    confirmed: '✅ Potwierdzone',
-    received: '📦 Odebrane'
-  };
-  
-  const statusColor = statusColors[po.status] || '#94a3b8';
-  const statusLabel = statusLabels[po.status] || po.status;
-  
-  const deliveryDate = po.deliveryDate ? new Date(po.deliveryDate).toLocaleDateString('pl-PL') : 'Brak';
-  const createdDate = new Date(po.createdAt).toLocaleDateString('pl-PL');
-  
-  const typeLabel = po.purchaseType === 'small' ? '🛍️ Drobne' : '📦 Standard';
-  const sentViaLabel = po.sentVia ? (po.sentVia === 'print' ? '🖨️ Druk' : po.sentVia === 'email' ? '📧 Email' : '📱 SMS') : '';
-  
-  return `
-    <div class="card" style="border-left:6px solid ${statusColor};position:relative">
-      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
-        <div>
-          <div style="font-weight:700;font-size:18px;color:#ffffff;margin-bottom:4px">${po.id}</div>
-          <div style="font-size:14px;color:#94a3b8">📅 Utworzono: ${createdDate}</div>
-          <div style="font-size:14px;color:#94a3b8">🚚 Dostawa: ${deliveryDate}</div>
-        </div>
-        <div style="text-align:right">
-          <div style="display:inline-block;padding:4px 12px;border-radius:12px;background:${statusColor};color:white;font-size:12px;font-weight:600;margin-bottom:4px">${statusLabel}</div>
-          ${sentViaLabel ? `<div style="font-size:12px;color:#94a3b8;margin-top:4px">${sentViaLabel}</div>` : ''}
-          <div style="font-size:12px;color:#94a3b8;margin-top:4px">${typeLabel}</div>
-        </div>
-      </div>
-      
-      <div style="margin-bottom:12px">
-        <div style="font-weight:600;color:#ffffff;margin-bottom:4px">Dostawca:</div>
-        <div style="color:#94a3b8">${po.supplier?.name || 'Brak'}</div>
-        ${po.supplier?.email ? `<div style="font-size:12px;color:#94a3b8">📧 ${po.supplier.email}</div>` : ''}
-        ${po.supplier?.phone ? `<div style="font-size:12px;color:#94a3b8">📞 ${po.supplier.phone}</div>` : ''}
-      </div>
-      
-      <div style="margin-bottom:12px">
-        <div style="font-weight:600;color:#ffffff;margin-bottom:4px">Pozycje: ${po.items?.length || 0}</div>
-        <div style="font-size:14px;color:#94a3b8">
-          ${(po.items || []).slice(0, 3).map(item => `• ${item.materialName} (${item.quantity} ${item.unit})`).join('<br>')}
-          ${po.items?.length > 3 ? `<br>... i ${po.items.length - 3} więcej` : ''}
-        </div>
-      </div>
-      
-      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid rgba(148,163,184,0.2)">
-        <div style="font-weight:700;font-size:20px;color:#ffffff">${po.totalValue?.toFixed(2) || '0.00'} zł</div>
-        <div class="row" style="gap:6px">
-          ${po.status === 'draft' ? `<button class="btn small blue" onclick="editPurchaseOrder('${po.id}')">✏️ Edytuj</button>` : ''}
-          ${po.status === 'draft' || po.status === 'sent' ? `<button class="btn small green" onclick="sendPurchaseOrder('${po.id}')">📤 Wyślij</button>` : ''}
-          <button class="btn small" onclick="printPurchaseOrder('${po.id}')">🖨️ Drukuj</button>
-          ${po.status === 'sent' || po.status === 'confirmed' ? `<button class="btn small green" onclick="receivePurchaseOrder('${po.id}')">📦 Odbierz</button>` : ''}
-          <button class="btn small red" onclick="deletePurchaseOrder('${po.id}')">🗑️</button>
-        </div>
-      </div>
-      
-      ${po.notes ? `<div style="margin-top:12px;padding:8px;background:rgba(148,163,184,0.1);border-radius:4px;font-size:12px;color:#94a3b8">${po.notes}</div>` : ''}
-    </div>
-  `;
-}
-
-// Modal tworzenia/edycji zamówienia zakupowego
-function showPurchaseOrderModal(orderId = null) {
-  const isEdit = !!orderId;
-  const existingOrder = isEdit ? window.purchaseOrders.find(po => po.id === orderId) : null;
-  
-  const suppliersOptions = (window.suppliers || []).map(s => 
-    `<option value="${s.id}">${s.name}</option>`
-  ).join('');
-  
-  const materialsOptions = (window.warehouseItems || []).map(item => 
-    `<option value="${item.id}" data-unit="${item.unit}">${item.name}</option>`
-  ).join('');
-  
-  const content = `
-    <div style="display:flex;flex-direction:column;gap:16px;max-width:800px">
-      <input type="hidden" id="po-id" value="${existingOrder?.id || ''}">
-      
-      <div class="grid2">
-        <div>
-          <label style="font-weight:600;margin-bottom:4px;display:block">Dostawca *</label>
-          <select id="po-supplier-select" style="width:100%;padding:8px" onchange="populateSupplierDetails()">
-            <option value="">-- Wybierz dostawcę --</option>
-            ${suppliersOptions}
-            <option value="new">+ Dodaj nowego dostawcę</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-weight:600;margin-bottom:4px;display:block">Typ zamówienia</label>
-          <select id="po-type" style="width:100%;padding:8px">
-            <option value="standard" ${existingOrder?.purchaseType === 'standard' ? 'selected' : ''}>📦 Standardowe</option>
-            <option value="small" ${existingOrder?.purchaseType === 'small' ? 'selected' : ''}>🛍️ Drobne zakupy</option>
-          </select>
-        </div>
-      </div>
-      
-      <div id="supplier-details" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px;background:rgba(148,163,184,0.1);border-radius:8px">
-        <div>
-          <label style="font-weight:600;margin-bottom:4px;display:block">Nazwa dostawcy</label>
-          <input type="text" id="po-supplier-name" placeholder="Nazwa firmy" style="width:100%;padding:8px" value="${existingOrder?.supplier?.name || ''}">
-        </div>
-        <div>
-          <label style="font-weight:600;margin-bottom:4px;display:block">Email</label>
-          <input type="email" id="po-supplier-email" placeholder="email@dostawca.pl" style="width:100%;padding:8px" value="${existingOrder?.supplier?.email || ''}">
-        </div>
-        <div>
-          <label style="font-weight:600;margin-bottom:4px;display:block">Telefon</label>
-          <input type="tel" id="po-supplier-phone" placeholder="+48 123 456 789" style="width:100%;padding:8px" value="${existingOrder?.supplier?.phone || ''}">
-        </div>
-        <div>
-          <label style="font-weight:600;margin-bottom:4px;display:block">Data dostawy</label>
-          <input type="date" id="po-delivery-date" style="width:100%;padding:8px" value="${existingOrder?.deliveryDate || ''}">
-        </div>
-      </div>
-      
-      <div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <label style="font-weight:600">Pozycje zamówienia</label>
-          <button class="btn small green" onclick="addPurchaseOrderItem()">+ Dodaj pozycję</button>
-        </div>
-        <div id="po-items-list" style="display:flex;flex-direction:column;gap:8px"></div>
-      </div>
-      
-      <div>
-        <label style="font-weight:600;margin-bottom:4px;display:block">Notatki</label>
-        <textarea id="po-notes" placeholder="Dodatkowe informacje..." style="width:100%;padding:8px;min-height:60px">${existingOrder?.notes || ''}</textarea>
-      </div>
-      
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:rgba(37,99,235,0.1);border-radius:8px">
-        <div style="font-weight:700;font-size:20px;color:#2563eb">Suma: <span id="po-total-value">0.00</span> zł</div>
-        <div class="row" style="gap:8px">
-          <button class="btn" onclick="closeModal()">Anuluj</button>
-          <button class="btn amber" onclick="savePurchaseOrder('draft')">💾 Zapisz jako szkic</button>
-          <button class="btn green" onclick="savePurchaseOrder('sent')">📤 Zapisz i wyślij</button>
-        </div>
-      </div>
-    </div>
-  `;
-  
-  showModal(isEdit ? '✏️ Edytuj zamówienie' : '➕ Nowe zamówienie zakupowe', content);
-  
-  // Załaduj istniejące pozycje
-  if (existingOrder && existingOrder.items) {
-    existingOrder.items.forEach(item => {
-      addPurchaseOrderItem(item);
-    });
-  } else {
-    addPurchaseOrderItem(); // Dodaj pierwszą pustą pozycję
-  }
-  
-  calculatePOTotal();
-}
-
-// Dodawanie pozycji do zamówienia
-let poItemCounter = 0;
-function addPurchaseOrderItem(existingItem = null) {
-  poItemCounter++;
-  const itemId = `po-item-${poItemCounter}`;
-  
-  const materialsOptions = (window.warehouseItems || []).map(item => 
-    `<option value="${item.id}" data-unit="${item.unit}" ${existingItem && existingItem.materialId === item.id ? 'selected' : ''}>${item.name}</option>`
-  ).join('');
-  
-  const itemHtml = `
-    <div class="card" id="${itemId}" style="padding:12px">
-      <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;align-items:end">
-        <div>
-          <label style="font-size:12px;color:#94a3b8;margin-bottom:4px;display:block">Materiał</label>
-          <select class="po-item-material" onchange="updatePOItemUnit('${itemId}');calculatePOTotal()" style="width:100%;padding:6px">
-            <option value="">-- Wybierz --</option>
-            ${materialsOptions}
-          </select>
-        </div>
-        <div>
-          <label style="font-size:12px;color:#94a3b8;margin-bottom:4px;display:block">Ilość</label>
-          <input type="number" class="po-item-quantity" min="0" step="0.01" value="${existingItem?.quantity || 1}" onchange="calculatePOTotal()" style="width:100%;padding:6px">
-        </div>
-        <div>
-          <label style="font-size:12px;color:#94a3b8;margin-bottom:4px;display:block">Jedn.</label>
-          <input type="text" class="po-item-unit" value="${existingItem?.unit || 'szt'}" readonly style="width:100%;padding:6px;background:#1f2937">
-        </div>
-        <div>
-          <label style="font-size:12px;color:#94a3b8;margin-bottom:4px;display:block">Cena jedn. (zł)</label>
-          <input type="number" class="po-item-price" min="0" step="0.01" value="${existingItem?.unitPrice || 0}" onchange="calculatePOTotal()" style="width:100%;padding:6px">
-        </div>
-        <button class="btn small red" onclick="removePurchaseOrderItem('${itemId}')" style="height:32px">🗑️</button>
-      </div>
-    </div>
-  `;
-  
-  document.getElementById('po-items-list').insertAdjacentHTML('beforeend', itemHtml);
-  
-  if (existingItem) {
-    calculatePOTotal();
-  }
-}
-
-// Usuwanie pozycji z zamówienia
-function removePurchaseOrderItem(itemId) {
-  document.getElementById(itemId)?.remove();
-  calculatePOTotal();
-}
-
-// Aktualizacja jednostki po wyborze materiału
-function updatePOItemUnit(itemId) {
-  const itemDiv = document.getElementById(itemId);
-  if (!itemDiv) return;
-  
-  const materialSelect = itemDiv.querySelector('.po-item-material');
-  const selectedOption = materialSelect.options[materialSelect.selectedIndex];
-  const unit = selectedOption.getAttribute('data-unit') || 'szt';
-  
-  const unitInput = itemDiv.querySelector('.po-item-unit');
-  if (unitInput) {
-    unitInput.value = unit;
-  }
-}
-
-// Obliczanie sumy zamówienia
-function calculatePOTotal() {
-  const items = document.querySelectorAll('#po-items-list .card');
-  let total = 0;
-  
-  items.forEach(itemDiv => {
-    const quantity = parseFloat(itemDiv.querySelector('.po-item-quantity')?.value || 0);
-    const price = parseFloat(itemDiv.querySelector('.po-item-price')?.value || 0);
-    total += quantity * price;
-  });
-  
-  const totalSpan = document.getElementById('po-total-value');
-  if (totalSpan) {
-    totalSpan.textContent = total.toFixed(2);
-  }
-}
-
-// Wypełnianie danych dostawcy z listy
-function populateSupplierDetails() {
-  const select = document.getElementById('po-supplier-select');
-  if (!select) return;
-  
-  const supplierId = select.value;
-  
-  if (supplierId === 'new') {
-    // Wyczyść pola dla nowego dostawcy
-    document.getElementById('po-supplier-name').value = '';
-    document.getElementById('po-supplier-email').value = '';
-    document.getElementById('po-supplier-phone').value = '';
-    return;
-  }
-  
-  const supplier = window.suppliers?.find(s => s.id === supplierId);
-  if (supplier) {
-    document.getElementById('po-supplier-name').value = supplier.name || '';
-    document.getElementById('po-supplier-email').value = supplier.email || '';
-    document.getElementById('po-supplier-phone').value = supplier.phone || '';
-  }
-}
-
-// Zapisywanie zamówienia zakupowego
-function savePurchaseOrder(status = 'draft') {
-  const orderId = document.getElementById('po-id')?.value || `PO-${Date.now()}`;
-  const isEdit = window.purchaseOrders?.some(po => po.id === orderId);
-  
-  // Zbierz dane dostawcy
-  const supplier = {
-    name: document.getElementById('po-supplier-name')?.value || '',
-    email: document.getElementById('po-supplier-email')?.value || '',
-    phone: document.getElementById('po-supplier-phone')?.value || '',
-  };
-  
-  // Walidacja
-  if (!supplier.name.trim()) {
-    alert('⚠️ Podaj nazwę dostawcy');
-    return;
-  }
-  
-  // Zbierz pozycje
-  const itemDivs = document.querySelectorAll('#po-items-list .card');
-  const items = [];
-  
-  itemDivs.forEach(itemDiv => {
-    const materialSelect = itemDiv.querySelector('.po-item-material');
-    const materialId = materialSelect?.value;
-    const materialName = materialSelect?.options[materialSelect.selectedIndex]?.text || '';
-    const quantity = parseFloat(itemDiv.querySelector('.po-item-quantity')?.value || 0);
-    const unit = itemDiv.querySelector('.po-item-unit')?.value || 'szt';
-    const unitPrice = parseFloat(itemDiv.querySelector('.po-item-price')?.value || 0);
-    
-    if (materialId && quantity > 0) {
-      items.push({
-        materialId,
-        materialName,
-        quantity,
-        unit,
-        unitPrice,
-        totalPrice: quantity * unitPrice
-      });
-    }
-  });
-  
-  if (items.length === 0) {
-    alert('⚠️ Dodaj co najmniej jedną pozycję do zamówienia');
-    return;
-  }
-  
-  // Oblicz sumę
-  const totalValue = items.reduce((sum, item) => sum + item.totalPrice, 0);
-  
-  // Utwórz obiekt zamówienia
-  const purchaseOrder = {
-    id: orderId,
-    createdAt: isEdit ? window.purchaseOrders.find(po => po.id === orderId)?.createdAt : Date.now(),
-    updatedAt: Date.now(),
-    supplier,
-    items,
-    totalValue,
-    deliveryDate: document.getElementById('po-delivery-date')?.value || '',
-    purchaseType: document.getElementById('po-type')?.value || 'standard',
-    status,
-    sentVia: null,
-    sentAt: null,
-    receivedAt: null,
-    notes: document.getElementById('po-notes')?.value || ''
-  };
-  
-  // Zapisz do tablicy
-  if (!window.purchaseOrders) {
-    window.purchaseOrders = [];
-  }
-  
-  if (isEdit) {
-    const index = window.purchaseOrders.findIndex(po => po.id === orderId);
-    window.purchaseOrders[index] = purchaseOrder;
-  } else {
-    window.purchaseOrders.push(purchaseOrder);
-  }
-  
-  // Zapisz dostawcę jeśli nowy
-  if (!window.suppliers) {
-    window.suppliers = [];
-  }
-  
-  const supplierExists = window.suppliers.some(s => s.name.toLowerCase() === supplier.name.toLowerCase());
-  if (!supplierExists) {
-    window.suppliers.push({
-      id: `SUP-${Date.now()}`,
-      name: supplier.name,
-      email: supplier.email,
-      phone: supplier.phone,
-      createdAt: Date.now()
-    });
-    localStorage.setItem('suppliers', JSON.stringify(window.suppliers));
-  }
-  
-  // Zapisz do localStorage
-  localStorage.setItem('purchaseOrders', JSON.stringify(window.purchaseOrders));
-  
-  // Odśwież widok
-  renderPurchaseOrders();
-  updateMrpDashboard();
-  
-  showNotification(`✅ Zamówienie ${orderId} zostało ${isEdit ? 'zaktualizowane' : 'utworzone'}`, 'success');
-  
-  // Zamknij modal
-  closeModal();
-  
-  // Jeśli status to 'sent', otwórz modal wysyłki (z opóźnieniem)
-  if (status === 'sent') {
-    setTimeout(() => sendPurchaseOrder(orderId), 400);
-  }
-}
-
-// Edycja zamówienia
-function editPurchaseOrder(orderId) {
-  showPurchaseOrderModal(orderId);
-}
-
-// Usuwanie zamówienia
-function deletePurchaseOrder(orderId) {
-  if (!confirm(`Czy na pewno chcesz usunąć zamówienie ${orderId}?`)) {
-    return;
-  }
-  
-  window.purchaseOrders = window.purchaseOrders.filter(po => po.id !== orderId);
-  localStorage.setItem('purchaseOrders', JSON.stringify(window.purchaseOrders));
-  
-  renderPurchaseOrders();
-  updateMrpDashboard();
-  
-  showNotification(`🗑️ Zamówienie ${orderId} zostało usunięte`, 'info');
-}
-
-// Wysyłanie zamówienia (druk/email/SMS)
-function sendPurchaseOrder(orderId) {
-  const order = window.purchaseOrders?.find(po => po.id === orderId);
-  if (!order) return;
-  
-  const content = `
-    <div style="display:flex;flex-direction:column;gap:16px;max-width:500px">
-      <div style="padding:12px;background:rgba(37,99,235,0.1);border-radius:8px">
-        <div style="font-weight:600;margin-bottom:8px">Zamówienie: ${order.id}</div>
-        <div style="font-size:14px;color:#94a3b8">Dostawca: ${order.supplier.name}</div>
-        <div style="font-size:14px;color:#94a3b8">Wartość: ${order.totalValue.toFixed(2)} zł</div>
-      </div>
-      
-      <div style="font-weight:600;font-size:16px;text-align:center;margin:8px 0">Wybierz sposób wysyłki:</div>
-      
-      <button class="btn blue" onclick="printPurchaseOrder('${orderId}');markAsSent('${orderId}', 'print')" style="padding:16px">
-        🖨️ Drukuj dokument
-        <div style="font-size:12px;margin-top:4px;opacity:0.8">Otwórz dokument w nowym oknie i wydrukuj</div>
-      </button>
-      
-      <button class="btn green" onclick="sendPurchaseOrderEmail('${orderId}')" style="padding:16px">
-        📧 Wyślij e-mail
-        <div style="font-size:12px;margin-top:4px;opacity:0.8">Otwórz klienta pocztowego z gotową wiadomością</div>
-      </button>
-      
-      ${order.purchaseType === 'small' ? `
-        <button class="btn orange" onclick="sendPurchaseOrderSMS('${orderId}')" style="padding:16px">
-          📱 Wyślij SMS do kierowcy
-          <div style="font-size:12px;margin-top:4px;opacity:0.8">Dla drobnych zakupów</div>
-        </button>
-      ` : ''}
-      
-      <button class="btn" onclick="closeModal()">Anuluj</button>
-    </div>
-  `;
-  
-  showModal('📤 Wysyłka zamówienia', content);
-}
-
-// Oznaczenie jako wysłane
-function markAsSent(orderId, via) {
-  const order = window.purchaseOrders?.find(po => po.id === orderId);
-  if (!order) return;
-  
-  order.status = 'sent';
-  order.sentVia = via;
-  order.sentAt = Date.now();
-  
-  localStorage.setItem('purchaseOrders', JSON.stringify(window.purchaseOrders));
-  renderPurchaseOrders();
-  updateMrpDashboard();
-  closeModal();
-  
-  showNotification(`✅ Zamówienie ${orderId} oznaczone jako wysłane (${via})`, 'success');
-}
-
-// Drukowanie zamówienia
-function printPurchaseOrder(orderId) {
-  const order = window.purchaseOrders?.find(po => po.id === orderId);
-  if (!order) return;
-  
-  const newWindow = window.open('', '_blank');
-  
-  const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('pl-PL') : 'Nie określono';
-  const createdDate = new Date(order.createdAt).toLocaleDateString('pl-PL');
-  
-  const html = `
-    <!DOCTYPE html>
-    <html lang="pl">
-    <head>
-      <meta charset="UTF-8">
-      <title>Zamówienie ${order.id}</title>
-      <style>
-        @media print {
-          body { margin: 0; padding: 20mm; }
-          .no-print { display: none; }
-        }
-        body { 
-          font-family: Arial, sans-serif; 
-          font-size: 12pt; 
-          line-height: 1.4;
-          color: #000;
-          background: #fff;
-        }
-        h1 { 
-          font-size: 24pt; 
-          border-bottom: 3px solid #000; 
-          padding-bottom: 8px;
-          margin-bottom: 16px;
-        }
-        table { 
-          width: 100%; 
-          border-collapse: collapse; 
-          margin-top: 16px; 
-        }
-        th, td { 
-          border: 1px solid #000; 
-          padding: 8px; 
-          text-align: left; 
-        }
-        th { 
-          background: #f0f0f0; 
-          font-weight: bold; 
-        }
-        .total { 
-          font-size: 18pt; 
-          font-weight: bold; 
-          margin-top: 16px; 
-          text-align: right;
-        }
-        .section {
-          margin-bottom: 20px;
-        }
-        .section-title {
-          font-size: 14pt;
-          font-weight: bold;
-          margin-bottom: 8px;
-          border-bottom: 2px solid #ccc;
-          padding-bottom: 4px;
-        }
-        .info-row {
-          margin-bottom: 4px;
-        }
-        .btn-print {
-          background: #3b82f6;
-          color: white;
-          border: none;
-          padding: 12px 24px;
-          font-size: 14pt;
-          cursor: pointer;
-          border-radius: 6px;
-          margin-bottom: 20px;
-        }
-        .btn-print:hover {
-          background: #2563eb;
-        }
-      </style>
-    </head>
-    <body>
-      <button class="no-print btn-print" onclick="window.print()">🖨️ Drukuj dokument</button>
-      
-      <h1>ZAMÓWIENIE ZAKUPOWE ${order.id}</h1>
-      
-      <div class="section">
-        <div class="info-row"><strong>Data utworzenia:</strong> ${createdDate}</div>
-        <div class="info-row"><strong>Planowana data dostawy:</strong> ${deliveryDate}</div>
-        <div class="info-row"><strong>Typ zamówienia:</strong> ${order.purchaseType === 'small' ? 'Drobne zakupy' : 'Standardowe'}</div>
-      </div>
-      
-      <div class="section">
-        <div class="section-title">Dostawca</div>
-        <div class="info-row"><strong>Nazwa:</strong> ${order.supplier.name}</div>
-        ${order.supplier.email ? `<div class="info-row"><strong>Email:</strong> ${order.supplier.email}</div>` : ''}
-        ${order.supplier.phone ? `<div class="info-row"><strong>Telefon:</strong> ${order.supplier.phone}</div>` : ''}
-      </div>
-      
-      <div class="section">
-        <div class="section-title">Pozycje zamówienia</div>
-        <table>
-          <thead>
-            <tr>
-              <th>Lp.</th>
-              <th>Materiał</th>
-              <th>Ilość</th>
-              <th>Cena jedn. (zł)</th>
-              <th>Wartość (zł)</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${order.items.map((item, i) => `
-              <tr>
-                <td>${i + 1}</td>
-                <td>${item.materialName}</td>
-                <td>${item.quantity} ${item.unit}</td>
-                <td>${item.unitPrice.toFixed(2)}</td>
-                <td>${item.totalPrice.toFixed(2)}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-      
-      <div class="total">SUMA: ${order.totalValue.toFixed(2)} zł</div>
-      
-      ${order.notes ? `
-        <div class="section">
-          <div class="section-title">Uwagi</div>
-          <p>${order.notes.replace(/\n/g, '<br>')}</p>
-        </div>
-      ` : ''}
-      
-      <div style="margin-top:40px;padding-top:20px;border-top:1px solid #ccc;font-size:10pt;color:#666">
-        <p>Dokument wygenerowany automatycznie przez System Planowania Produkcji</p>
-        <p>Data wydruku: ${new Date().toLocaleString('pl-PL')}</p>
-      </div>
-    </body>
-    </html>
-  `;
-  
-  newWindow.document.write(html);
-  newWindow.document.close();
-  
-  // Auto-print
-  newWindow.onload = () => {
-    newWindow.focus();
-    setTimeout(() => newWindow.print(), 250);
-  };
-}
-
-// Wysyłka e-mail (mailto)
-function sendPurchaseOrderEmail(orderId) {
-  const order = window.purchaseOrders?.find(po => po.id === orderId);
-  if (!order) return;
-  
-  const subject = encodeURIComponent(`Zamówienie zakupowe ${order.id}`);
-  const body = encodeURIComponent(`
-Dzień dobry,
-
-Przesyłam zamówienie zakupowe ${order.id} z dnia ${new Date(order.createdAt).toLocaleDateString('pl-PL')}.
-
-Pozycje zamówienia:
-${order.items.map((item, i) => 
-  `${i + 1}. ${item.materialName} - ${item.quantity} ${item.unit} x ${item.unitPrice.toFixed(2)} zł = ${item.totalPrice.toFixed(2)} zł`
-).join('\n')}
-
-SUMA: ${order.totalValue.toFixed(2)} zł
-
-Planowana data dostawy: ${order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('pl-PL') : 'Do uzgodnienia'}
-
-${order.notes ? `Uwagi:\n${order.notes}\n` : ''}
-
-Pozdrawiam,
-${window.state?.currentUser?.name || 'Magazyn'}
-  `.trim());
-  
-  const mailtoLink = `mailto:${order.supplier.email || ''}?subject=${subject}&body=${body}`;
-  window.location.href = mailtoLink;
-  
-  markAsSent(orderId, 'email');
-}
-
-// Wysyłka SMS (fallback - otwiera aplikację SMS)
-function sendPurchaseOrderSMS(orderId) {
-  const order = window.purchaseOrders?.find(po => po.id === orderId);
-  if (!order) return;
-  
-  const content = `
-    <div style="display:flex;flex-direction:column;gap:16px;max-width:500px">
-      <div style="padding:12px;background:rgba(245,158,11,0.1);border-radius:8px">
-        <div style="font-weight:600;margin-bottom:8px">Wysyłka SMS dla: ${order.id}</div>
-        <div style="font-size:14px;color:#94a3b8">Drobne zakupy - wartość: ${order.totalValue.toFixed(2)} zł</div>
-      </div>
-      
-      <div>
-        <label style="font-weight:600;margin-bottom:4px;display:block">Numer telefonu kierowcy</label>
-        <input type="tel" id="sms-phone" placeholder="+48 123 456 789" style="width:100%;padding:8px">
-      </div>
-      
-      <div>
-        <label style="font-weight:600;margin-bottom:4px;display:block">Treść SMS</label>
-        <textarea id="sms-message" style="width:100%;padding:8px;min-height:120px;font-family:monospace">${generateSMSTemplate(order)}</textarea>
-        <div style="font-size:12px;color:#94a3b8;margin-top:4px">Długość: <span id="sms-length">0</span> znaków</div>
-      </div>
-      
-      <div class="row" style="gap:8px">
-        <button class="btn" onclick="closeModal()">Anuluj</button>
-        <button class="btn green" onclick="doSendSMS('${orderId}')">📱 Wyślij SMS</button>
-      </div>
-    </div>
-  `;
-  
-  showModal('📱 SMS do kierowcy', content);
-  
-  // Licznik znaków
-  const messageArea = document.getElementById('sms-message');
-  const lengthSpan = document.getElementById('sms-length');
-  if (messageArea && lengthSpan) {
-    messageArea.addEventListener('input', () => {
-      lengthSpan.textContent = messageArea.value.length;
-    });
-    lengthSpan.textContent = messageArea.value.length;
-  }
-}
-
-// Generowanie szablonu SMS
-function generateSMSTemplate(order) {
-  return `ZAKUPY (${order.id}):
-${order.items.map(item => `- ${item.materialName} ${item.quantity}${item.unit}`).join('\n')}
-Łącznie: ${order.totalValue.toFixed(0)}zł
-Dostawa: ${order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('pl-PL') : 'dziś'}`;
-}
-
-// Wysłanie SMS (otwiera aplikację SMS na urządzeniu)
-function doSendSMS(orderId) {
-  const phone = document.getElementById('sms-phone')?.value?.trim();
-  const message = document.getElementById('sms-message')?.value?.trim();
-  
-  if (!phone) {
-    alert('⚠️ Podaj numer telefonu');
-    return;
-  }
-  
-  if (!message) {
-    alert('⚠️ Wpisz treść wiadomości');
-    return;
-  }
-  
-  // Otwórz aplikację SMS
-  const smsLink = `sms:${phone}?body=${encodeURIComponent(message)}`;
-  window.location.href = smsLink;
-  
-  // Poczekaj chwilę i zapytaj czy wysłano
-  setTimeout(() => {
-    if (confirm('Czy SMS został wysłany?')) {
-      markAsSent(orderId, 'sms');
-    }
-  }, 1500);
-}
-
-// Odbieranie zamówienia (tworzenie transakcji PZ)
-function receivePurchaseOrder(orderId) {
-  const order = window.purchaseOrders?.find(po => po.id === orderId);
-  if (!order) return;
-  
-  const content = `
-    <div style="display:flex;flex-direction:column;gap:16px;max-width:600px">
-      <div style="padding:12px;background:rgba(16,185,129,0.1);border-radius:8px">
-        <div style="font-weight:600;margin-bottom:8px">Przyjęcie dostawy: ${order.id}</div>
-        <div style="font-size:14px;color:#94a3b8">Dostawca: ${order.supplier.name}</div>
-      </div>
-      
-      <div>
-        <div style="font-weight:600;margin-bottom:8px">Pozycje do przyjęcia:</div>
-        <div id="receive-items-list" style="display:flex;flex-direction:column;gap:8px">
-          ${order.items.map((item, i) => `
-            <div class="card" style="padding:12px">
-              <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;align-items:center">
-                <div style="font-weight:600">${item.materialName}</div>
-                <div style="text-align:center">
-                  <label style="font-size:12px;color:#94a3b8;display:block">Zamówiono</label>
-                  <div>${item.quantity} ${item.unit}</div>
-                </div>
-                <div>
-                  <label style="font-size:12px;color:#94a3b8;display:block">Otrzymano</label>
-                  <input type="number" id="received-qty-${i}" min="0" step="0.01" value="${item.quantity}" style="width:100%;padding:6px">
-                </div>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-      
-      <div style="padding:12px;background:rgba(245,158,11,0.1);border-radius:8px;font-size:14px">
-        ℹ️ System utworzy transakcje PZ (Przyjęcie Zewnętrzne) i zaktualizuje stany magazynowe
-      </div>
-      
-      <div class="row" style="gap:8px">
-        <button class="btn" onclick="closeModal()">Anuluj</button>
-        <button class="btn green" onclick="confirmReceivePurchaseOrder('${orderId}')">📦 Potwierdź odbiór</button>
-      </div>
-    </div>
-  `;
-  
-  showModal('📦 Odbiór dostawy', content);
-}
-
-// Potwierdzenie odbioru zamówienia
-function confirmReceivePurchaseOrder(orderId) {
-  const order = window.purchaseOrders?.find(po => po.id === orderId);
-  if (!order) return;
-  
-  // Zbierz faktyczne ilości
-  const receivedItems = order.items.map((item, i) => {
-    const receivedQty = parseFloat(document.getElementById(`received-qty-${i}`)?.value || 0);
-    return {
-      ...item,
-      receivedQuantity: receivedQty
-    };
-  });
-  
-  // Utwórz transakcje PZ dla każdej pozycji
-  if (!window.warehouseTransactions) {
-    window.warehouseTransactions = [];
-  }
-  
-  receivedItems.forEach(item => {
-    if (item.receivedQuantity > 0) {
-      const transaction = {
-        id: `PZ-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
-        type: 'in',
-        itemId: item.materialId,
-        itemName: item.materialName,
-        quantity: item.receivedQuantity,
-        unit: item.unit,
-        date: Date.now(),
-        orderId: orderId,
-        notes: `Przyjęcie z zamówienia ${orderId} (dostawca: ${order.supplier.name})`,
-        performedBy: window.state?.currentUser?.name || 'System'
-      };
-      
-      window.warehouseTransactions.push(transaction);
-      
-      // Zaktualizuj stan magazynowy
-      if (!window.warehouseItems) {
-        window.warehouseItems = [];
-      }
-      
-      const warehouseItem = window.warehouseItems.find(w => w.id === item.materialId);
-      if (warehouseItem) {
-        warehouseItem.quantity = (warehouseItem.quantity || 0) + item.receivedQuantity;
-      } else {
-        // Dodaj nowy materiał do magazynu
-        window.warehouseItems.push({
-          id: item.materialId,
-          name: item.materialName,
-          quantity: item.receivedQuantity,
-          unit: item.unit,
-          minStock: 0,
-          lastUpdated: Date.now()
-        });
-      }
-    }
-  });
-  
-  // Zaktualizuj status zamówienia
-  order.status = 'received';
-  order.receivedAt = Date.now();
-  
-  // Zapisz wszystko
-  localStorage.setItem('purchaseOrders', JSON.stringify(window.purchaseOrders));
-  localStorage.setItem('warehouseTransactions', JSON.stringify(window.warehouseTransactions));
-  localStorage.setItem('warehouseItems', JSON.stringify(window.warehouseItems));
-  
-  closeModal();
-  renderPurchaseOrders();
-  updateMrpDashboard();
-  
-  showNotification(`✅ Przyjęto dostawę dla zamówienia ${orderId}`, 'success');
-  
-  // Opcjonalnie: przejdź do widoku transakcji
-  if (confirm('Czy chcesz zobaczyć utworzone transakcje PZ?')) {
-    switchWarehouseTab('transactions');
-  }
-}
-
-// Aktualizacja dashboard MRP
-function updateMrpDashboard() {
-  if (!window.purchaseOrders) {
-    window.purchaseOrders = [];
-  }
-  
-  if (!window.warehouseItems) {
-    window.warehouseItems = [];
-  }
-  
-  // Liczba materiałów poniżej progu (example - zakładamy minStock w item)
-  const lowStockCount = window.warehouseItems.filter(item => {
-    const minStock = item.minStock || 10; // domyślny próg
-    return item.quantity < minStock;
-  }).length;
-  
-  // Zamówienia oczekujące (sent lub confirmed)
-  const pendingOrders = window.purchaseOrders.filter(po => 
-    po.status === 'sent' || po.status === 'confirmed'
-  ).length;
-  
-  // Dostawy w tym tygodniu
-  const now = Date.now();
-  const oneWeek = 7 * 24 * 60 * 60 * 1000;
-  const deliveriesThisWeek = window.purchaseOrders.filter(po => {
-    if (!po.deliveryDate || po.status === 'received') return false;
-    const deliveryTime = new Date(po.deliveryDate).getTime();
-    return deliveryTime >= now && deliveryTime <= now + oneWeek;
-  }).length;
-  
-  // Aktualizuj kafelki
-  const lowStockEl = document.getElementById('mrp-low-stock-count');
-  const pendingEl = document.getElementById('mrp-pending-orders');
-  const deliveriesEl = document.getElementById('mrp-deliveries-week');
-  
-  if (lowStockEl) lowStockEl.textContent = lowStockCount;
-  if (pendingEl) pendingEl.textContent = pendingOrders;
-  if (deliveriesEl) deliveriesEl.textContent = deliveriesThisWeek;
-  
-  // Aktualizuj badge MRP (suma alertów)
-  const totalAlerts = lowStockCount + deliveriesThisWeek;
-  const badge = document.getElementById('mrp-badge');
-  if (badge) {
-    if (totalAlerts > 0) {
-      badge.textContent = totalAlerts;
-      badge.style.display = 'inline-block';
-    } else {
-      badge.style.display = 'none';
-    }
-  }
-}
-
-// Analiza MRP - automatyczne generowanie listy potrzeb
-function scanForPurchaseNeeds() {
-  if (!window.warehouseItems) {
-    alert('⚠️ Brak pozycji w magazynie do analizy');
-    return;
-  }
-  
-  const needs = [];
-  
-  window.warehouseItems.forEach(item => {
-    const minStock = item.minStock || 10; // domyślny próg
-    const currentStock = item.quantity || 0;
-    const reserved = calculateReservedQuantity(item.id); // ilość zarezerwowana
-    const available = currentStock - reserved;
-    
-    if (available < minStock) {
-      const shortage = minStock - available;
-      const suggested = Math.ceil(shortage * 1.5); // zamów 150% niedoboru
-      
-      needs.push({
-        itemId: item.id,
-        itemName: item.name,
-        unit: item.unit,
-        currentStock,
-        reserved,
-        available,
-        minStock,
-        shortage,
-        suggestedOrder: suggested
-      });
-    }
-  });
-  
-  if (needs.length === 0) {
-    alert('✅ Wszystkie materiały powyżej progu minimalnego. Brak potrzeby zamawiania.');
-    return;
-  }
-  
-  // Pokaż modal z wynikami analizy
-  const content = `
-    <div style="display:flex;flex-direction:column;gap:16px;max-width:800px">
-      <div style="padding:12px;background:rgba(239,68,68,0.1);border-radius:8px">
-        <div style="font-weight:600;font-size:16px;margin-bottom:4px">🔴 Znaleziono ${needs.length} materiałów poniżej progu</div>
-        <div style="font-size:14px;color:#94a3b8">Sugerowane zamówienia:</div>
-      </div>
-      
-      <div class="table" style="max-height:400px;overflow-y:auto">
-        <table>
-          <thead>
-            <tr>
-              <th>Materiał</th>
-              <th>Stan</th>
-              <th>Zarezerwowane</th>
-              <th>Dostępne</th>
-              <th>Próg min.</th>
-              <th>Niedobór</th>
-              <th style="background:#16a34a;color:white">Zamówić</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${needs.map(need => `
-              <tr>
-                <td>${need.itemName}</td>
-                <td>${need.currentStock} ${need.unit}</td>
-                <td>${need.reserved} ${need.unit}</td>
-                <td style="${need.available < need.minStock ? 'color:#ef4444;font-weight:bold' : ''}">${need.available} ${need.unit}</td>
-                <td>${need.minStock} ${need.unit}</td>
-                <td style="color:#ef4444;font-weight:bold">${need.shortage} ${need.unit}</td>
-                <td style="background:#dcfce7;color:#166534;font-weight:bold">${need.suggestedOrder} ${need.unit}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-      
-      <div style="padding:12px;background:rgba(37,99,235,0.1);border-radius:8px;font-size:14px">
-        ℹ️ Sugerowana ilość to 150% niedoboru, aby zapewnić zapas bezpieczeństwa
-      </div>
-      
-      <div class="row" style="gap:8px">
-        <button class="btn" onclick="closeModal()">Zamknij</button>
-        <button class="btn green" onclick="createPurchaseOrderFromNeeds(${JSON.stringify(needs).replace(/"/g, '&quot;')})">
-          ➕ Utwórz zamówienie na podstawie analizy
-        </button>
-      </div>
-    </div>
-  `;
-  
-  showModal('🔍 Analiza MRP - Potrzeby materiałowe', content);
-}
-
-// Obliczanie zarezerwowanej ilości materiału
-function calculateReservedQuantity(itemId) {
-  if (!window.warehouseReservations) {
-    return 0;
-  }
-  
-  return window.warehouseReservations
-    .filter(r => r.itemId === itemId && r.status === 'active')
-    .reduce((sum, r) => sum + (r.quantity || 0), 0);
-}
-
-// Tworzenie zamówienia na podstawie analizy MRP
-function createPurchaseOrderFromNeeds(needs) {
-  closeModal();
-  
-  // Otwórz modal nowego zamówienia
-  showPurchaseOrderModal();
-  
-  // Dodaj pozycje z analizy (po małym opóźnieniu aby modal się załadował)
-  setTimeout(() => {
-    // Wyczyść domyślną pustą pozycję
-    document.getElementById('po-items-list').innerHTML = '';
-    
-    needs.forEach(need => {
-      addPurchaseOrderItem({
-        materialId: need.itemId,
-        materialName: need.itemName,
-        quantity: need.suggestedOrder,
-        unit: need.unit,
-        unitPrice: 0 // użytkownik wpisze cenę
-      });
-    });
-    
-    calculatePOTotal();
-  }, 300);
-}
-
-// Eksport zamówień do CSV
-function exportPurchaseOrdersToCSV() {
-  if (!window.purchaseOrders || window.purchaseOrders.length === 0) {
-    alert('Brak zamówień do eksportu');
-    return;
-  }
-  
-  const headers = ['ID', 'Data utworzenia', 'Dostawca', 'Status', 'Typ', 'Wartość (zł)', 'Data dostawy', 'Liczba pozycji', 'Wysłano przez'];
-  
-  const rows = window.purchaseOrders.map(po => [
-    po.id,
-    new Date(po.createdAt).toLocaleDateString('pl-PL'),
-    po.supplier?.name || '',
-    po.status,
-    po.purchaseType,
-    po.totalValue?.toFixed(2) || '0.00',
-    po.deliveryDate || '',
-    po.items?.length || 0,
-    po.sentVia || ''
-  ]);
-  
-  let csv = headers.join(';') + '\n';
-  csv += rows.map(row => row.join(';')).join('\n');
-  
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  
-  link.setAttribute('href', url);
-  link.setAttribute('download', `zamowienia_zakupowe_${new Date().toISOString().split('T')[0]}.csv`);
-  link.style.visibility = 'hidden';
-  
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  
-  showNotification('📊 Eksport zamówień zakończony', 'success');
-}
-
-// Udostępnij funkcje globalnie
-window.renderPurchaseOrders = renderPurchaseOrders;
-window.updateMrpDashboard = updateMrpDashboard;
-window.showPurchaseOrderModal = showPurchaseOrderModal;
-window.addPurchaseOrderItem = addPurchaseOrderItem;
-window.removePurchaseOrderItem = removePurchaseOrderItem;
-window.updatePOItemUnit = updatePOItemUnit;
-window.calculatePOTotal = calculatePOTotal;
-window.populateSupplierDetails = populateSupplierDetails;
-window.savePurchaseOrder = savePurchaseOrder;
-window.editPurchaseOrder = editPurchaseOrder;
-window.deletePurchaseOrder = deletePurchaseOrder;
-window.sendPurchaseOrder = sendPurchaseOrder;
-window.markAsSent = markAsSent;
-window.printPurchaseOrder = printPurchaseOrder;
-window.sendPurchaseOrderEmail = sendPurchaseOrderEmail;
-window.sendPurchaseOrderSMS = sendPurchaseOrderSMS;
-window.doSendSMS = doSendSMS;
-window.receivePurchaseOrder = receivePurchaseOrder;
-window.confirmReceivePurchaseOrder = confirmReceivePurchaseOrder;
-window.scanForPurchaseNeeds = scanForPurchaseNeeds;
-window.createPurchaseOrderFromNeeds = createPurchaseOrderFromNeeds;
-window.exportPurchaseOrdersToCSV = exportPurchaseOrdersToCSV;
-
-console.log('✅ Moduł MRP/Zakupy załadowany');
-
 </script>
 
 </body>

@@ -626,40 +626,23 @@
         // Inicjalizacja Firebase
         async function initializeFirebase() {
             try {
-                // Dynamiczne ładowanie Firebase SDK - czekaj na wszystkie skrypty
-                await new Promise((resolve, reject) => {
-                    let loaded = 0;
-                    const scripts = [
-                        'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
-                        'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js',
-                        'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js'
-                    ];
-                    
-                    scripts.forEach((src, index) => {
-                        const script = document.createElement('script');
-                        script.src = src;
-                        script.onload = () => {
-                            loaded++;
-                            console.log(`✅ Loaded ${index + 1}/${scripts.length}: ${src.split('/').pop()}`);
-                            if (loaded === scripts.length) resolve();
-                        };
-                        script.onerror = () => reject(new Error(`Failed to load ${src}`));
-                        document.head.appendChild(script);
-                    });
+                // Dynamiczne ładowanie Firebase SDK
+                const script1 = document.createElement('script');
+                script1.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js';
+                document.head.appendChild(script1);
+
+                const script2 = document.createElement('script');
+                script2.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js';
+                document.head.appendChild(script2);
+
+                const script3 = document.createElement('script');
+                script3.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js';
+                document.head.appendChild(script3);
+
+                // Czekaj na załadowanie
+                await new Promise(resolve => {
+                    script3.onload = resolve;
                 });
-
-                // Czekaj aż firebase będzie dostępny globalnie
-                let attempts = 0;
-                while ((typeof firebase === 'undefined' || typeof firebase.firestore !== 'function') && attempts < 50) {
-                    await new Promise(r => setTimeout(r, 100));
-                    attempts++;
-                }
-
-                if (typeof firebase === 'undefined' || typeof firebase.firestore !== 'function') {
-                    throw new Error('Firebase SDK nie załadował się poprawnie');
-                }
-
-                console.log('🔥 Firebase SDK załadowany, inicjalizacja...');
 
                 // Inicjalizuj Firebase
                 firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
@@ -687,12 +670,10 @@
             try {
                 // Pobierz appId i userId z localStorage planera
                 let appId = localStorage.getItem('planner-app-id');
-                let userId = localStorage.getItem('planner-user-id');
-                
-                console.log('🔍 loadEmployeesFromFirebase - appId:', appId, 'userId:', userId);
+                let userId = null;
                 
                 // Jeśli nie ma, użyj domyślnych wartości
-                if (!appId || !userId) {
+                if (!appId) {
                     // Sprawdź w różnych kluczach localStorage
                     const keys = Object.keys(localStorage);
                     for (const key of keys) {
@@ -1019,12 +1000,8 @@
                 updateNotificationUI();
             }
 
-            // Ustawienie nazwy użytkownika w tytule (tylko jeśli currentUser istnieje)
-            if (currentUser && currentUser.name) {
-                document.title = `Worker App - ${currentUser.name}`;
-            } else {
-                document.title = 'Worker App';
-            }
+            // Ustawienie nazwy użytkownika w tytule
+            document.title = `Worker App - ${currentUser.name}`;
             
             // Uruchomienie przypomnień dla aktywnych zadań
             startRemindersForActiveTasks();

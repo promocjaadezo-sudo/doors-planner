@@ -1,0 +1,2330 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2563eb">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Worker App v2 - Lista Zadań (z wylogowaniem)</title>
+    <style>
+        :root {
+            --bg: #0a0e27;
+            --bg-secondary: #151932;
+            --panel: #1e2139;
+            --panel-hover: #252945;
+            --accent: #7c3aed;
+            --accent-hover: #6d28d9;
+            --success: #10b981;
+            --success-hover: #059669;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --text: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --border: #2d3250;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: var(--panel);
+            padding: 24px 32px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header h1 {
+            color: var(--text);
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1 .icon {
+            background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 1.5rem;
+        }
+
+        .worker-badge {
+            background: var(--bg-secondary);
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .worker-badge .name {
+            color: var(--accent);
+        }
+
+        .header .date {
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--panel);
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            box-shadow: 0 8px 24px var(--shadow);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1;
+        }
+
+        .stat-card.pending .stat-number { color: var(--warning); }
+        .stat-card.completed .stat-number { color: var(--success); }
+        .stat-card.in-progress .stat-number { color: var(--accent); }
+
+        .orders-section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+            border-radius: 2px;
+        }
+
+        .order-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .order-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 8px 24px var(--shadow);
+        }
+
+        .order-header {
+            padding: 20px 24px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--panel);
+            transition: background 0.2s;
+        }
+
+        .order-header:hover {
+            background: var(--panel-hover);
+        }
+
+        .order-header.expanded {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .order-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .order-number {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .order-client {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .order-stats {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .order-stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            font-size: 0.875rem;
+        }
+
+        .expand-icon {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            transition: transform 0.3s;
+        }
+
+        .expanded .expand-icon {
+            transform: rotate(180deg);
+        }
+
+        .order-tasks {
+            display: none;
+            padding: 0;
+        }
+
+        .order-tasks.expanded {
+            display: block;
+        }
+
+        .task-card {
+            background: var(--bg-secondary);
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s;
+        }
+
+        .task-card:last-child {
+            border-bottom: none;
+        }
+
+        .task-card:hover {
+            background: var(--panel-hover);
+        }
+
+        .task-card.completed {
+            opacity: 0.7;
+        }
+
+        .task-card.completed .task-title span {
+            text-decoration: line-through;
+            color: var(--text-secondary);
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .task-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .task-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .task-status::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .status-todo,
+        .status-pending { 
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        .status-doing,
+        .status-in-progress { 
+            background: rgba(124, 58, 237, 0.15);
+            color: var(--accent);
+            border: 1px solid rgba(124, 58, 237, 0.3);
+        }
+        .status-done,
+        .status-completed { 
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .status-paused { 
+            background: rgba(148, 163, 184, 0.15);
+            color: var(--text-secondary);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+        }
+
+        .task-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+        }
+
+        .task-detail {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .task-detail.full {
+            grid-column: 1 / -1;
+        }
+
+        .detail-label {
+            color: var(--muted);
+            font-size: 0.8rem;
+            margin-bottom: 2px;
+        }
+
+        .detail-value {
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .detail-value.notes {
+            white-space: pre-wrap;
+            line-height: 1.4;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+            color: white;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), var(--success-hover));
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-success:hover:not(:disabled) {
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning), #dc6d18);
+            color: white;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-warning:hover:not(:disabled) {
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--panel-hover);
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .sync-section {
+            background: var(--panel);
+            padding: 16px;
+            border-radius: 12px;
+            margin-top: 16px;
+            text-align: center;
+        }
+
+        .sync-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .sync-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .sync-btn.secondary {
+            background: var(--panel);
+            color: var(--text);
+            border: 1px solid rgba(148, 163, 184, 0.4);
+        }
+
+        .sync-btn.secondary:hover {
+            background: rgba(148, 163, 184, 0.2);
+        }
+
+        .offline-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: var(--error);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            display: none;
+        }
+
+        .timer {
+            background: rgba(0,0,0,0.2);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-top: 8px;
+            display: inline-block;
+        }
+
+        .notification-settings {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 1001;
+        }
+
+        .notification-toggle {
+            background: var(--panel);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            color: var(--muted);
+        }
+
+        .notification-toggle:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        .notification-toggle.active {
+            background: var(--success);
+            color: white;
+        }
+
+        .notification-popup {
+            position: fixed;
+            top: 60px;
+            left: 10px;
+            background: var(--panel);
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1001;
+            min-width: 200px;
+            display: none;
+        }
+
+        .notification-popup h4 {
+            margin: 0 0 8px 0;
+            color: var(--accent);
+            font-size: 0.9rem;
+        }
+
+        .notification-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+        }
+
+        .notification-option:last-child {
+            margin-bottom: 0;
+        }
+
+        .notification-switch {
+            width: 40px;
+            height: 20px;
+            background: var(--muted);
+            border-radius: 10px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .notification-switch.active {
+            background: var(--success);
+        }
+
+        .notification-switch::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+
+        .notification-switch.active::after {
+            transform: translateX(20px);
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateX(-50%) translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(-50%) translateY(-100%);
+                opacity: 0;
+            }
+        }
+
+        .confirmation-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .confirmation-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .confirmation-content {
+            background: var(--panel);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 90vw;
+            width: 400px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .confirmation-modal.show .confirmation-content {
+            transform: scale(1);
+        }
+
+        .confirmation-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .confirmation-message {
+            color: var(--muted);
+            margin-bottom: 20px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .confirmation-task-info {
+            background: var(--bg);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .confirmation-task-title {
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+
+        .confirmation-task-details {
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+
+        .confirmation-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .confirmation-actions .btn {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="offline-indicator" class="offline-indicator">OFFLINE</div>
+
+    <!-- Modal potwierdzenia zakończenia zadania -->
+    <div id="confirmation-modal" class="confirmation-modal">
+        <div class="confirmation-content">
+            <div class="confirmation-title">✅ Potwierdź zakończenie zadania</div>
+            <div class="confirmation-message">
+                Czy na pewno chcesz oznaczyć to zadanie jako zakończone? Tej akcji nie można cofnąć.
+            </div>
+            <div class="confirmation-task-info" id="confirmation-task-info">
+                <div class="confirmation-task-title" id="confirmation-task-title">Ładowanie...</div>
+                <div class="confirmation-task-details" id="confirmation-task-details">...</div>
+            </div>
+            <div class="confirmation-actions">
+                <button class="btn btn-secondary" onclick="hideConfirmationModal()">❌ Anuluj</button>
+                <button class="btn btn-success" id="confirm-complete-btn" onclick="confirmCompleteTask()">✅ Potwierdź zakończenie</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification-settings">
+        <button class="notification-toggle" id="notification-btn" onclick="toggleNotificationSettings()">
+            🔔
+        </button>
+        <div class="notification-popup" id="notification-popup">
+            <h4>🔔 Powiadomienia</h4>
+            <div class="notification-option">
+                <span>Dźwięk</span>
+                <div class="notification-switch active" id="sound-switch" onclick="toggleNotification('sound')"></div>
+            </div>
+            <div class="notification-option">
+                <span>Wibracja</span>
+                <div class="notification-switch active" id="vibration-switch" onclick="toggleNotification('vibration')"></div>
+            </div>
+            <div class="notification-option">
+                <span>Przypomnienia czasu</span>
+                <div class="notification-switch active" id="reminder-switch" onclick="toggleNotification('reminder')"></div>
+            </div>
+            <div class="notification-option">
+                <span>Nowe zadania</span>
+                <div class="notification-switch active" id="task-switch" onclick="toggleNotification('task')"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <div class="header">
+            <div class="header-left">
+                <h1><span class="icon">📋</span> Lista Zadań</h1>
+            </div>
+            <div class="worker-badge" id="worker-info" style="display: none;">
+                <span>👤</span>
+                <span class="name" id="logged-worker-name"></span>
+                <button onclick="logoutWorker()" style="
+                    padding: 6px 12px;
+                    background: var(--error);
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 0.85rem;
+                    font-weight: 600;
+                    margin-left: 12px;
+                ">Wyloguj</button>
+            </div>
+        </div>
+
+        <select id="employee-select" onchange="onEmployeeChange()" style="
+            width: 100%;
+            padding: 14px;
+            background: var(--panel);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-bottom: 24px;
+        ">
+            <option value="">Wybierz pracownika...</option>
+        </select>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">Wszystkie</div>
+                <div class="stat-number" id="total-tasks">0</div>
+            </div>
+            <div class="stat-card completed">
+                <div class="stat-label">Ukończone</div>
+                <div class="stat-number" id="completed-tasks">0</div>
+            </div>
+            <div class="stat-card in-progress">
+                <div class="stat-label">W trakcie</div>
+                <div class="stat-number" id="in-progress-tasks">0</div>
+            </div>
+        </div>
+
+        <div class="section-title">Twoje zamówienia</div>
+        
+        <div id="task-list">
+            <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
+                <div style="font-size: 3rem; margin-bottom: 16px;">⏳</div>
+                <div style="font-size: 1.1rem;">Ładowanie zadań...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sync-section">
+        <div>Import zadań z systemu głównego</div>
+        <button class="sync-btn" onclick="importTasksFromMainApp()">� Importuj zadania</button>
+        <button class="sync-btn secondary" onclick="clearWorkerCache()">🧹 Wyczyść dane lokalne</button>
+        <div style="margin-top: 8px; font-size: 0.8rem; color: var(--muted);" id="last-sync">
+            Brak zaimportowanych zadań
+        </div>
+    </div>
+
+    <script>
+        // Firebase Config (wbudowana)
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyD93UqqsHWoAUBV7g8OVKAnajIfGDX_ZdY",
+            authDomain: "doors-planner.firebaseapp.com",
+            projectId: "doors-planner",
+            storageBucket: "doors-planner.appspot.com",
+            messagingSenderId: "513098608067",
+            appId: "1:513098608067:web:1fe3855b3470ca7ef22176"
+        };
+
+        // Dane aplikacji
+        let tasks = [];
+        let allEmployees = [];
+        let currentUser = null;
+        let isOnline = navigator.onLine;
+        let firebaseApp = null;
+        let firestore = null;
+        
+        // Ustawienia powiadomień
+        let notificationSettings = {
+            sound: true,
+            vibration: true,
+            reminder: true,
+            task: true
+        };
+        
+        // Timery przypomnień
+        let reminderIntervals = new Map();
+
+        function escapeHtml(value) {
+            if (value === null || value === undefined) return '';
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatInstallDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            if (!isFinite(date.getTime())) return String(dateStr);
+            return date.toLocaleDateString('pl-PL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        function formatPhoneLink(phone) {
+            if (!phone) return '-';
+            const trimmed = String(phone).trim();
+            if (!trimmed) return '-';
+            const normalized = trimmed.replace(/[^0-9+]/g, '');
+            if (!normalized) return escapeHtml(trimmed);
+            return `<a href="tel:${normalized}" style="color: var(--accent); text-decoration: none;">${escapeHtml(trimmed)}</a>`;
+        }
+
+        // Inicjalizacja Firebase
+        async function initializeFirebase() {
+            try {
+                // Dynamiczne ładowanie Firebase SDK - czekaj na wszystkie skrypty
+                await new Promise((resolve, reject) => {
+                    let loaded = 0;
+                    const scripts = [
+                        'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
+                        'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js',
+                        'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js'
+                    ];
+                    
+                    scripts.forEach((src, index) => {
+                        const script = document.createElement('script');
+                        script.src = src;
+                        script.onload = () => {
+                            loaded++;
+                            console.log(`✅ Loaded ${index + 1}/${scripts.length}: ${src.split('/').pop()}`);
+                            if (loaded === scripts.length) resolve();
+                        };
+                        script.onerror = () => reject(new Error(`Failed to load ${src}`));
+                        document.head.appendChild(script);
+                    });
+                });
+
+                // Czekaj aż firebase będzie dostępny globalnie
+                let attempts = 0;
+                while ((typeof firebase === 'undefined' || typeof firebase.firestore !== 'function') && attempts < 50) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+
+                if (typeof firebase === 'undefined' || typeof firebase.firestore !== 'function') {
+                    throw new Error('Firebase SDK nie załadował się poprawnie');
+                }
+
+                console.log('🔥 Firebase SDK załadowany, inicjalizacja...');
+
+                // Inicjalizuj Firebase
+                firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+                firestore = firebase.firestore();
+                
+                // Włącz persistence
+                await firestore.enablePersistence({ synchronizeTabs: true });
+
+                // Zaloguj anonimowo
+                await firebase.auth().signInAnonymously();
+
+                console.log('✅ Firebase zainicjalizowany');
+                
+                // Pobierz pracowników i zadania
+                await loadEmployeesFromFirebase();
+                await loadTasksFromFirebase();
+                
+            } catch (error) {
+                console.error('❌ Błąd Firebase:', error);
+            }
+        }
+
+        // Pobieranie pracowników z Firebase
+        async function loadEmployeesFromFirebase() {
+            try {
+                // Pobierz appId i userId z localStorage planera
+                let appId = localStorage.getItem('planner-app-id');
+                let userId = localStorage.getItem('planner-user-id');
+                
+                console.log('🔍 loadEmployeesFromFirebase - appId:', appId, 'userId:', userId);
+                
+                // Jeśli nie ma, użyj domyślnych wartości
+                if (!appId || !userId) {
+                    // Sprawdź w różnych kluczach localStorage
+                    const keys = Object.keys(localStorage);
+                    for (const key of keys) {
+                        if (key.includes('planner') || key.includes('app')) {
+                            try {
+                                const data = JSON.parse(localStorage.getItem(key));
+                                if (data && data.appId) {
+                                    appId = data.appId;
+                                    userId = data.userId;
+                                    break;
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                }
+                
+                // Jeśli nadal nie ma, użyj prostego query do kolekcji głównej
+                if (!appId || !userId) {
+                    // Pobierz z pierwszego dostępnego dokumentu planner
+                    const plannerSnap = await firestore.collection('planner').limit(1).get();
+                    if (!plannerSnap.empty) {
+                        appId = plannerSnap.docs[0].id;
+                        const usersSnap = await firestore.collection('planner').doc(appId).collection('users').limit(1).get();
+                        if (!usersSnap.empty) {
+                            userId = usersSnap.docs[0].id;
+                        }
+                    }
+                }
+
+                if (!appId || !userId) {
+                    console.warn('⚠️ Nie znaleziono appId/userId. Używam danych lokalnych.');
+                    loadEmployeesFromLocalStorage();
+                    return;
+                }
+
+                // Pobierz pracowników z właściwej ścieżki
+                const snapshot = await firestore
+                    .collection('planner')
+                    .doc(appId)
+                    .collection('users')
+                    .doc(userId)
+                    .collection('employees')
+                    .get();
+
+                allEmployees = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                // Aktualizuj dropdown
+                const select = document.getElementById('employee-select');
+                select.innerHTML = '<option value="">Wybierz pracownika...</option>';
+                
+                allEmployees.forEach(emp => {
+                    const option = document.createElement('option');
+                    option.value = emp.id;
+                    option.textContent = emp.name;
+                    select.appendChild(option);
+                });
+
+                // Przywróć ostatnio wybranego pracownika
+                const savedUserId = localStorage.getItem('worker-current-employee-id');
+                if (savedUserId) {
+                    select.value = savedUserId;
+                    currentUser = allEmployees.find(e => e.id === savedUserId);
+                    if (currentUser) {
+                        showWorkerInfo(currentUser.name);
+                        loadTasks();
+                        updateStats();
+                    }
+                }
+
+                console.log(`✅ Załadowano ${allEmployees.length} pracowników`);
+            } catch (error) {
+                console.error('❌ Błąd pobierania pracowników:', error);
+                loadEmployeesFromLocalStorage();
+            }
+        }
+
+        // Fallback - załaduj pracowników z localStorage
+        function loadEmployeesFromLocalStorage() {
+            const plannerData = localStorage.getItem('planner-state');
+            if (plannerData) {
+                try {
+                    const state = JSON.parse(plannerData);
+                    if (state.employees && Array.isArray(state.employees)) {
+                        allEmployees = state.employees;
+                        
+                        const select = document.getElementById('employee-select');
+                        select.innerHTML = '<option value="">Wybierz pracownika...</option>';
+                        
+                        allEmployees.forEach(emp => {
+                            const option = document.createElement('option');
+                            option.value = emp.id;
+                            option.textContent = emp.name;
+                            select.appendChild(option);
+                        });
+                        
+                        // Przywróć zalogowanego pracownika
+                        const savedUserId = localStorage.getItem('worker-current-employee-id');
+                        if (savedUserId) {
+                            select.value = savedUserId;
+                            currentUser = allEmployees.find(e => e.id === savedUserId);
+                            if (currentUser) {
+                                showWorkerInfo(currentUser.name);
+                            }
+                        }
+                        
+                        console.log(`✅ Załadowano ${allEmployees.length} pracowników z localStorage`);
+                    }
+                } catch (e) {
+                    console.error('Błąd parsowania localStorage:', e);
+                }
+            }
+        }
+
+        // Pobieranie zadań z Firebase
+        async function loadTasksFromFirebase() {
+            try {
+                // Pobierz appId i userId (tak samo jak w loadEmployeesFromFirebase)
+                let appId = localStorage.getItem('planner-app-id');
+                let userId = localStorage.getItem('planner-user-id');
+                
+                console.log('🔍 loadTasksFromFirebase - appId:', appId, 'userId:', userId);
+                
+                if (!appId || !userId) {
+                    const keys = Object.keys(localStorage);
+                    for (const key of keys) {
+                        if (key.includes('planner') || key.includes('app')) {
+                            try {
+                                const data = JSON.parse(localStorage.getItem(key));
+                                if (data && data.appId) {
+                                    appId = data.appId;
+                                    userId = data.userId;
+                                    break;
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                }
+                
+                if (!appId || !userId) {
+                    const plannerSnap = await firestore.collection('planner').limit(1).get();
+                    if (!plannerSnap.empty) {
+                        appId = plannerSnap.docs[0].id;
+                        const usersSnap = await firestore.collection('planner').doc(appId).collection('users').limit(1).get();
+                        if (!usersSnap.empty) {
+                            userId = usersSnap.docs[0].id;
+                        }
+                    }
+                }
+
+                if (!appId || !userId) {
+                    console.warn('⚠️ Nie znaleziono appId/userId dla zadań');
+                    return;
+                }
+
+                const snapshot = await firestore
+                    .collection('planner')
+                    .doc(appId)
+                    .collection('users')
+                    .doc(userId)
+                    .collection('tasks')
+                    .get();
+
+                const allTasks = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                console.log(`✅ Załadowano ${allTasks.length} zadań z Firebase`);
+                
+                // Zapisz wszystkie zadania
+                localStorage.setItem('worker-all-tasks', JSON.stringify(allTasks));
+                
+                // Jeśli jest wybrany pracownik, przefiltruj zadania
+                if (currentUser) {
+                    tasks = filterTasksForEmployee(allTasks, currentUser.id);
+                    console.log(`🎯 Przefiltrowano do ${tasks.length} zadań dla pracownika ${currentUser.name}`);
+                } else {
+                    // Jeśli nie ma wybranego pracownika, pokaż wszystkie zadania
+                    tasks = allTasks;
+                    console.log(`📋 Pokazuję wszystkie ${tasks.length} zadań (brak wybranego pracownika)`);
+                }
+                
+                saveTasks();
+                renderTasks();
+                updateStats();
+            } catch (error) {
+                console.error('❌ Błąd pobierania zadań:', error);
+            }
+        }
+
+        // Sprawdza czy zadanie przypisano do danego pracownika (obsługa wielu formatów)
+        function isTaskForEmployee(task, employeeId) {
+            if (!task || !employeeId) return false;
+
+            if (task.employeeId === employeeId) return true;
+
+            if (Array.isArray(task.employeeIds) && task.employeeIds.includes(employeeId)) return true;
+
+            if (task.assignedToId === employeeId) return true;
+
+            if (Array.isArray(task.assignees)) {
+                const assigneeMatch = task.assignees.some(entry => {
+                    if (!entry) return false;
+                    if (typeof entry === 'string') return entry === employeeId;
+                    if (typeof entry === 'object') {
+                        if (entry.id && entry.id === employeeId) return true;
+                        if (entry.employeeId && entry.employeeId === employeeId) return true;
+                    }
+                    return false;
+                });
+                if (assigneeMatch) return true;
+            }
+
+            if (Array.isArray(task.assignedEmployees)) {
+                const assignedMatch = task.assignedEmployees.some(entry => {
+                    if (!entry) return false;
+                    if (typeof entry === 'string') return entry === employeeId;
+                    if (typeof entry === 'object') {
+                        if (entry.id && entry.id === employeeId) return true;
+                        if (entry.employeeId && entry.employeeId === employeeId) return true;
+                    }
+                    return false;
+                });
+                if (assignedMatch) return true;
+            }
+
+            return false;
+        }
+
+        // Filtrowanie zadań dla pracownika
+        function filterTasksForEmployee(allTasks, employeeId) {
+            return allTasks.filter(task => isTaskForEmployee(task, employeeId));
+        }
+
+        // Obsługa zmiany pracownika
+        function onEmployeeChange() {
+            const select = document.getElementById('employee-select');
+            const employeeId = select.value;
+            
+            if (!employeeId) {
+                currentUser = null;
+                tasks = [];
+                localStorage.removeItem('worker-current-employee-id');
+                hideWorkerInfo();
+                renderTasks();
+                updateStats();
+                return;
+            }
+
+            currentUser = allEmployees.find(e => e.id === employeeId);
+            localStorage.setItem('worker-current-employee-id', employeeId);
+            
+            // Przefiltruj zadania
+            const allTasksStr = localStorage.getItem('worker-all-tasks');
+            if (allTasksStr) {
+                const allTasks = JSON.parse(allTasksStr);
+                tasks = filterTasksForEmployee(allTasks, employeeId);
+                console.log(`🎯 Przefiltrowano do ${tasks.length} zadań dla pracownika ${currentUser.name}`);
+                saveTasks();
+            }
+            
+            showWorkerInfo(currentUser.name);
+            renderTasks();
+            updateStats();
+            
+            console.log(`✅ Wybrano pracownika: ${currentUser.name}`);
+        }
+
+        // Pokazanie informacji o zalogowanym pracowniku
+        function showWorkerInfo(workerName) {
+            const workerInfo = document.getElementById('worker-info');
+            const workerNameSpan = document.getElementById('logged-worker-name');
+            const select = document.getElementById('employee-select');
+            
+            if (workerInfo && workerNameSpan && select) {
+                workerNameSpan.textContent = workerName;
+                workerInfo.style.display = 'flex';
+                select.style.display = 'none';
+            }
+        }
+
+        // Ukrycie informacji o zalogowanym pracowniku
+        function hideWorkerInfo() {
+            const workerInfo = document.getElementById('worker-info');
+            const select = document.getElementById('employee-select');
+            
+            if (workerInfo && select) {
+                workerInfo.style.display = 'none';
+                select.style.display = 'block';
+            }
+        }
+
+        // Wylogowanie pracownika
+        function logoutWorker() {
+            if (confirm('Czy na pewno chcesz wylogować tego pracownika?\n\nUwaga: Po wylogowaniu pracownik straci dostęp do aplikacji na tym urządzeniu.')) {
+                // Usuń dane zalogowanego pracownika
+                localStorage.removeItem('worker-current-employee-id');
+                localStorage.removeItem('worker-tasks');
+                
+                // Reset stanu
+                currentUser = null;
+                tasks = [];
+                
+                // Ukryj info i pokaż select
+                hideWorkerInfo();
+                
+                // Zresetuj select
+                const select = document.getElementById('employee-select');
+                if (select) {
+                    select.value = '';
+                }
+                
+                // Odśwież widok
+                loadTasks();
+                updateStats();
+                
+                alert('✅ Pracownik został wylogowany.\n\nMożna teraz zalogować innego pracownika.');
+                console.log('🚪 Pracownik wylogowany');
+            }
+        }
+
+        // Inicjalizacja aplikacji
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            updateDate();
+            initializeFirebase(); // Uruchom Firebase
+        });
+
+        // Sprawdzanie połączenia internetowego
+        window.addEventListener('online', function() {
+            isOnline = true;
+            const indicator = document.getElementById('offline-indicator');
+            if (indicator) indicator.style.display = 'none';
+        });
+
+        window.addEventListener('offline', function() {
+            isOnline = false;
+            const indicator = document.getElementById('offline-indicator');
+            if (indicator) indicator.style.display = 'block';
+        });
+
+        // Listener dla zmian w localStorage planera (cross-tab sync)
+        window.addEventListener('storage', function(e) {
+            console.log('📡 Storage event:', e.key);
+            if (e.key && (e.key.includes('state') || e.key.includes('planner'))) {
+                console.log('🔄 Planer zaktualizował dane, synchronizuję...');
+                // Odśwież zadania z planera po zmianie
+                setTimeout(() => {
+                    const plannerState = loadPlannerState();
+                    if (plannerState) {
+                        const imported = mapPlannerTasks(plannerState);
+                        if (imported.length && currentUser) {
+                            mergeIncomingTasks(imported);
+                            saveTasks();
+                            renderTasks();
+                            updateStats();
+                        }
+                    }
+                }, 500);
+            }
+        });
+
+        function initializeApp() {
+            // Próba wczytania danych z localStorage
+            const savedTasks = localStorage.getItem('worker-tasks');
+            if (savedTasks) {
+                tasks = JSON.parse(savedTasks);
+            }
+
+            const plannerState = loadPlannerState();
+            if (plannerState) {
+                const imported = mapPlannerTasks(plannerState);
+                if (imported.length) {
+                    mergeIncomingTasks(imported);
+                    saveTasks();
+                    updateLastSync();
+                }
+            }
+
+            // Wczytanie ustawień powiadomień
+            const savedSettings = localStorage.getItem('worker-notifications');
+            if (savedSettings) {
+                notificationSettings = { ...notificationSettings, ...JSON.parse(savedSettings) };
+                updateNotificationUI();
+            }
+
+            // Ustawienie nazwy użytkownika w tytule (tylko jeśli currentUser istnieje)
+            if (currentUser && currentUser.name) {
+                document.title = `Worker App - ${currentUser.name}`;
+            } else {
+                document.title = 'Worker App';
+            }
+            
+            // Uruchomienie przypomnień dla aktywnych zadań
+            startRemindersForActiveTasks();
+        }
+
+        function updateDate() {
+            const dateElement = document.getElementById('current-date');
+            if (!dateElement) return; // Element usunięty z nowego designu
+            
+            const now = new Date();
+            const options = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            };
+            dateElement.textContent = now.toLocaleDateString('pl-PL', options);
+        }
+
+        function loadTasks() {
+            // Ładowanie zadań z Firebase - testowe zadania usunięte
+            // Zadania są ładowane przez loadTasksFromFirebase() podczas inicjalizacji
+            renderTasks();
+        }
+
+        function renderTasks() {
+            const taskList = document.getElementById('task-list');
+            
+            console.log('🔍 renderTasks: tasks count =', tasks.length, tasks);
+
+            if (tasks.length === 0) {
+                taskList.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                        <div style="font-size: 3rem; margin-bottom: 16px;">🎉</div>
+                        <div style="font-size: 1.25rem; font-weight: 600; margin-bottom: 8px;">Brak zadań na dziś</div>
+                        <div style="font-size: 0.9rem;">Świetna robota!</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Grupowanie zadań po orderId
+            const tasksByOrder = {};
+            tasks.forEach(task => {
+                const orderId = task.orderId || 'Bez zamówienia';
+                if (!tasksByOrder[orderId]) {
+                    tasksByOrder[orderId] = {
+                        orderId: orderId,
+                        client: task.client || 'Nieznany klient',
+                        tasks: []
+                    };
+                }
+                tasksByOrder[orderId].tasks.push(task);
+            });
+            
+            console.log('📦 tasksByOrder =', tasksByOrder);
+
+            // Renderowanie zamówień
+            taskList.innerHTML = Object.values(tasksByOrder).map(order => {
+                const allTasks = order.tasks;
+                const completedCount = allTasks.filter(t => t.status === 'completed').length;
+                const inProgressCount = allTasks.filter(t => t.status === 'in-progress').length;
+                const totalCount = allTasks.length;
+
+                const safeOrderId = order.orderId.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                
+                return `
+                    <div class="order-card">
+                        <div class="order-header" onclick="toggleOrder('${safeOrderId}')">
+                            <div class="order-info">
+                                <div class="order-number">📦 ${escapeHtml(order.orderId)}</div>
+                                <div class="order-client">${escapeHtml(order.client)}</div>
+                            </div>
+                            <div class="order-stats">
+                                <div class="order-stat">
+                                    <span>${completedCount}/${totalCount}</span>
+                                    <span>✓</span>
+                                </div>
+                                ${inProgressCount > 0 ? `
+                                    <div class="order-stat">
+                                        <span>${inProgressCount}</span>
+                                        <span>⚡</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <div class="expand-icon">▼</div>
+                        </div>
+                        <div class="order-tasks" id="order-${safeOrderId}">
+                            ${allTasks.map(task => renderTaskCard(task)).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            updateStats();
+        }
+
+        function toggleOrder(orderId) {
+            const orderTasks = document.getElementById(`order-${orderId}`);
+            const orderHeader = orderTasks.previousElementSibling;
+            
+            if (orderTasks.classList.contains('expanded')) {
+                orderTasks.classList.remove('expanded');
+                orderHeader.classList.remove('expanded');
+            } else {
+                orderTasks.classList.add('expanded');
+                orderHeader.classList.add('expanded');
+            }
+        }
+
+        function renderTaskCard(task) {
+            const statusClass = `status-${task.status}`;
+            const statusText = getStatusText(task.status);
+            const elapsedTime = task.startTime ? getElapsedTime(task.startTime) : '';
+            const title = escapeHtml(task.title || `Zadanie ${task.id}`);
+            const model = escapeHtml(task.model || '-');
+            const quantityValue = escapeHtml(`${task.quantity || '-'} ${task.unit || ''}`.trim());
+            const estimatedTime = escapeHtml(task.estimatedTime != null ? `${task.estimatedTime} min` : '-');
+            const phoneLink = formatPhoneLink(task.contactPhone);
+            const orderNotes = task.orderNotes ? escapeHtml(task.orderNotes).replace(/\n/g, '<br>') : '';
+            const isCompleted = task.status === 'completed';
+            
+            // Debug
+            const actions = getTaskActions(task);
+            console.log(`Task ${task.id} (${task.status}): actions =`, actions);
+
+            return `
+                <div class="task-card ${isCompleted ? 'completed' : ''}">
+                    <div class="task-header">
+                        <div class="task-title-section">
+                            <div class="task-title">
+                                <input type="checkbox" class="task-checkbox" 
+                                    ${isCompleted ? 'checked' : ''}
+                                    onchange="toggleTaskComplete('${task.id}')"
+                                    ${task.status === 'in-progress' || task.status === 'paused' || task.status === 'doing' ? 'disabled' : ''}>
+                                <span>${title}</span>
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+                                ${model} • ${quantityValue}${estimatedTime !== '-' ? ' • ' + estimatedTime : ''}
+                            </div>
+                        </div>
+                        <div class="task-status ${statusClass}">${statusText}</div>
+                    </div>
+
+                    ${orderNotes ? `
+                        <div style="margin: 12px 0; padding: 12px; background: var(--panel); border-radius: 8px; border-left: 3px solid var(--accent);">
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">📝 Uwagi:</div>
+                            <div style="font-size: 0.9rem; line-height: 1.5;">${orderNotes}</div>
+                        </div>
+                    ` : ''}
+
+                    ${phoneLink !== '-' ? `
+                        <div style="margin: 8px 0;">
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);">📞</span>
+                            ${phoneLink}
+                        </div>
+                    ` : ''}
+
+                    ${task.status === 'in-progress' && elapsedTime ? `
+                        <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(124, 58, 237, 0.1); border-radius: 8px; margin-top: 12px;">
+                            <span style="font-size: 1.2rem;">⏱️</span>
+                            <span style="font-weight: 600; color: var(--accent);">${elapsedTime}</span>
+                        </div>
+                    ` : ''}
+
+                    <div class="task-actions">
+                        ${actions}
+                    </div>
+                </div>
+            `;
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'todo': 'Do zrobienia',
+                'pending': 'Oczekuje',
+                'doing': 'W trakcie',
+                'in-progress': 'W trakcie',
+                'done': 'Ukończone',
+                'completed': 'Ukończone',
+                'paused': 'Wstrzymane'
+            };
+            return statusMap[status] || status;
+        }
+
+        function getElapsedTime(startTime) {
+            const elapsed = Date.now() - startTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+
+            if (hours > 0) {
+                return `${hours}h ${mins}m`;
+            } else {
+                return `${mins}m`;
+            }
+        }
+
+        function getPlannedWindow(task) {
+            if (task.startPlanned && task.endPlanned) {
+                return `${formatDateTime(task.startPlanned)} → ${formatDateTime(task.endPlanned)}`;
+            }
+            if (task.endPlanned) {
+                return formatDateTime(task.endPlanned);
+            }
+            if (task.deadline) {
+                return task.deadline;
+            }
+            return '-';
+        }
+
+        function formatDateTime(ts) {
+            if (!ts) return '-';
+            const date = new Date(ts);
+            if (!isFinite(date.getTime())) return '-';
+            return date.toLocaleString('pl-PL', {
+                weekday: 'short',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function getTaskActions(task) {
+            const status = task.status || 'todo';
+            // Bezpiecznie cytujemy ID zadania (może być string lub liczba)
+            const idEsc = JSON.stringify(task.id);
+            
+            switch (status) {
+                case 'todo':
+                case 'pending':
+                    return `
+                        <button class="btn btn-primary" onclick="startTask(${idEsc})">🚀 Rozpocznij pracę</button>
+                        <button class="btn btn-success" onclick="showCompleteConfirmation(${idEsc})">✅ Oznacz jako wykonane</button>
+                    `;
+
+                case 'in-progress':
+                case 'doing':
+                    return `
+                        <button class="btn btn-warning" onclick="pauseTask(${idEsc})">⏸️ Wstrzymaj</button>
+                        <button class="btn btn-success" onclick="showCompleteConfirmation(${idEsc})">✅ Oznacz jako wykonane</button>
+                    `;
+
+                case 'paused':
+                    return `
+                        <button class="btn btn-primary" onclick="resumeTask(${idEsc})">▶️ Wznów pracę</button>
+                        <button class="btn btn-success" onclick="showCompleteConfirmation(${idEsc})">✅ Oznacz jako wykonane</button>
+                    `;
+
+                case 'completed':
+                case 'done':
+                    return `<button class="btn btn-secondary" disabled>✓ Ukończone</button>`;
+
+                default:
+                    console.warn('Unknown task status:', status);
+                    return `
+                        <button class="btn btn-primary" onclick="startTask(${idEsc})">🚀 Rozpocznij pracę</button>
+                        <button class="btn btn-success" onclick="showCompleteConfirmation(${idEsc})">✅ Oznacz jako wykonane</button>
+                    `;
+            }
+        }
+
+        async function startTask(taskId) {
+            const task = tasks.find(t => t.id == taskId || t.id === taskId);
+            if (task) {
+                task.status = 'doing'; // Używamy 'doing' zgodnie z planerem
+                task.startTime = Date.now();
+                saveTasks();
+                await syncTaskToFirebase(task);
+                
+                // Synchronizuj do planera (localStorage)
+                try { syncTaskToPlanner(task); } catch (e) { console.warn('Sync do planera nieudany:', e); }
+                
+                renderTasks();
+                startRemindersForActiveTasks();
+
+                // Wibracja na urządzeniach mobilnych
+                if (navigator.vibrate) {
+                    navigator.vibrate(200);
+                }
+                
+                showNotification(`Rozpoczęto zadanie: "${task.title}"`, 'success');
+            } else {
+                console.error('Task not found:', taskId);
+            }
+        }
+
+        async function completeTask(taskId) {
+            const task = tasks.find(t => t.id == taskId || t.id === taskId);
+            if (task) {
+                task.status = 'done'; // Używamy 'done' zgodnie z planerem
+                task.endTime = Date.now();
+                saveTasks();
+                await syncTaskToFirebase(task);
+                
+                // Synchronizuj do planera (localStorage)
+                try { syncTaskToPlanner(task); } catch (e) { console.warn('Sync do planera nieudany:', e); }
+                
+                renderTasks();
+
+                // Zatrzymaj przypomnienia dla tego zadania
+                if (reminderIntervals.has(taskId)) {
+                    clearInterval(reminderIntervals.get(taskId));
+                    reminderIntervals.delete(taskId);
+                }
+
+                // Powiadomienie o ukończeniu
+                showNotification(`Zadanie "${task.title}" zostało ukończone!`, 'success');
+
+                if (navigator.vibrate) {
+                    navigator.vibrate([200, 100, 200]);
+                }
+            } else {
+                console.error('Task not found:', taskId);
+            }
+        }
+
+        async function pauseTask(taskId) {
+            const task = tasks.find(t => t.id == taskId || t.id === taskId);
+            if (task) {
+                task.status = 'paused';
+                saveTasks();
+                await syncTaskToFirebase(task);
+                
+                // Synchronizuj do planera (localStorage)
+                try { syncTaskToPlanner(task); } catch (e) { console.warn('Sync do planera nieudany:', e); }
+                
+                renderTasks();
+
+                // Zatrzymaj przypomnienia dla wstrzymanego zadania
+                if (reminderIntervals.has(taskId)) {
+                    clearInterval(reminderIntervals.get(taskId));
+                    reminderIntervals.delete(taskId);
+                }
+                
+                showNotification(`Wstrzymano zadanie: "${task.title}"`, 'warning');
+            } else {
+                console.error('Task not found:', taskId);
+            }
+        }
+
+        async function resumeTask(taskId) {
+            const task = tasks.find(t => t.id == taskId || t.id === taskId);
+            if (task) {
+                task.status = 'doing'; // Używamy 'doing' zgodnie z planerem
+                saveTasks();
+                await syncTaskToFirebase(task);
+                
+                // Synchronizuj do planera (localStorage)
+                try { syncTaskToPlanner(task); } catch (e) { console.warn('Sync do planera nieudany:', e); }
+                
+                renderTasks();
+                startRemindersForActiveTasks();
+                
+                showNotification(`Wznowiono zadanie: "${task.title}"`, 'success');
+            } else {
+                console.error('Task not found:', taskId);
+            }
+        }
+
+        function updateStats() {
+            const total = tasks.length;
+            const completed = tasks.filter(t => t.status === 'completed' || t.status === 'done').length;
+            const inProgress = tasks.filter(t => t.status === 'in-progress' || t.status === 'doing').length;
+
+            const totalEl = document.getElementById('total-tasks');
+            const completedEl = document.getElementById('completed-tasks');
+            const inProgressEl = document.getElementById('in-progress-tasks');
+            
+            if (totalEl) totalEl.textContent = total;
+            if (completedEl) completedEl.textContent = completed;
+            if (inProgressEl) inProgressEl.textContent = inProgress;
+        }
+
+        function saveTasks() {
+            localStorage.setItem('worker-tasks', JSON.stringify(tasks));
+        }
+
+        function loadPlannerState() {
+            const possibleKeys = ['door_v50_state', 'door_v5627_state', 'door_planner_state', 'state_backup'];
+            for (const key of possibleKeys) {
+                try {
+                    const raw = localStorage.getItem(key);
+                    if (!raw) continue;
+                    const parsed = JSON.parse(raw);
+                    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.tasks)) {
+                        return parsed;
+                    }
+                } catch (err) {
+                    console.warn('[WorkerApp] Błąd odczytu stanu planera z', key, err);
+                }
+            }
+            return null;
+        }
+
+        function mapPlannerTasks(plannerState) {
+            if (!plannerState || !Array.isArray(plannerState.tasks)) return [];
+            const currentId = currentUser && currentUser.id;
+            const ordersById = new Map((plannerState.orders || []).map(o => [o.id, o]));
+            const employeesById = new Map((plannerState.employees || []).map(e => [e.id, e]));
+            const keepAll = !currentId;
+
+            const filtered = plannerState.tasks.filter(task => {
+                if (keepAll) return true;
+                return isTaskForEmployee(task, currentId);
+            });
+
+            return filtered.map(task => {
+                const order = ordersById.get(task.orderId) || {};
+                const baseDuration = task.estMin || task.duration || 0;
+                const leadEmployeeId = order.leadEmployeeId || '';
+                const lead = leadEmployeeId ? employeesById.get(leadEmployeeId) : null;
+                return {
+                    id: task.id,
+                    title: task.name || task.opName || `Zadanie ${task.id}`,
+                    model: order.model || task.orderId || '-',
+                    quantity: task.qty || order.quantity || 1,
+                    unit: task.unit || 'szt',
+                    deadline: task.endPlanned ? new Date(task.endPlanned).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }) : '-',
+                    status: mapPlannerStatus(task.status),
+                    startTime: null,
+                    endTime: null,
+                    estimatedTime: baseDuration,
+                    priority: task.priority || 'normal',
+                    orderId: task.orderId || '-',
+                    startPlanned: task.startPlanned || null,
+                    endPlanned: task.endPlanned || null,
+                    client: order.client || '',
+                    address: order.address || '',
+                    postalCode: order.postalCode || '',
+                    contactPhone: order.phone || '',
+                    installDate: order.installDate || '',
+                    leadEmployeeId,
+                    leadEmployeeName: lead && lead.name ? lead.name : '',
+                    orderNotes: order.notes || ''
+                };
+            });
+        }
+
+        function mapPlannerStatus(status) {
+            switch (status) {
+                case 'run':
+                case 'in-progress':
+                    return 'in-progress';
+                case 'done':
+                case 'completed':
+                    return 'completed';
+                case 'paused':
+                    return 'paused';
+                default:
+                    return 'pending';
+            }
+        }
+
+        // Mapowanie statusu z Worker App do formatu używanego przez planer
+        function mapWorkerStatusToPlanner(status) {
+            switch (status) {
+                case 'in-progress':
+                    return 'doing';
+                case 'doing':
+                    return 'doing';
+                case 'completed':
+                    return 'done';
+                case 'done':
+                    return 'done';
+                case 'paused':
+                    return 'paused';
+                case 'pending':
+                    return 'todo';
+                default:
+                    return status;
+            }
+        }
+
+        // Synchronizuje zmiany statusu zadania z localStorage planera (kilka możliwych kluczy)
+        function syncTaskToPlanner(task) {
+            if (!task || !task.id) return false;
+
+            const possibleKeys = ['door_v50_state', 'door_v5627_state', 'door_planner_state', 'state_backup', 'planner-state'];
+            const plannerStatus = mapWorkerStatusToPlanner(task.status);
+            let updated = false;
+
+            for (const key of possibleKeys) {
+                try {
+                    const raw = localStorage.getItem(key);
+                    if (!raw) continue;
+                    const parsed = JSON.parse(raw);
+                    if (!parsed || !Array.isArray(parsed.tasks)) continue;
+
+                    const idx = parsed.tasks.findIndex(t => t && (t.id == task.id));
+                    if (idx !== -1) {
+                        // Zaktualizuj status
+                        parsed.tasks[idx].status = plannerStatus;
+
+                        // Opcjonalnie zapisz znaczniki czasu (ISO) jeśli mamy start/end
+                        try {
+                            if (task.startTime) parsed.tasks[idx].actualStart = new Date(task.startTime).toISOString();
+                            if (task.endTime) parsed.tasks[idx].actualEnd = new Date(task.endTime).toISOString();
+                        } catch (e) { /* ignore date errors */ }
+
+                        // Zapisz z powrotem
+                        localStorage.setItem(key, JSON.stringify(parsed));
+                        updated = true;
+                        console.log(`🔄 Planer (${key}) zaktualizowany: zadanie ${task.id} → status=${plannerStatus}`);
+
+                        // Wyemituj custom event na wypadek gdy planer nie nasłuchuje storage
+                        try {
+                            window.dispatchEvent(new CustomEvent('planner-state-updated', { detail: { key, taskId: task.id, status: plannerStatus } }));
+                        } catch (e) {}
+
+                        // Nie przerywamy pętli — spróbuj zaktualizować wszystkie możliwe kopie
+                    }
+                } catch (err) {
+                    console.warn('[WorkerApp] Błąd podczas syncTaskToPlanner dla', key, err);
+                }
+            }
+
+            if (!updated) {
+                console.log('⚠️ Nie znaleziono zadania w stanie planera dla id:', task.id);
+            }
+
+            return updated;
+        }
+
+        function mergeIncomingTasks(importedTasks) {
+            const existingMap = new Map(tasks.map(task => [task.id, task]));
+            tasks = importedTasks.map(task => {
+                const existing = existingMap.get(task.id);
+                if (existing) {
+                    return Object.assign({}, existing, task, {
+                        status: existing.status,
+                        startTime: existing.startTime,
+                        endTime: existing.endTime
+                    });
+                }
+                return task;
+            });
+        }
+
+        function updateLastSync() {
+            const lastSync = document.getElementById('last-sync');
+            if (lastSync) {
+                lastSync.textContent = `Ostatnia synchronizacja: ${new Date().toLocaleString('pl-PL')}`;
+            }
+        }
+
+        function exportConfirmations() {
+            const confirmations = tasks.map(task => ({
+                id: task.id,
+                title: task.title,
+                status: task.status,
+                startTime: task.startTime,
+                endTime: task.endTime,
+                actualTime: task.startTime && task.endTime ? task.endTime - task.startTime : null,
+                completedAt: task.endTime ? new Date(task.endTime).toISOString() : null,
+                worker: currentUser.name,
+                device: 'Worker App PWA'
+            }));
+            
+            const exportData = {
+                exportDate: new Date().toISOString(),
+                confirmations: confirmations,
+                worker: currentUser,
+                version: "1.0",
+                app: "Worker App"
+            };
+            
+            const jsonContent = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'confirmations-export.json');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification('📤 Potwierdzenia zostały wyeksportowane!');
+            
+            if (navigator.vibrate) {
+                navigator.vibrate([200, 100, 200]);
+            }
+        }
+
+        function importTasksFromMainApp() {
+            const plannerState = loadPlannerState();
+            if (plannerState) {
+                const importedTasks = mapPlannerTasks(plannerState);
+                if (importedTasks.length) {
+                    mergeIncomingTasks(importedTasks);
+                    saveTasks();
+                    renderTasks();
+                    startRemindersForActiveTasks();
+                    updateLastSync();
+                    if (notificationSettings.task) {
+                        showNotification(`📥 Załadowano ${importedTasks.length} zadań z planera`, 'success');
+                        playNotificationSound('success');
+                    }
+                    if (navigator.vibrate) {
+                        navigator.vibrate([120, 60, 120]);
+                    }
+                    return;
+                } else {
+                    showNotification('ℹ️ Brak dopasowanych zadań w planerze', 'info');
+                    return;
+                }
+            }
+
+            // Fallback: import przez plik JSON
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        try {
+                            const importData = JSON.parse(event.target.result);
+                            
+                            if (importData.tasks && Array.isArray(importData.tasks)) {
+                                // Importuj nowe zadania
+                                const newTasks = importData.tasks.filter(importedTask => 
+                                    !tasks.some(existingTask => existingTask.id === importedTask.id)
+                                );
+                                
+                                if (newTasks.length > 0) {
+                                    tasks.push(...newTasks);
+                                    saveTasks();
+                                    renderTasks();
+                                    startRemindersForActiveTasks();
+                                    
+                                    // Powiadomienie o nowych zadaniach
+                                    if (notificationSettings.task) {
+                                        showNotification(`📥 Zaimportowano ${newTasks.length} nowych zadań!`, 'success');
+                                    }
+                                    
+                                    updateLastSync();
+                                    
+                                    if (navigator.vibrate) {
+                                        navigator.vibrate([100, 50, 100, 50, 100]);
+                                    }
+                                } else {
+                                    showNotification('ℹ️ Brak nowych zadań do zaimportowania', 'info');
+                                }
+                            } else {
+                                showNotification('❌ Nieprawidłowy format pliku importu', 'error');
+                            }
+                        } catch (error) {
+                            console.error('Błąd podczas importu:', error);
+                            showNotification('❌ Błąd podczas importu pliku', 'error');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        }
+
+        function clearWorkerCache() {
+            try {
+                reminderIntervals.forEach(interval => clearInterval(interval));
+                reminderIntervals.clear();
+                localStorage.removeItem('worker-tasks');
+                localStorage.removeItem('worker-notifications');
+                // Nie usuwamy worker-user, żeby zachować profil pracownika
+                tasks = [];
+                renderTasks();
+                updateStats();
+                const lastSync = document.getElementById('last-sync');
+                if (lastSync) {
+                    lastSync.textContent = 'Pamięć lokalna wyczyszczona — zaimportuj zadania ponownie.';
+                }
+                showNotification('🧹 Pamięć lokalna wyczyszczona. Zaimportuj zadania ponownie.', 'success');
+            } catch (error) {
+                console.error('Błąd czyszczenia pamięci:', error);
+                showNotification('❌ Nie udało się wyczyścić danych lokalnych', 'error');
+            }
+        }
+
+        function toggleNotificationSettings() {
+            const popup = document.getElementById('notification-popup');
+            const isVisible = popup.style.display === 'block';
+            
+            if (isVisible) {
+                popup.style.display = 'none';
+            } else {
+                popup.style.display = 'block';
+                // Zamknij po kliknięciu poza popup
+                setTimeout(() => {
+                    document.addEventListener('click', function closePopup(e) {
+                        if (!popup.contains(e.target) && e.target.id !== 'notification-btn') {
+                            popup.style.display = 'none';
+                            document.removeEventListener('click', closePopup);
+                        }
+                    });
+                }, 1);
+            }
+        }
+
+        function toggleNotification(type) {
+            notificationSettings[type] = !notificationSettings[type];
+            updateNotificationUI();
+            saveNotificationSettings();
+            
+            // Pokaż podgląd powiadomienia
+            if (notificationSettings[type]) {
+                showNotification(`✅ ${getNotificationLabel(type)} włączone`, 'success');
+                playNotificationSound('success');
+            } else {
+                showNotification(`❌ ${getNotificationLabel(type)} wyłączone`, 'info');
+            }
+        }
+
+        function getNotificationLabel(type) {
+            const labels = {
+                sound: 'Dźwięki',
+                vibration: 'Wibracja',
+                reminder: 'Przypomnienia czasu',
+                task: 'Nowe zadania'
+            };
+            return labels[type] || type;
+        }
+
+        function updateNotificationUI() {
+            Object.keys(notificationSettings).forEach(type => {
+                const switchEl = document.getElementById(`${type}-switch`);
+                if (switchEl) {
+                    if (notificationSettings[type]) {
+                        switchEl.classList.add('active');
+                    } else {
+                        switchEl.classList.remove('active');
+                    }
+                }
+            });
+            
+            // Aktualizuj ikonę głównego przycisku
+            const btn = document.getElementById('notification-btn');
+            const hasAnyEnabled = Object.values(notificationSettings).some(v => v);
+            btn.classList.toggle('active', hasAnyEnabled);
+        }
+
+        function saveNotificationSettings() {
+            localStorage.setItem('worker-notifications', JSON.stringify(notificationSettings));
+        }
+
+        function playNotificationSound(type = 'default') {
+            if (!notificationSettings.sound) return;
+            
+            try {
+                // Użyj Web Audio API do generowania dźwięków
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                // Różne dźwięki dla różnych typów
+                const frequencies = {
+                    'success': 800,
+                    'warning': 600,
+                    'error': 400,
+                    'default': 500
+                };
+                
+                oscillator.frequency.setValueAtTime(frequencies[type] || 500, audioContext.currentTime);
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (e) {
+                // Fallback - próba użycia HTML5 Audio jeśli Web Audio nie działa
+                console.log('Web Audio not supported, using fallback');
+            }
+        }
+
+        function vibrateDevice(pattern = [200]) {
+            if (!notificationSettings.vibration || !navigator.vibrate) return;
+            navigator.vibrate(pattern);
+        }
+
+        async function toggleTaskComplete(taskId) {
+            const task = tasks.find(t => t.id == taskId || t.id === taskId);
+            if (!task) {
+                console.error('Task not found:', taskId);
+                return;
+            }
+
+            if (task.status === 'completed' || task.status === 'done') {
+                // Cofnięcie ukończenia
+                task.status = 'todo';
+                task.endTime = null;
+                saveTasks();
+                await syncTaskToFirebase(task);
+                renderTasks();
+                showNotification(`Zadanie "${task.title}" zostało cofnięte`, 'info');
+            } else if (task.status === 'pending' || task.status === 'todo') {
+                // Oznacz jako ukończone
+                if (confirm(`Czy na pewno oznaczyć zadanie jako wykonane?\n\n"${task.title}"`)) {
+                    await completeTask(taskId);
+                }
+            }
+        }
+
+        function showCompleteConfirmation(taskId) {
+            const task = tasks.find(t => t.id == taskId || t.id === taskId);
+            if (!task) {
+                console.error('Task not found:', taskId);
+                return;
+            }
+
+            if (confirm(`Czy na pewno oznaczyć zadanie jako wykonane?\n\n"${task.title}"\n\nTej operacji nie można cofnąć.`)) {
+                completeTask(taskId);
+            }
+        }
+
+        async function syncTaskToFirebase(task) {
+            try {
+                const appId = localStorage.getItem('planner-app-id') || 'doors-demo';
+                const userId = localStorage.getItem('planner-user-id') || 'hala-1';
+
+                console.log(`🔄 Synchronizacja zadania ${task.id} (${task.status}) do planera...`);
+
+                // Przygotuj dane do synchronizacji
+                const taskData = {
+                    status: task.status,
+                    startTime: task.startTime || null,
+                    endTime: task.endTime || null,
+                    updatedAt: Date.now(),
+                    updatedBy: currentUser?.name || 'Worker App'
+                };
+
+                // 1. Zaktualizuj w Firebase
+                try {
+                    const taskRef = firestore
+                        .collection('planner')
+                        .doc(appId)
+                        .collection('users')
+                        .doc(userId)
+                        .collection('tasks')
+                        .doc(task.id.toString());
+
+                    await taskRef.update(taskData);
+                    console.log(`✅ Firebase: Zadanie ${task.id} zaktualizowane`);
+                } catch (fbError) {
+                    console.warn('⚠️ Firebase update failed:', fbError);
+                }
+
+                // 2. Aktualizuj w plannerze (localStorage) - KLUCZOWE!
+                const plannerKeys = ['door_v5627_state', 'door_planner_state', 'state_backup'];
+                let updated = false;
+                
+                for (const key of plannerKeys) {
+                    try {
+                        const raw = localStorage.getItem(key);
+                        if (!raw) continue;
+                        
+                        const state = JSON.parse(raw);
+                        if (state && Array.isArray(state.tasks)) {
+                            const plannerTask = state.tasks.find(t => t.id === task.id);
+                            if (plannerTask) {
+                                // Aktualizuj status i czasy
+                                plannerTask.status = task.status;
+                                plannerTask.startTime = task.startTime;
+                                plannerTask.endTime = task.endTime;
+                                plannerTask.updatedAt = Date.now();
+                                
+                                // Zapisz z powrotem
+                                localStorage.setItem(key, JSON.stringify(state));
+                                console.log(`✅ Planer (${key}): Status zmieniony na "${task.status}"`);
+                                updated = true;
+                                
+                                // Wyślij event dla planera
+                                window.dispatchEvent(new CustomEvent('worker-task-updated', { 
+                                    detail: { taskId: task.id, status: task.status, key: key }
+                                }));
+                            }
+                        }
+                    } catch (err) {
+                        console.warn(`⚠️ Błąd aktualizacji ${key}:`, err);
+                    }
+                }
+
+                if (updated) {
+                    console.log(`🎉 Zadanie ${task.id} zsynchronizowane z planerem!`);
+                    // Wymuś odświeżenie UI planera jeśli jest otwarty
+                    window.dispatchEvent(new Event('storage'));
+                } else {
+                    console.warn(`⚠️ Nie znaleziono zadania ${task.id} w localStorage planera`);
+                }
+
+                return updated;
+            } catch (error) {
+                console.error('❌ Błąd synchronizacji:', error);
+                showNotification('Błąd synchronizacji z planerem', 'error');
+                return false;
+            }
+        }
+
+        function hideConfirmationModal() {
+            const modal = document.getElementById('confirmation-modal');
+            modal.classList.remove('show');
+        }
+
+        function confirmCompleteTask() {
+            const taskId = parseInt(document.getElementById('confirm-complete-btn').getAttribute('data-task-id'));
+            hideConfirmationModal();
+            completeTask(taskId);
+        }
+
+        function showNotification(message, type = 'info') {
+            // Prosta implementacja powiadomień
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${type === 'error' ? 'var(--error)' : type === 'success' ? 'var(--success)' : type === 'warning' ? 'var(--warning)' : 'var(--accent)'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 1000;
+                animation: slideDown 0.3s ease-out;
+                max-width: 90vw;
+                word-wrap: break-word;
+            `;
+
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            // Dźwięk i wibracja
+            playNotificationSound(type);
+            vibrateDevice(type === 'error' ? [200, 100, 200, 100, 200] : 
+                          type === 'success' ? [100, 50, 100] : [200]);
+
+            setTimeout(() => {
+                notification.style.animation = 'slideUp 0.3s ease-in';
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
+        }
+
+        function startRemindersForActiveTasks() {
+            if (!notificationSettings.reminder) return;
+
+            // Wyczyść istniejące timery
+            reminderIntervals.forEach(interval => clearInterval(interval));
+            reminderIntervals.clear();
+
+            // Znajdź zadania w trakcie
+            const activeTasks = tasks.filter(task => task.status === 'in-progress');
+
+            activeTasks.forEach(task => {
+                if (task.startTime) {
+                    // Sprawdź czy zadanie trwa już dłużej niż szacowany czas
+                    const elapsedMinutes = (Date.now() - task.startTime) / 60000;
+                    const estimatedMinutes = task.estimatedTime;
+
+                    if (elapsedMinutes > estimatedMinutes) {
+                        // Zadanie przekracza czas - natychmiastowe przypomnienie
+                        showNotification(`⚠️ Zadanie "${task.title}" przekracza szacowany czas!`, 'warning');
+                    }
+
+                    // Ustaw timer przypomnień co 30 minut
+                    const intervalId = setInterval(() => {
+                        const currentElapsed = (Date.now() - task.startTime) / 60000;
+                        
+                        if (currentElapsed > estimatedMinutes) {
+                            const overtime = Math.floor(currentElapsed - estimatedMinutes);
+                            showNotification(`⏰ Zadanie "${task.title}" trwa już ${overtime} min dłużej!`, 'warning');
+                        }
+                    }, 30 * 60 * 1000); // 30 minut
+
+                    reminderIntervals.set(task.id, intervalId);
+                }
+            });
+        }
+
+        // PWA - Service Worker registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                // Service Worker będzie dodany w następnej iteracji
+                console.log('PWA capabilities ready');
+            });
+        }
+
+        // Dodanie do ekranu głównego (PWA)
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+
+            // Można dodać przycisk instalacji
+            console.log('App can be installed');
+        });
+    </script>
+</body>
+</html></content>
+<parameter name="filePath">c:\Users\KOMPUTER\Desktop\aplikacja\1\worker-app.html
