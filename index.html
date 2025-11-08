@@ -6775,7 +6775,8 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         { name: 'processes', items: targetState.processes || [] },
         { name: 'orders', items: targetState.orders || [] },
         { name: 'tasks', items: targetState.tasks || [] },
-        { name: 'after', items: targetState.after || [] }
+        { name: 'after', items: targetState.after || [] },
+        { name: 'warehouseItems', items: window.warehouseItems || [] }
       ];
 
       // Pobierz aktualne dokumenty zdalne, aby usunąć te, których już nie ma lokalnie
@@ -7027,11 +7028,11 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       }
       
       const getAll=async(name)=>(await r.collection(name).get()).docs.map(d=>({id:d.id,...d.data()}));
-      const [employees,operationsCatalog,processes,orders,tasks,after]=await Promise.all([
-        getAll('employees'),getAll('operationsCatalog'),getAll('processes'),getAll('orders'),getAll('tasks'),getAll('after')
+      const [employees,operationsCatalog,processes,orders,tasks,after,warehouseItems]=await Promise.all([
+        getAll('employees'),getAll('operationsCatalog'),getAll('processes'),getAll('orders'),getAll('tasks'),getAll('after'),getAll('warehouseItems')
       ]);
 
-      const remoteCollections = { employees, operationsCatalog, processes, orders, tasks, after };
+      const remoteCollections = { employees, operationsCatalog, processes, orders, tasks, after, warehouseItems };
 
       const remoteCountTotal = Object.values(remoteCollections)
         .reduce((sum, collection)=> sum + (Array.isArray(collection) ? collection.length : (collection && typeof collection === 'object' ? Object.keys(collection).length : 0)), 0);
@@ -7069,7 +7070,17 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         }
 
         console.log(`📝 Aktualizuję kolekcję '${key}': lokalna=${localLen}, zdalna=${remoteLen}`);
-        state[key] = Array.isArray(collection) ? collection.slice() : (collection ? JSON.parse(JSON.stringify(collection)) : Array.isArray(state[key]) ? [] : {});
+        let dataToLoad = Array.isArray(collection) ? collection.slice() : (collection ? JSON.parse(JSON.stringify(collection)) : Array.isArray(state[key]) ? [] : {});
+        
+        // Specjalna obsługa dla warehouseItems - przypisz do window.warehouseItems
+        if(key === 'warehouseItems' && Array.isArray(dataToLoad)){
+          console.log(`📦 [loadFromDB] Wczytaję magazyn: ${dataToLoad.length} pozycji`);
+          window.warehouseItems = dataToLoad;
+          localStorage.setItem('warehouseItems', JSON.stringify(dataToLoad));
+          console.log(`✅ [loadFromDB] Magazyn zsynchronizowany z Firebase (${dataToLoad.length} pozycji)`);
+        }
+        
+        state[key] = dataToLoad;
         updated.push(key);
       });
 
