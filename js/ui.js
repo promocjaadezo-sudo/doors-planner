@@ -3,15 +3,15 @@ const qs = (s) => document.querySelector(s);
 
 function renderDash(state) {
   state = state || (typeof window!=='undefined' ? window.state : null);
-  if(!state){ console.warn('[renderDash] brak state'); return; }
+  // Don't bail if state is missing - warehouse items are separate
   try{
-    const dOrders = qs('#dash-orders'); if (dOrders) dOrders.textContent = String((state.orders || []).length);
-    const dProc = qs('#dash-proc'); if (dProc) dProc.textContent = String((state.processes || []).length);
-    const dOps = qs('#dash-ops'); if (dOps) dOps.textContent = String((state.operationsCatalog || []).length);
+    const dOrders = qs('#dash-orders'); if (dOrders && state) dOrders.textContent = String((state.orders || []).length);
+    const dProc = qs('#dash-proc'); if (dProc && state) dProc.textContent = String((state.processes || []).length);
+    const dOps = qs('#dash-ops'); if (dOps && state) dOps.textContent = String((state.operationsCatalog || []).length);
     const dWarehouse = qs('#dash-warehouse'); if (dWarehouse) dWarehouse.textContent = String((window.warehouseItems || []).length);
     
     // Renderuj alerty terminów zamówień
-    renderDeadlineAlerts(state);
+    if(state) renderDeadlineAlerts(state);
   }catch(e){ console.warn('[renderDash] error', e&&e.message); }
 }
 // Eksport do globalnego scope (diagnostyka w index.html sprawdza window.renderDash)
