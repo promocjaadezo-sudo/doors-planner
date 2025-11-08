@@ -6928,11 +6928,10 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     const forceLoad = options.forceLoad || false;
     const reason = options.reason || 'manual';
     
-    // 🔒 BLOKADA PODCZAS USUWANIA - Nie wczytuj starych danych gdy usuwamy
+    // 🔒 BLOKADA PODCZAS USUWANIA - Nie wczytuj starych danych gdy usuwamy (TYLKO dla orders/tasks)
     if (window._isSyncingDelete) {
-      console.log('🔒 [loadFromDB] Pominięty: trwa synchronizacja usunięcia (_isSyncingDelete = true)');
-      qs('#set-info').textContent = '🔒 Czekam na zakończenie usunięcia...';
-      return { skipped: true, reason: 'sync-delete-in-progress' };
+      console.log('🔒 [loadFromDB] Blokowanie tylko dla orders/tasks. Pracownicy mogą się synchronizować.');
+      // Flaga blokuje pełne loadFromDB dla orders/tasks, ale pracownicy są zarządzani niezależnie
     }
     
     if(state.storage.mode!=='firebase'){qs('#set-info').textContent='Tryb localStorage (offline)';return;}
@@ -7055,6 +7054,13 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       Object.entries(remoteCollections).forEach(([key, collection])=>{
         const remoteLen = Array.isArray(collection) ? collection.length : (collection && typeof collection === 'object' ? Object.keys(collection).length : 0);
         const localLen = Array.isArray(localCollections[key]) ? localCollections[key].length : (localCollections[key] && typeof localCollections[key] === 'object' ? Object.keys(localCollections[key]).length : 0);
+
+        // 🔒 BLOKADA PODCZAS USUWANIA - Nie nadpisuj orders/tasks gdy usuwamy
+        if (window._isSyncingDelete && (key === 'orders' || key === 'tasks')) {
+          console.log(`🔒 [loadFromDB] Blokuję aktualizację ${key} (trwa synchronizacja usunięcia)`);
+          skipped.push(key);
+          return;
+        }
 
         if(remoteLen === 0 && localLen > 0){
           console.log(`⏭️ Pominięto kolekcję '${key}' (zdalna pusta, lokalna ma ${localLen} elementów)`);
