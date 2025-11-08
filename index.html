@@ -12313,16 +12313,25 @@ function renderWarehouse() {
       </thead>
       <tbody>
         ${filteredItems.map((item, index) => {
-          const isLowStock = item.minStock && item.quantity <= item.minStock;
+          const qtyValue = typeof item.quantity === 'number' ? item.quantity : Number(item.quantity || 0);
+          const priceValue = typeof item.price === 'number' ? item.price : Number(item.price || 0);
+          const hasMinStock = item.minStock !== undefined && item.minStock !== null && item.minStock !== '';
+          const minStockValue = hasMinStock ? Number(item.minStock) : null;
+          const isLowStock = hasMinStock && qtyValue <= minStockValue;
           const rowStyle = isLowStock ? 'background:#c0392b' : (index % 2 === 0 ? 'background:#34495e' : 'background:#2c3e50');
-          
-          // Lokalizacja
+
+          const qtyDisplay = Number.isFinite(qtyValue) ? qtyValue : '-';
+          const priceDisplay = Number.isFinite(priceValue) ? priceValue.toFixed(2) : '-';
+          const minStockDisplay = hasMinStock && Number.isFinite(minStockValue) ? minStockValue : '-';
+
+          // Lokalizacja (może nie istnieć)
+          const location = item.location || {};
           let locationStr = '-';
-          if (item.location && (item.location.shelf || item.location.rack || item.location.sector)) {
+          if (location.shelf || location.rack || location.sector) {
             const parts = [];
-            if (item.location.shelf) parts.push(`R:${item.location.shelf}`);
-            if (item.location.rack) parts.push(`P:${item.location.rack}`);
-            if (item.location.sector) parts.push(`S:${item.location.sector}`);
+            if (location.shelf) parts.push(`R:${location.shelf}`);
+            if (location.rack) parts.push(`P:${location.rack}`);
+            if (location.sector) parts.push(`S:${location.sector}`);
             locationStr = parts.join(' • ');
           }
           
@@ -12332,10 +12341,10 @@ function renderWarehouse() {
                 <div style="font-weight:600;font-size:15px;color:#ffffff !important">${item.name}</div>
                 ${isLowStock ? '<div style="font-size:12px;color:#ffeb3b !important;font-weight:700;margin-top:2px">⚠️ DO ZAMÓWIENIA</div>' : ''}
               </td>
-              <td style="padding:12px;text-align:center;font-weight:700;font-size:15px;color:${isLowStock ? '#ffeb3b' : '#ffffff'} !important">${item.quantity}</td>
-              <td style="padding:12px;text-align:center;font-size:14px;color:#ffffff !important">${item.unit}</td>
-              <td style="padding:12px;text-align:right;font-weight:600;font-size:14px;color:#ffffff !important">${item.price.toFixed(2)}</td>
-              <td style="padding:12px;text-align:center;font-size:14px;color:#ffffff !important">${item.minStock || '-'}</td>
+              <td style="padding:12px;text-align:center;font-weight:700;font-size:15px;color:${isLowStock ? '#ffeb3b' : '#ffffff'} !important">${qtyDisplay}</td>
+              <td style="padding:12px;text-align:center;font-size:14px;color:#ffffff !important">${item.unit || '-'}</td>
+              <td style="padding:12px;text-align:right;font-weight:600;font-size:14px;color:#ffffff !important">${priceDisplay}</td>
+              <td style="padding:12px;text-align:center;font-size:14px;color:#ffffff !important">${minStockDisplay}</td>
               <td style="padding:12px;font-size:14px;color:#ffffff !important">${locationStr}</td>
               <td style="padding:12px;text-align:center">
                 <div style="display:flex;gap:4px;justify-content:center">
