@@ -1,3 +1,26 @@
 {
-    "liveServer.settings.port": 5501
+    "liveServer.settings.port": 5501,
+    // Wyłącz duże/nieistotne foldery z obserwatora plików i wyszukiwania — zmniejsza zużycie CPU/RAM
+    "files.watcherExclude": {
+        "**/node_modules/**": true,
+        "**/.git/**": true,
+        "**/backups/**": true,
+        "**/playwright-report/**": true,
+        "**/test-results/**": true
+    },
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/backups": true,
+        "**/playwright-report": true,
+        "**/test-results": true,
+        "**/.git": true
+    },
+    "files.exclude": {
+        "**/.cache": true
+    },
+    // Dodatkowe optymalizacje wydajności
+    "eslint.enable": false,
+    "typescript.tsc.autoDetect": "off",
+    "git.autorefresh": false,
+    "git.autofetch": false
 }

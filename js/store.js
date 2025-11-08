@@ -104,31 +104,6 @@
     return entry;
   }
 
-  function safeStringify(data){
-    const seen = new WeakSet();
-    return JSON.stringify(data, (key, value) => {
-      if (typeof value === 'function') {
-        return undefined;
-      }
-      if (typeof Node !== 'undefined' && value instanceof Node) {
-        return undefined;
-      }
-      if (typeof value === 'object' && value !== null) {
-        if (value === window) {
-          return undefined;
-        }
-        if (seen.has(value)) {
-          return undefined;
-        }
-        seen.add(value);
-      }
-      if (typeof value === 'number' && !Number.isFinite(value)) {
-        return null;
-      }
-      return value;
-    });
-  }
-
   function migrateLegacyStore(){
     if (typeof localStorage === 'undefined') return;
     if (localStorage.getItem(PRIMARY_STORE_KEY)) return;
@@ -425,7 +400,7 @@
       const shouldPersist = (mergeStats.mergedOrders + mergeStats.updatedOrders + mergeStats.mergedAfter + mergeStats.updatedAfter + hydratedAfter + hydratedOrders) > 0;
       if (shouldPersist){
         try {
-          localStorage.setItem(storeKey, safeStringify(state));
+          localStorage.setItem(storeKey, JSON.stringify(state));
           console.log('[store-migrate] zmiany po inicjalizacji', {
             mergedOrders: mergeStats.mergedOrders,
             updatedOrders: mergeStats.updatedOrders,
@@ -452,18 +427,13 @@
   
   function saveState(shouldSaveToDb = false){ 
     try{ 
-      // Automatyczna kopia zapasowa przed zapisem (jeśli BackupManager dostępny)
-      if (typeof window.BackupManager !== 'undefined' && window.BackupManager.create) {
-        window.BackupManager.create('auto-before-save');
-      }
-      
       // Sprawdź czy kluczowe pola są tablicami
       if (!Array.isArray(state.tasks)) {
         console.error('state.tasks nie jest tablicą przed zapisem!', state.tasks);
         state.tasks = [];
       }
       
-  localStorage.setItem(storeKey, safeStringify(state));
+      localStorage.setItem(storeKey, JSON.stringify(state));
       console.log('Stan zapisany:', {
         tasksLength: state.tasks.length,
         ordersLength: (state.orders || []).length
