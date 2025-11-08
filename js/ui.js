@@ -8,6 +8,7 @@ function renderDash(state) {
     const dOrders = qs('#dash-orders'); if (dOrders) dOrders.textContent = String((state.orders || []).length);
     const dProc = qs('#dash-proc'); if (dProc) dProc.textContent = String((state.processes || []).length);
     const dOps = qs('#dash-ops'); if (dOps) dOps.textContent = String((state.operationsCatalog || []).length);
+    const dWarehouse = qs('#dash-warehouse'); if (dWarehouse) dWarehouse.textContent = String((window.warehouseItems || []).length);
     
     // Renderuj alerty terminów zamówień
     renderDeadlineAlerts(state);
