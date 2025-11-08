@@ -9002,6 +9002,7 @@ function showAdjustQuantityModal(index) {
 }
 
 function showAddWarehouseModal() {
+  console.log('🧪 [showAddWarehouseModal] Otwieranie modalu');
   const content = `
     <div style="display: flex; flex-direction: column; gap: 16px;">
       <div>
@@ -9061,11 +9062,14 @@ function showAddWarehouseModal() {
     {
       text: 'Dodaj',
       action: () => {
+        console.log('🧪 [showAddWarehouseModal] Kliknęto przycisk "Dodaj"');
         const name = document.getElementById('wh-modal-name').value.trim();
         const quantity = parseFloat(document.getElementById('wh-modal-quantity').value);
         const unit = document.getElementById('wh-modal-unit').value;
         const price = parseFloat(document.getElementById('wh-modal-price').value);
         const minStock = parseFloat(document.getElementById('wh-modal-min-stock').value) || 0;
+
+        console.log('📝 Dane: ', { name, quantity, unit, price, minStock });
 
         if (!name) {
           alert('Nazwa pozycji jest wymagana!');
@@ -9091,7 +9095,7 @@ function showAddWarehouseModal() {
         const rack = document.getElementById('wh-modal-rack').value.trim();
         const sector = document.getElementById('wh-modal-sector').value.trim();
 
-        window.warehouseItems.push({ 
+        const newItem = { 
           id: generateId(),
           name, 
           quantity, 
@@ -9099,10 +9103,23 @@ function showAddWarehouseModal() {
           price, 
           minStock,
           location: { shelf, rack, sector }
-        });
+        };
+        
+        console.log('✅ [showAddWarehouseModal] Nowa pozycja:', newItem);
+        console.log('📊 [showAddWarehouseModal] Liczba pozycji przed: ', window.warehouseItems.length);
+        
+        window.warehouseItems.push(newItem);
+        
+        console.log('📊 [showAddWarehouseModal] Liczba pozycji po: ', window.warehouseItems.length);
+        console.log('💾 [showAddWarehouseModal] Zachowuję do localStorage...');
+        
         saveWarehouseToStorage();
+        
+        console.log('📢 [showAddWarehouseModal] Renderuję magazyn...');
         renderWarehouse();
         renderDash();
+        
+        console.log('✅ [showAddWarehouseModal] Pozycja dodana - koniec');
       }
     }
   ]);
