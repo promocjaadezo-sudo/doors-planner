@@ -9116,8 +9116,17 @@ function showAddWarehouseModal() {
         saveWarehouseToStorage();
         
         console.log('📢 [showAddWarehouseModal] Renderuję magazyn...');
-        renderWarehouse();
-        renderDash();
+        try {
+          renderWarehouse();
+        } catch (e) {
+          console.error('❌ [showAddWarehouseModal] renderWarehouse error:', e);
+        }
+        
+        try {
+          renderDash();
+        } catch (e) {
+          console.error('❌ [showAddWarehouseModal] renderDash error:', e);
+        }
         
         console.log('✅ [showAddWarehouseModal] Pozycja dodana - koniec');
       }
