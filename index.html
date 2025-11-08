@@ -7,8 +7,8 @@
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0"/>
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
-<meta name="last-modified" content="2025-10-05"/>
-<title>Planner Produkcji Drzwi — v5.6.27 (2025-10-05 14:00)</title>
+<meta name="last-modified" content="2025-11-08"/>
+<title>Planner Produkcji Drzwi — v6.0.0 (2025-11-08)</title>
 <style>
 :root{--bg:#0f172a;--panel:#1f2937;--muted:#94a3b8;--b:#374151;--acc:#2563eb;--ok:#16a34a;--warn:#d97706;--err:#dc2626;--text:#ffffff;--text-secondary:#ffffff}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:#ffffff;line-height:1.5}
@@ -525,6 +525,194 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
   .map-card-header { flex-direction: column; align-items: flex-start; }
   .map-card-meta { width: 100%; }
 }
+
+/* Console Panel Styles */
+#debug-console-panel {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 600px;
+  max-height: 400px;
+  background: #1a1a2e;
+  border: 2px solid #3b82f6;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Courier New', monospace;
+}
+
+#debug-console-panel.hidden {
+  display: none;
+}
+
+#debug-console-header {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 10px 10px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  cursor: move;
+}
+
+#debug-console-header .title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+#debug-console-header .controls {
+  display: flex;
+  gap: 6px;
+}
+
+#debug-console-header button {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+#debug-console-header button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+#debug-console-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  background: #0d0d1a;
+  max-height: 320px;
+}
+
+#debug-console-logs {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #e5e7eb;
+}
+
+.console-log {
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border-left: 3px solid #6b7280;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+  word-break: break-all;
+}
+
+.console-log.info {
+  border-left-color: #3b82f6;
+  color: #93c5fd;
+}
+
+.console-log.warn {
+  border-left-color: #f59e0b;
+  color: #fbbf24;
+}
+
+.console-log.error {
+  border-left-color: #ef4444;
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.console-log.success {
+  border-left-color: #10b981;
+  color: #6ee7b7;
+}
+
+.console-log .timestamp {
+  color: #6b7280;
+  font-size: 10px;
+  margin-right: 8px;
+}
+
+#debug-console-footer {
+  padding: 8px 12px;
+  background: #16213e;
+  border-top: 1px solid #374151;
+  display: flex;
+  gap: 6px;
+  border-radius: 0 0 10px 10px;
+}
+
+#debug-console-footer button {
+  flex: 1;
+  padding: 8px 12px;
+  background: #374151;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+#debug-console-footer button:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+}
+
+#debug-console-footer button.primary {
+  background: #3b82f6;
+}
+
+#debug-console-footer button.primary:hover {
+  background: #2563eb;
+}
+
+/* Toggle Button */
+#debug-console-toggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+#debug-console-toggle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+}
+
+#debug-console-toggle.hidden {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  #debug-console-panel {
+    width: calc(100vw - 40px);
+    right: 20px;
+    bottom: 20px;
+  }
+}
 </style>
 </head>
 <body>
@@ -570,7 +758,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
 </div>
 
 <div class="wrap">
-  <div class="row" style="justify-content:space-between"><h1>Planner Produkcji Drzwi — v5.6.27</h1></div>
+  <div class="row" style="justify-content:space-between"><h1>Planner Produkcji Drzwi — v6.0.0</h1></div>
 
   <div class="card" id="p-dash">
     <h3>Panel</h3>
@@ -609,8 +797,24 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
       <div><label>Klient</label><input id="o-client" placeholder="Nazwa klienta"></div>
       <div><label>Model</label><input id="o-model" placeholder="Model / wariant"></div>
       <div><label>Ilość</label><input id="o-qty" type="number" min="1" value="1"></div>
-      <div><label>Data przyjęcia</label><input id="o-start" type="date"></div>
-      <div><label>Termin produkcji</label><input id="o-end" type="date"></div>
+      <div><label>Data przyjęcia</label><input id="o-start" type="date" onchange="calcEndDate()"></div>
+      <div><label>Czas realizacji</label>
+        <select id="o-weeks" onchange="calcEndDate()">
+          <option value="">— wybierz tygodnie —</option>
+          <option value="2">2 tygodnie</option>
+          <option value="3">3 tygodnie</option>
+          <option value="4">4 tygodnie</option>
+          <option value="5">5 tygodni</option>
+          <option value="6">6 tygodni</option>
+          <option value="7">7 tygodni</option>
+          <option value="8">8 tygodni</option>
+          <option value="9">9 tygodni</option>
+          <option value="10">10 tygodni</option>
+          <option value="11">11 tygodni</option>
+          <option value="12">12 tygodni</option>
+        </select>
+      </div>
+      <div><label>Termin końca produkcji</label><input id="o-end" type="date" onchange="calcInstallDate()"></div>
       <div style="grid-column:1/-1"><label>Uwagi</label><textarea id="o-notes" rows="2" placeholder="Dodatkowe informacje, wymagania, kontakt..."></textarea></div>
       <div><label>Termin montażu</label><input id="o-install" type="date"></div>
       <div><label>Adres montażu</label><input id="o-addr" placeholder="ulica nr, miejscowość"></div>
@@ -738,7 +942,47 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
 
   <div class="card hidden" id="p-emp">
     <div class="row" style="justify-content:space-between"><h3>Pracownicy</h3><button class="btn" id="emp-add">Dodaj</button></div>
-    <div class="table"><table><thead><tr><th>Imię i nazwisko</th><th>cap%</th><th>h/d</th><th>Akcje</th></tr></thead><tbody id="emp-tb"></tbody></table></div>
+    
+    <!-- Formularz dodawania pracownika -->
+    <div id="emp-form-container" class="hidden" style="margin:16px 0;padding:16px;background:#f0f9ff;border:2px solid #3b82f6;border-radius:8px">
+      <div style="font-weight:600;font-size:16px;color:#1e40af;margin-bottom:12px">➕ Nowy pracownik</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 100px 100px 1fr;gap:12px;align-items:end">
+        <div>
+          <label for="emp-form-name" style="display:block;font-size:13px;color:#475569;margin-bottom:4px">Imię i nazwisko *</label>
+          <input type="text" id="emp-form-name" placeholder="np. Jan Kowalski" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px">
+        </div>
+        <div>
+          <label for="emp-form-role" style="display:block;font-size:13px;color:#475569;margin-bottom:4px">Rola / Stanowisko</label>
+          <select id="emp-form-role" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px">
+            <option value="">— Wybierz rolę —</option>
+            <option value="Magazynier">📦 Magazynier</option>
+            <option value="Produkcja">🔧 Produkcja</option>
+            <option value="Montaż">🏗️ Montaż</option>
+            <option value="Handlowiec">💼 Handlowiec</option>
+            <option value="Kierownik">👔 Kierownik</option>
+            <option value="Inne">➕ Inne</option>
+          </select>
+        </div>
+        <div>
+          <label for="emp-form-cap" style="display:block;font-size:13px;color:#475569;margin-bottom:4px">Cap %</label>
+          <input type="number" id="emp-form-cap" value="100" min="0" max="100" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px">
+        </div>
+        <div>
+          <label for="emp-form-hours" style="display:block;font-size:13px;color:#475569;margin-bottom:4px">h/d</label>
+          <input type="number" id="emp-form-hours" value="8" min="1" max="24" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px">
+        </div>
+        <div>
+          <label for="emp-form-phone" style="display:block;font-size:13px;color:#475569;margin-bottom:4px">Telefon</label>
+          <input type="tel" id="emp-form-phone" placeholder="np. 123-456-789" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+        <button class="btn green" id="emp-form-save">✓ Zapisz</button>
+        <button class="btn" id="emp-form-cancel">✕ Anuluj</button>
+      </div>
+    </div>
+    
+    <div class="table"><table><thead><tr><th>Imię i nazwisko</th><th>Rola</th><th>Telefon</th><th>cap%</th><th>h/d</th><th>Akcje</th></tr></thead><tbody id="emp-tb"></tbody></table></div>
   </div>
 
   <div class="card hidden" id="p-as">
@@ -1160,6 +1404,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
         <button class="btn" id="export-tasks">Eksport zadań (.json)</button>
         <input type="file" id="import-tasks-file" accept=".json" style="display:none">
         <button class="btn" id="import-tasks">Import zadań</button>
+        <button class="btn green" id="force-load-firebase" title="Wymuś pobranie danych z Firebase (nadpisze lokalne)">⬇️ Pobierz z Firebase</button>
         <button class="btn red" id="restore-authentic-data" title="Przywróć autentyczne dane z backupu">🔄 Przywróć dane</button>
         <button class="btn blue" id="restore-click-delegation" title="Przywróć normalną obsługę kliknięć">🔧 Napraw kliknięcia</button>
       </div>
@@ -2311,6 +2556,8 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         if(t.dataset.od) {
           const id = t.dataset.od;
           
+          console.log('🗑️ Usuwanie zlecenia:', id);
+          
           // Usuń z lokalnego state
           state.orders = state.orders.filter(x => x.id !== id); 
           state.tasks = state.tasks.filter(t => t.orderId !== id); 
@@ -2318,6 +2565,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           
           // KRYTYCZNE: Zaktualizuj timestamp ostatniej modyfikacji
           state.lastModified = Date.now();
+          state.storage.lastRemoteSync = Date.now(); // Oznacz jako zsynchronizowane
           
           // Zaktualizuj window.state
           window.state = state;
@@ -2325,16 +2573,14 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           // Zapisz do localStorage
           save();
           
-          // Synchronizuj z Firebase przez kolejkę (PRIORYTET WYSOKI!)
-          if (state.storage && state.storage.mode === 'firebase' && window.FirebaseSyncQueue) {
-            // 1. Usuń dokument zlecenia (wysoki priorytet)
-            window.FirebaseSyncQueue.enqueue('delete', {
-              collection: 'orders',
-              documentId: id
-            }, 20);
-            
-            // 2. Następnie pełny zapis aktualnego stanu
-            window.FirebaseSyncQueue.enqueue('save', { state }, 10);
+          // Synchronizuj z Firebase - saveToDB automatycznie usuwa z Firebase to czego nie ma lokalnie
+          if (state.storage && state.storage.mode === 'firebase' && typeof window.saveToDB === 'function') {
+            console.log('Synchronizuje usuniecie z Firebase...');
+            window.saveToDB().then(() => {
+              console.log('Zlecenie i zadania usuniete z Firebase');
+            }).catch(err => {
+              console.error('Blad synchronizacji:', err);
+            });
           }
           
           // Wymuszenie odświeżenia wszystkich widoków
@@ -2801,7 +3047,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     const s = qs('#o-start').value;
     const w = +qs('#o-weeks').value || 1;
     if (!s) return;
-    const end = addWorkdays(s, w * 5 - 1);
+    const end = addWorkdays(s, w * 5);
     qs('#o-end').value = end;
     calcInstallDate();
   }
@@ -3420,6 +3666,9 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       return;
     }
     
+    // Sprawdź ile zadań nie ma zlecenia (orphans)
+    const orphanTasks = (state.tasks || []).filter(t => !state.orders.find(o => o.id === t.orderId));
+    
     // Dodaj przycisk do masowego usuwania na górze listy
     const controlsDiv = document.createElement('div');
     controlsDiv.className = 'row';
@@ -3429,19 +3678,53 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       <button class="btn red" id="mass-delete-tasks" ${rows.length ? '' : 'disabled'}>
         Usuń wszystkie wyświetlone zadania (${rows.length})
       </button>
+      ${orphanTasks.length > 0 ? `
+        <button class="btn amber" id="clean-orphan-tasks" title="Usuń zadania bez przypisanego zlecenia">
+          🧹 Wyczyść osierocone zadania (${orphanTasks.length})
+        </button>
+      ` : ''}
     `;
     list.appendChild(controlsDiv);
     
-    // Dodaj obsługę przycisku
+    // Dodaj obsługę przycisku masowego usuwania
     const massDeleteBtn = qs('#mass-delete-tasks');
     if(massDeleteBtn) {
-      massDeleteBtn.addEventListener('click', () => {
+      massDeleteBtn.addEventListener('click', async () => {
         if(confirm(`Czy na pewno chcesz usunąć ${rows.length} zadań? Ta operacja jest nieodwracalna.`)) {
           const idsToDelete = rows.map(t => t.id);
+          const beforeCount = (state.tasks || []).length;
           state.tasks = (state.tasks || []).filter(t => !idsToDelete.includes(t.id));
+          state.lastModified = Date.now();
           save();
+          if (state.storage && state.storage.mode === 'firebase' && typeof saveToDB === 'function') {
+            await saveToDB().catch(err => console.error('Błąd sync:', err));
+          }
           renderTasks();
-          setInfoText('Usunięto ' + rows.length + ' zadań', 'success');
+          renderGantt();
+          setInfoText('Usunięto ' + (beforeCount - state.tasks.length) + ' zadań', 'success');
+        }
+      });
+    }
+    
+    // Dodaj obsługę przycisku czyszczenia osieroconych zadań
+    const cleanOrphanBtn = qs('#clean-orphan-tasks');
+    if(cleanOrphanBtn) {
+      cleanOrphanBtn.addEventListener('click', async () => {
+        const orphans = (state.tasks || []).filter(t => !state.orders.find(o => o.id === t.orderId));
+        if(confirm(`🧹 Czy na pewno usunąć ${orphans.length} osieroconych zadań?\n\nTo zadania bez przypisanego zlecenia.`)) {
+          console.log('Czyszczenie osieroconych:', orphans.length);
+          const beforeCount = state.tasks.length;
+          state.tasks = state.tasks.filter(t => state.orders.find(o => o.id === t.orderId));
+          state.lastModified = Date.now();
+          save();
+          if (state.storage && state.storage.mode === 'firebase' && typeof saveToDB === 'function') {
+            console.log('Synchronizuje z Firebase...');
+            await saveToDB().catch(err => console.error('Błąd sync:', err));
+          }
+          renderTasks();
+          renderGantt();
+          renderDash(window.state||state);
+          setInfoText('Wyczyszczono ' + (beforeCount - state.tasks.length) + ' zadań', 'success');
         }
       });
     }
@@ -3967,7 +4250,15 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     });
   }
 
-  function renderEmployees(){ const tb=qs('#emp-tb'); tb.innerHTML=''; (state.employees||[]).forEach(e=>{ const tr=document.createElement('tr'); tr.innerHTML='<td>'+e.name+'</td><td>'+(e.cap||100)+'</td><td>'+(e.hoursPerDay||8)+'</td><td><button class="btn" data-emp-ed="'+e.id+'">Edytuj</button> <button class="btn red" data-emp-del="'+e.id+'">Usuń</button></td>'; tb.appendChild(tr); } ); }
+  function renderEmployees(){ 
+    const tb=qs('#emp-tb'); 
+    tb.innerHTML=''; 
+    (state.employees||[]).forEach(e=>{ 
+      const tr=document.createElement('tr'); 
+      tr.innerHTML='<td>'+e.name+'</td><td>'+(e.role||'—')+'</td><td>'+(e.phone||'—')+'</td><td>'+(e.cap||100)+'</td><td>'+(e.hoursPerDay||8)+'</td><td><button class="btn" data-emp-ed="'+e.id+'">Edytuj</button> <button class="btn red" data-emp-del="'+e.id+'">Usuń</button></td>'; 
+      tb.appendChild(tr); 
+    }); 
+  }
 
   // Function to restore authentic data
   function restoreAuthenticData() {
@@ -5638,20 +5929,59 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     const capacityExportBtn = qs('#capacity-export');
     if(capacityExportBtn){ capacityExportBtn.addEventListener('click', () => exportCapacityAnalysis()); }
 
+    // Obsługa formularza dodawania pracownika
     qs('#emp-add').addEventListener('click',()=>{
-      const name = prompt('Imię i nazwisko');
-      if (!name || !name.trim()) return;
-
-      const trimmedName = name.trim();
-      if (trimmedName.length < 2) {
-        alert('Imię i nazwisko musi mieć co najmniej 2 znaki');
-        return;
+      const formContainer = qs('#emp-form-container');
+      if (formContainer) {
+        formContainer.classList.remove('hidden');
+        // Wyczyść formularz
+        qs('#emp-form-name').value = '';
+        qs('#emp-form-role').value = '';
+        qs('#emp-form-cap').value = '100';
+        qs('#emp-form-hours').value = '8';
+        qs('#emp-form-phone').value = '';
       }
-
-      state.employees.push({id:uid(),name:trimmedName,cap:100,hoursPerDay:8});
-      save();
-      renderEmployees();
     });
+
+    // Obsługa zapisywania formularza pracownika
+    const empFormSave = qs('#emp-form-save');
+    if (empFormSave) {
+      empFormSave.addEventListener('click', () => {
+        const name = qs('#emp-form-name').value.trim();
+        const role = qs('#emp-form-role').value;
+        const cap = parseInt(qs('#emp-form-cap').value) || 100;
+        const hours = parseInt(qs('#emp-form-hours').value) || 8;
+        const phone = qs('#emp-form-phone').value.trim();
+
+        if (!name || name.length < 2) {
+          alert('Imię i nazwisko musi mieć co najmniej 2 znaki');
+          return;
+        }
+
+        state.employees.push({
+          id: uid(),
+          name: name,
+          role: role || 'Inne',
+          phone: phone,
+          cap: cap,
+          hoursPerDay: hours
+        });
+        
+        save();
+        renderEmployees();
+        
+        // Ukryj formularz
+        qs('#emp-form-container').classList.add('hidden');
+      });
+    }
+
+    // Obsługa anulowania formularza pracownika
+    const empFormCancel = qs('#emp-form-cancel');
+    if (empFormCancel) {
+      empFormCancel.addEventListener('click', () => {
+        qs('#emp-form-container').classList.add('hidden');
+      });
+    }
   }
 
   document.addEventListener('DOMContentLoaded', function() {
@@ -6622,10 +6952,16 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       const localCountTotal = Object.values(localCollections)
         .reduce((sum, collection)=> sum + (Array.isArray(collection) ? collection.length : (collection && typeof collection === 'object' ? Object.keys(collection).length : 0)), 0);
       
+      // Sprawdź czy dane lokalne były niedawno modyfikowane (ostatnie 30 sekund)
+      const timeSinceLastModification = Date.now() - localTimestamp;
+      const recentlyModified = timeSinceLastModification < 30000; // 30 sekund
+      
       console.log('🔄 Porównanie timestampów:', {
         local: new Date(localTimestamp).toLocaleString('pl-PL'),
         remote: new Date(remoteTimestamp).toLocaleString('pl-PL'),
         localNewer: localTimestamp > remoteTimestamp,
+        recentlyModified,
+        timeSinceLastMod: `${Math.round(timeSinceLastModification / 1000)}s`,
         lastRemoteSync: lastRemoteSync ? new Date(lastRemoteSync).toLocaleString('pl-PL') : null,
         localOrders: (state.orders || []).length,
         localCountTotal,
@@ -6633,12 +6969,13 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         reason
       });
       
-      // If local data is newer, skip loading and save to Firebase instead (UNLESS forceLoad)
-      if(!forceLoad && remoteTimestamp > 0 && localTimestamp > remoteTimestamp && lastRemoteSync >= remoteTimestamp && localCountTotal > 0){
-        console.log('⚠️ Lokalne dane nowsze (ostatnia sync >= zdalej) - POMIJAM wczytywanie z Firebase');
-        console.log('📊 Zachowano lokalne zlecenia:', (state.orders || []).length);
-        qs('#set-info').textContent='⚠️ Lokalne dane nowsze (ostatnia sync '+new Date(lastRemoteSync).toLocaleString('pl-PL')+') – nie załadowano z Firebase.';
-        return { skipped: true, reason: 'local-newer', localTimestamp, remoteTimestamp };
+      // OCHRONA: Tylko gdy forceLoad=false I dane lokalne świeże (<10s) I jest reason="auto"
+      const localOrdersCount = (state.orders || []).length;
+      if(!forceLoad && reason === 'auto' && recentlyModified && timeSinceLastModification < 10000 && localCountTotal > 0) {
+        console.log('🛡️ Auto-sync pominięty (dane świeże <10s)');
+        console.log('📊 Zachowano lokalne zlecenia:', localOrdersCount);
+        qs('#set-info').textContent='🔄 Auto-sync pominięty (dane świeże)';
+        return { skipped: true, reason: 'auto-sync-skip', localTimestamp, remoteTimestamp };
       }
       
       if (forceLoad) {
@@ -6800,6 +7137,32 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   qs('#restore-authentic-data').addEventListener('click', () => {
     if (confirm('Czy na pewno chcesz przywrócić autentyczne dane? To nadpisze wszystkie obecne dane w aplikacji.')) {
       restoreAuthenticData();
+    }
+  });
+  
+  // Force load from Firebase
+  qs('#force-load-firebase').addEventListener('click', async () => {
+    if (!confirm('⚠️ Czy na pewno pobrać dane z Firebase?\n\nTo NADPISZE wszystkie lokalne dane!')) return;
+    
+    try {
+      qs('#force-load-firebase').disabled = true;
+      qs('#force-load-firebase').textContent = '⏳ Pobieram...';
+      
+      // Wymuś pobranie z Firebase
+      const result = await loadFromDB({ forceLoad: true, reason: 'manual-force' });
+      
+      if (result && result.skipped) {
+        alert('❌ Pobieranie zablokowane: ' + result.reason);
+      } else {
+        alert('✅ Dane pobrane z Firebase!\n\nZleceń: ' + (state.orders?.length || 0));
+        location.reload();
+      }
+    } catch (err) {
+      console.error('❌ Błąd pobierania z Firebase:', err);
+      alert('❌ Błąd: ' + err.message);
+    } finally {
+      qs('#force-load-firebase').disabled = false;
+      qs('#force-load-firebase').textContent = '⬇️ Pobierz z Firebase';
     }
   });
 
@@ -8074,7 +8437,7 @@ function loadWarehouseFromStorage() {
 
 // Napraw checklisty w zleceniach - znajdź itemId po nazwie materiału
 window.fixChecklistItemIds = function() {
-  const state = window.STATE || JSON.parse(localStorage.getItem('production_planner_state') || '{}');
+  const state = window.state || JSON.parse(localStorage.getItem('door_v50_state') || '{}');
   const orders = state.orders || [];
   
   // Wczytaj magazyn
@@ -8110,8 +8473,8 @@ window.fixChecklistItemIds = function() {
   // Zapisz stan
   if (fixedCount > 0) {
     state.orders = orders;
-    window.STATE = state;
-    localStorage.setItem('production_planner_state', JSON.stringify(state));
+    window.state = state;
+    localStorage.setItem('door_v50_state', JSON.stringify(state));
   }
   
   console.log(`🔧 Sprawdzono ${totalChecked} pozycji w checklistach, naprawiono ${fixedCount}`);
@@ -8170,7 +8533,7 @@ window.diagnoseItemIdProblem = function() {
   });
   
   // 2. Sprawdź checklisty w zleceniach
-  const state = window.STATE || JSON.parse(localStorage.getItem('production_planner_state') || '{}');
+  const state = window.state || JSON.parse(localStorage.getItem('door_v50_state') || '{}');
   const orders = state.orders || [];
   console.log(`\n📝 CHECKLISTY W ZLECENIACH (${orders.filter(o => o.materialChecklist).length}):`);
   orders.forEach(order => {
@@ -12393,6 +12756,296 @@ window.addEventListener('offline', () => {
 });
 
 console.log('✅ [App] Real-time Sync integration loaded');
+</script>
+
+<!-- Debug Console Panel -->
+<div id="debug-console-panel" class="hidden">
+  <div id="debug-console-header">
+    <div class="title">
+      <span>🔍</span>
+      <span>Konsola Debugowania</span>
+    </div>
+    <div class="controls">
+      <button id="console-minimize" title="Zwiń">−</button>
+      <button id="console-close" title="Zamknij">×</button>
+    </div>
+  </div>
+  <div id="debug-console-content">
+    <div id="debug-console-logs"></div>
+  </div>
+  <div id="debug-console-footer">
+    <button id="console-copy" class="primary">📋 Kopiuj wszystko</button>
+    <button id="console-clear">🗑️ Wyczyść</button>
+    <button id="console-export">💾 Eksport</button>
+  </div>
+</div>
+
+<!-- Toggle Button -->
+<button id="debug-console-toggle" title="Pokaż konsolę">
+  🔍
+</button>
+
+<script>
+// Debug Console System
+(function() {
+  const maxLogs = 500;
+  const logs = [];
+  
+  const panel = document.getElementById('debug-console-panel');
+  const toggle = document.getElementById('debug-console-toggle');
+  const logsContainer = document.getElementById('debug-console-logs');
+  const closeBtn = document.getElementById('console-close');
+  const minimizeBtn = document.getElementById('console-minimize');
+  const copyBtn = document.getElementById('console-copy');
+  const clearBtn = document.getElementById('console-clear');
+  const exportBtn = document.getElementById('console-export');
+  
+  let isMinimized = false;
+  let dragOffset = { x: 0, y: 0 };
+  let isDragging = false;
+  
+  // Funkcja dodawania logu
+  function addLog(type, message, ...args) {
+    const timestamp = new Date().toLocaleTimeString('pl-PL', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 });
+    const fullMessage = [message, ...args].map(arg => {
+      if (typeof arg === 'object') {
+        try {
+          return JSON.stringify(arg, null, 2);
+        } catch(e) {
+          return String(arg);
+        }
+      }
+      return String(arg);
+    }).join(' ');
+    
+    const log = {
+      type,
+      message: fullMessage,
+      timestamp
+    };
+    
+    logs.push(log);
+    if (logs.length > maxLogs) {
+      logs.shift();
+    }
+    
+    renderLogs();
+  }
+  
+  // Renderowanie logów
+  function renderLogs() {
+    logsContainer.innerHTML = logs.map(log => `
+      <div class="console-log ${log.type}">
+        <span class="timestamp">${log.timestamp}</span>
+        <span>${log.message}</span>
+      </div>
+    `).join('');
+    
+    // Auto-scroll do końca
+    logsContainer.scrollTop = logsContainer.scrollHeight;
+  }
+  
+  // Przechwytywanie console.log, warn, error
+  const originalLog = console.log;
+  const originalWarn = console.warn;
+  const originalError = console.error;
+  
+  console.log = function(...args) {
+    originalLog.apply(console, args);
+    addLog('info', ...args);
+  };
+  
+  console.warn = function(...args) {
+    originalWarn.apply(console, args);
+    addLog('warn', ...args);
+  };
+  
+  console.error = function(...args) {
+    originalError.apply(console, args);
+    addLog('error', ...args);
+  };
+  
+  // Dodaj custom log success
+  window.logSuccess = function(...args) {
+    originalLog.apply(console, args);
+    addLog('success', ...args);
+  };
+  
+  // Toggle panel
+  toggle.addEventListener('click', () => {
+    panel.classList.toggle('hidden');
+    toggle.classList.toggle('hidden');
+    if (!panel.classList.contains('hidden')) {
+      renderLogs();
+    }
+  });
+  
+  // Close panel
+  closeBtn.addEventListener('click', () => {
+    panel.classList.add('hidden');
+    toggle.classList.remove('hidden');
+  });
+  
+  // Minimize panel
+  minimizeBtn.addEventListener('click', () => {
+    isMinimized = !isMinimized;
+    const content = document.getElementById('debug-console-content');
+    const footer = document.getElementById('debug-console-footer');
+    
+    if (isMinimized) {
+      content.style.display = 'none';
+      footer.style.display = 'none';
+      panel.style.maxHeight = 'auto';
+      minimizeBtn.textContent = '+';
+    } else {
+      content.style.display = 'block';
+      footer.style.display = 'flex';
+      panel.style.maxHeight = '400px';
+      minimizeBtn.textContent = '−';
+    }
+  });
+  
+  // Copy all logs
+  copyBtn.addEventListener('click', () => {
+    const text = logs.map(log => `[${log.timestamp}] [${log.type.toUpperCase()}] ${log.message}`).join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      const originalText = copyBtn.textContent;
+      copyBtn.textContent = '✅ Skopiowano!';
+      setTimeout(() => {
+        copyBtn.textContent = originalText;
+      }, 2000);
+    }).catch(err => {
+      alert('Błąd kopiowania: ' + err.message);
+    });
+  });
+  
+  // Clear logs
+  clearBtn.addEventListener('click', () => {
+    logs.length = 0;
+    renderLogs();
+  });
+  
+  // Export logs to file
+  exportBtn.addEventListener('click', () => {
+    const text = logs.map(log => `[${log.timestamp}] [${log.type.toUpperCase()}] ${log.message}`).join('\n');
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `console-logs-${new Date().toISOString().split('T')[0]}-${new Date().getTime()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+  
+  // Dragging functionality
+  const header = document.getElementById('debug-console-header');
+  
+  header.addEventListener('mousedown', (e) => {
+    if (e.target.tagName === 'BUTTON') return;
+    isDragging = true;
+    dragOffset.x = e.clientX - panel.offsetLeft;
+    dragOffset.y = e.clientY - panel.offsetTop;
+    panel.style.cursor = 'grabbing';
+  });
+  
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    
+    const newLeft = e.clientX - dragOffset.x;
+    const newTop = e.clientY - dragOffset.y;
+    
+    // Keep panel within viewport
+    const maxLeft = window.innerWidth - panel.offsetWidth;
+    const maxTop = window.innerHeight - panel.offsetHeight;
+    
+    panel.style.left = Math.max(0, Math.min(newLeft, maxLeft)) + 'px';
+    panel.style.top = Math.max(0, Math.min(newTop, maxTop)) + 'px';
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
+  });
+  
+  document.addEventListener('mouseup', () => {
+    if (isDragging) {
+      isDragging = false;
+      panel.style.cursor = 'default';
+    }
+  });
+  
+  // Initial log
+  console.log('🔍 Konsola debugowania uruchomiona');
+  console.log('📋 Użyj przycisku "Kopiuj wszystko" aby skopiować logi');
+})();
+
+// === FUNKCJA DIAGNOSTYCZNA: WSZYSTKIE KLUCZE LOCALSTORAGE ===
+function diagnostyka_kluczy_storage() {
+  console.log('═════════════════════════════════════');
+  console.log('🔍 DIAGNOSTYKA KLUCZY LOCALSTORAGE');
+  console.log('═════════════════════════════════════');
+  
+  const wszystkie_klucze = [];
+  for(let i = 0; i < localStorage.length; i++) {
+    wszystkie_klucze.push(localStorage.key(i));
+  }
+  
+  console.log(`📊 Znaleziono ${wszystkie_klucze.length} kluczy w localStorage:`);
+  wszystkie_klucze.sort().forEach(klucz => {
+    const dane = localStorage.getItem(klucz);
+    const rozmiar = new Blob([dane]).size;
+    const rozmiar_kb = (rozmiar / 1024).toFixed(2);
+    
+    let podglad = '';
+    try {
+      const parsed = JSON.parse(dane);
+      if(parsed && typeof parsed === 'object') {
+        const keys = Object.keys(parsed);
+        podglad = `{${keys.slice(0,5).join(', ')}${keys.length > 5 ? '...' : ''}}`;
+      } else {
+        podglad = String(dane).substring(0, 50);
+      }
+    } catch(e) {
+      podglad = String(dane).substring(0, 50);
+    }
+    
+    console.log(`  📦 "${klucz}" → ${rozmiar_kb} KB → ${podglad}`);
+  });
+  
+  console.log('');
+  console.log('🎯 GŁÓWNY KLUCZ APLIKACJI:');
+  console.log(`  window.storeKey = "${window.storeKey}"`);
+  
+  console.log('');
+  console.log('📋 ZAWARTOŚĆ GŁÓWNEGO KLUCZA:');
+  const glowne_dane = localStorage.getItem(window.storeKey);
+  if(glowne_dane) {
+    try {
+      const parsed = JSON.parse(glowne_dane);
+      const keys = Object.keys(parsed);
+      console.log(`  Właściwości (${keys.length}): ${keys.join(', ')}`);
+      
+      if(parsed.orders) {
+        console.log(`  📦 orders: ${parsed.orders.length} zleceń`);
+        if(parsed.orders.length > 0) {
+          console.log(`     Pierwsze zlecenie: ${parsed.orders[0].clientName} (ID: ${parsed.orders[0].id})`);
+        }
+      }
+    } catch(e) {
+      console.error('  ❌ Błąd parsowania:', e);
+    }
+  } else {
+    console.log('  ⚠️ BRAK DANYCH!');
+  }
+  
+  console.log('═════════════════════════════════════');
+}
+
+// Uruchom diagnostykę przy starcie
+setTimeout(() => {
+  diagnostyka_kluczy_storage();
+}, 1000);
+
+console.log('💡 Wpisz: diagnostyka_kluczy_storage() aby uruchomić ponownie');
 </script>
 
 </body>
