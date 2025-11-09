@@ -713,6 +713,16 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
     bottom: 20px;
   }
 }
+
+/* Employee table with assembly styles */
+#emp-tb tr.has-montaz {
+  background-color: #ecfdf5;
+  border-left: 3px solid #059669;
+}
+#emp-tb tr.has-montaz td:nth-child(6) {
+  font-weight: 600;
+  color: #059669;
+}
 </style>
 </head>
 <body>
@@ -4265,7 +4275,9 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       const montazeText = assignedMontaze.length > 0
         ? assignedMontaze.map(m => m.type + ' ' + (m.installDate || '')).join('; ')
         : '—';
+      
       tr.innerHTML='<td>'+e.name+'</td><td>'+(e.role||'—')+'</td><td>'+(e.phone||'—')+'</td><td>'+(e.cap||100)+'</td><td>'+(e.hoursPerDay||8)+'</td><td>'+montazeText+'</td><td><button class="btn" data-emp-ed="'+e.id+'">Edytuj</button> <button class="btn red" data-emp-del="'+e.id+'">Usuń</button></td>'; 
+      tr.className = assignedMontaze.length > 0 ? 'has-montaz' : '';
       tb.appendChild(tr); 
     }); 
   }
