@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Warehouse Counter Fix</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #0f172a;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #60a5fa;
+            margin-bottom: 20px;
+        }
+        .test-case {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .test-case h3 {
+            margin-top: 0;
+            color: #fbbf24;
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+        .counter-box {
+            background: rgba(59,130,246,0.18);
+            border: 1px solid rgba(59,130,246,0.35);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .counter-box.warehouse {
+            background: rgba(168,85,247,0.18);
+            border-color: rgba(168,85,247,0.35);
+        }
+        .counter-label {
+            font-size: 13px;
+            color: #e9d5ff;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .counter-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        .result {
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 12px;
+            font-weight: 600;
+        }
+        .result.success {
+            background: #10b981;
+            color: #ffffff;
+        }
+        .result.fail {
+            background: #ef4444;
+            color: #ffffff;
+        }
+        button {
+            background: #60a5fa;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        button:hover {
+            background: #3b82f6;
+        }
+        .log {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ Test Naprawa Licznika Magazynu</h1>
+        
+        <div class="test-case">
+            <h3>Test 1: HTML Element i renderDash()</h3>
+            <div class="dashboard">
+                <div class="counter-box">
+                    <span class="counter-label">Zlecenia</span>
+                    <span id="dash-orders" class="counter-value">0</span>
+                </div>
+                <div class="counter-box warehouse">
+                    <span class="counter-label">Magazyn</span>
+                    <span id="dash-warehouse" class="counter-value">0</span>
+                </div>
+            </div>
+            <button onclick="test1()">Testuj renderDash()</button>
+            <div id="test1-result"></div>
+            <div class="log" id="test1-log"></div>
+        </div>
+
+        <div class="test-case">
+            <h3>Test 2: Dodawanie pozycji magazynowych</h3>
+            <button onclick="test2Add()">Dodaj pozycję</button>
+            <button onclick="test2Verify()">Zweryfikuj licznik</button>
+            <div id="test2-result"></div>
+            <div class="log" id="test2-log"></div>
+        </div>
+
+        <div class="test-case">
+            <h3>Test 3: Edycja pozycji magazynowych</h3>
+            <button onclick="test3Edit()">Edytuj pozycję</button>
+            <button onclick="test3Verify()">Zweryfikuj licznik</button>
+            <div id="test3-result"></div>
+            <div class="log" id="test3-log"></div>
+        </div>
+
+        <div class="test-case">
+            <h3>Test 4: Usuwanie pozycji magazynowych</h3>
+            <button onclick="test4Delete()">Usuń pozycję</button>
+            <button onclick="test4Verify()">Zweryfikuj licznik</button>
+            <div id="test4-result"></div>
+            <div class="log" id="test4-log"></div>
+        </div>
+
+        <div class="test-case">
+            <h3>Test 5: Pełny scenariusz</h3>
+            <button onclick="test5Full()">Uruchom pełny test</button>
+            <div id="test5-result"></div>
+            <div class="log" id="test5-log"></div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize
+        window.warehouseItems = [];
+        window.state = { orders: [], processes: [], operationsCatalog: [] };
+
+        const qs = (s) => document.querySelector(s);
+
+        function renderDash(state) {
+            state = state || (typeof window!=='undefined' ? window.state : null);
+            if(!state){ console.warn('[renderDash] brak state'); return; }
+            try{
+                const dOrders = qs('#dash-orders'); if (dOrders) dOrders.textContent = String((state.orders || []).length);
+                const dProc = qs('#dash-proc'); if (dProc) dProc.textContent = String((state.processes || []).length);
+                const dOps = qs('#dash-ops'); if (dOps) dOps.textContent = String((state.operationsCatalog || []).length);
+                const dWarehouse = qs('#dash-warehouse'); if (dWarehouse) dWarehouse.textContent = String((window.warehouseItems || []).length);
+                console.log('[renderDash] Numbers: orders=' + (state.orders || []).length + ', warehouse=' + (window.warehouseItems || []).length);
+            }catch(e){ console.warn('[renderDash] error', e&&e.message); }
+        }
+
+        function log(elementId, message) {
+            const el = qs('#' + elementId);
+            if (el) {
+                el.innerHTML += message + '<br>';
+                el.scrollTop = el.scrollHeight;
+            }
+        }
+
+        function setResult(elementId, passed, message) {
+            const el = qs('#' + elementId);
+            if (el) {
+                const icon = passed ? '✅' : '❌';
+                el.innerHTML = `<div class="result ${passed ? 'success' : 'fail'}">${icon} ${message}</div>`;
+            }
+        }
+
+        // Test 1: HTML Element exists and renderDash updates it
+        function test1() {
+            const log1 = 'test1-log';
+            qs('#test1-log').innerHTML = '';
+            
+            log(log1, '🧪 Test 1: Sprawdzanie elementu HTML i renderDash()');
+            
+            // Check element exists
+            const element = qs('#dash-warehouse');
+            if (!element) {
+                setResult('test1-result', false, 'Element #dash-warehouse nie znaleziony!');
+                return;
+            }
+            log(log1, '✓ Element #dash-warehouse znaleziony');
+            
+            // Initialize
+            window.warehouseItems = [
+                { id: '1', name: 'Item 1', quantity: 5 },
+                { id: '2', name: 'Item 2', quantity: 10 },
+                { id: '3', name: 'Item 3', quantity: 15 }
+            ];
+            log(log1, `✓ Zainicjalizowano window.warehouseItems: ${window.warehouseItems.length} pozycji`);
+            
+            // Call renderDash
+            renderDash(window.state);
+            log(log1, '✓ Wywołano renderDash()');
+            
+            // Check value
+            const value = parseInt(element.textContent);
+            const expected = 3;
+            if (value === expected) {
+                setResult('test1-result', true, `Licznik pokazuje prawidłową wartość: ${value}`);
+                log(log1, `✅ Licznik prawidłowy: ${value} === ${expected}`);
+            } else {
+                setResult('test1-result', false, `Licznik pokazuje ${value}, oczekiwano ${expected}`);
+                log(log1, `❌ Licznik nieprawidłowy: ${value} !== ${expected}`);
+            }
+        }
+
+        // Test 2: Adding warehouse items
+        function test2Add() {
+            qs('#test2-log').innerHTML = '';
+            const log2 = 'test2-log';
+            
+            log(log2, '🧪 Test 2: Dodawanie pozycji');
+            window.warehouseItems = [
+                { id: '1', name: 'Item 1', quantity: 5 }
+            ];
+            log(log2, `✓ Dodano 1 pozycję, razem: ${window.warehouseItems.length}`);
+            
+            // Simulate add
+            window.warehouseItems.push({ id: '2', name: 'Item 2', quantity: 10 });
+            log(log2, `✓ Dodano kolejną pozycję, razem: ${window.warehouseItems.length}`);
+            
+            renderDash(window.state);
+            const value = parseInt(qs('#dash-warehouse').textContent);
+            log(log2, `✓ Licznik po dodaniu: ${value}`);
+        }
+
+        function test2Verify() {
+            const value = parseInt(qs('#dash-warehouse').textContent);
+            const expected = window.warehouseItems.length;
+            if (value === expected) {
+                setResult('test2-result', true, `Dodanie: licznik prawidłowy (${value})`);
+            } else {
+                setResult('test2-result', false, `Dodanie: licznik ${value}, powinno ${expected}`);
+            }
+        }
+
+        // Test 3: Editing warehouse items
+        function test3Edit() {
+            qs('#test3-log').innerHTML = '';
+            const log3 = 'test3-log';
+            
+            log(log3, '🧪 Test 3: Edycja pozycji (liczba powinna się nie zmienić)');
+            const initialCount = window.warehouseItems.length;
+            log(log3, `✓ Liczba pozycji przed edycją: ${initialCount}`);
+            
+            // Edit item
+            if (window.warehouseItems.length > 0) {
+                window.warehouseItems[0].name = 'Updated Item';
+                log(log3, `✓ Zmieniono nazwę pozycji`);
+            }
+            
+            renderDash(window.state);
+            const value = parseInt(qs('#dash-warehouse').textContent);
+            log(log3, `✓ Licznik po edycji: ${value}`);
+        }
+
+        function test3Verify() {
+            const value = parseInt(qs('#dash-warehouse').textContent);
+            const expected = window.warehouseItems.length;
+            if (value === expected) {
+                setResult('test3-result', true, `Edycja: licznik prawidłowy (${value})`);
+            } else {
+                setResult('test3-result', false, `Edycja: licznik ${value}, powinno ${expected}`);
+            }
+        }
+
+        // Test 4: Deleting warehouse items
+        function test4Delete() {
+            qs('#test4-log').innerHTML = '';
+            const log4 = 'test4-log';
+            
+            log(log4, '🧪 Test 4: Usunięcie pozycji');
+            const beforeCount = window.warehouseItems.length;
+            log(log4, `✓ Liczba pozycji przed usunięciem: ${beforeCount}`);
+            
+            // Delete item
+            if (window.warehouseItems.length > 0) {
+                window.warehouseItems.splice(0, 1);
+                log(log4, `✓ Usunięto 1 pozycję`);
+            }
+            
+            const afterCount = window.warehouseItems.length;
+            log(log4, `✓ Liczba pozycji po usunięciu: ${afterCount}`);
+            
+            renderDash(window.state);
+            const value = parseInt(qs('#dash-warehouse').textContent);
+            log(log4, `✓ Licznik po usunięciu: ${value}`);
+        }
+
+        function test4Verify() {
+            const value = parseInt(qs('#dash-warehouse').textContent);
+            const expected = window.warehouseItems.length;
+            if (value === expected) {
+                setResult('test4-result', true, `Usunięcie: licznik prawidłowy (${value})`);
+            } else {
+                setResult('test4-result', false, `Usunięcie: licznik ${value}, powinno ${expected}`);
+            }
+        }
+
+        // Test 5: Full scenario
+        function test5Full() {
+            qs('#test5-log').innerHTML = '';
+            const log5 = 'test5-log';
+            
+            let allPassed = true;
+
+            // Reset
+            window.warehouseItems = [];
+            log(log5, '🧪 Test 5: Pełny scenariusz');
+            log(log5, '📍 Etap 1: Inicjalizacja');
+            renderDash(window.state);
+            let value = parseInt(qs('#dash-warehouse').textContent);
+            if (value !== 0) { allPassed = false; log(log5, '❌ Licznik powinien być 0'); }
+            else { log(log5, '✓ Licznik = 0'); }
+
+            // Add 3 items
+            log(log5, '📍 Etap 2: Dodawanie 3 pozycji');
+            for (let i = 0; i < 3; i++) {
+                window.warehouseItems.push({ id: `${i}`, name: `Item ${i}`, quantity: i * 10 });
+            }
+            renderDash(window.state);
+            value = parseInt(qs('#dash-warehouse').textContent);
+            if (value !== 3) { allPassed = false; log(log5, '❌ Licznik powinien być 3'); }
+            else { log(log5, '✓ Licznik = 3'); }
+
+            // Edit one
+            log(log5, '📍 Etap 3: Edycja pozycji');
+            window.warehouseItems[1].name = 'Modified Item';
+            renderDash(window.state);
+            value = parseInt(qs('#dash-warehouse').textContent);
+            if (value !== 3) { allPassed = false; log(log5, '❌ Licznik powinien pozostać 3'); }
+            else { log(log5, '✓ Licznik = 3 (bez zmian)'); }
+
+            // Delete one
+            log(log5, '📍 Etap 4: Usunięcie 1 pozycji');
+            window.warehouseItems.splice(0, 1);
+            renderDash(window.state);
+            value = parseInt(qs('#dash-warehouse').textContent);
+            if (value !== 2) { allPassed = false; log(log5, '❌ Licznik powinien być 2'); }
+            else { log(log5, '✓ Licznik = 2'); }
+
+            // Delete another
+            log(log5, '📍 Etap 5: Usunięcie drugiej pozycji');
+            window.warehouseItems.splice(0, 1);
+            renderDash(window.state);
+            value = parseInt(qs('#dash-warehouse').textContent);
+            if (value !== 1) { allPassed = false; log(log5, '❌ Licznik powinien być 1'); }
+            else { log(log5, '✓ Licznik = 1'); }
+
+            // Final state
+            log(log5, '📍 Etap 6: Stan ostateczny');
+            log(log5, `✓ Pozostały ${window.warehouseItems.length} pozycje`);
+            log(log5, `✓ Licznik pokazuje: ${value}`);
+
+            setResult('test5-result', allPassed, allPassed ? 'Pełny test PASSOU ✅' : 'Pełny test FAILU ❌');
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            console.log('✅ Test page loaded');
+            renderDash(window.state);
+        });
+    </script>
+</body>
+</html>

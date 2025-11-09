@@ -370,6 +370,113 @@
     });
     return updated;
   }
+
+  function scoreTaskForDedupe(task){
+    if (!task || typeof task !== 'object') return 0;
+    let score = 0;
+    if (Array.isArray(task.assignees) && task.assignees.length) score += 4;
+    if (task.startPlanned) score += 2;
+    if (task.endPlanned) score += 1;
+    if (task.status && task.status !== 'todo') score += 1;
+    return score;
+  }
+
+  function mergeAssignees(primary, secondary){
+    const merged = [];
+    const seen = new Set();
+    const pushAssignee = (assignee)=>{
+      if (!assignee) return;
+      let key = null;
+      if (typeof assignee === 'string') {
+        key = assignee;
+      } else if (assignee && typeof assignee === 'object') {
+        key = assignee.id || assignee.employeeId || assignee.email || JSON.stringify(assignee);
+      }
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      merged.push(assignee);
+    };
+    if (Array.isArray(primary)) primary.forEach(pushAssignee);
+    if (Array.isArray(secondary)) secondary.forEach(pushAssignee);
+    return merged;
+  }
+
+  function mergeTaskData(preferred, fallback){
+    if (!preferred && !fallback) return null;
+    if (!preferred) return fallback;
+    if (!fallback) return preferred;
+    const merged = Object.assign({}, fallback, preferred);
+    merged.assignees = mergeAssignees(preferred.assignees, fallback.assignees);
+    if (!merged.startPlanned && fallback.startPlanned) merged.startPlanned = fallback.startPlanned;
+    if (!merged.endPlanned && fallback.endPlanned) merged.endPlanned = fallback.endPlanned;
+    if (!merged.status && fallback.status) merged.status = fallback.status;
+    if (!merged.seq && fallback.seq) merged.seq = fallback.seq;
+    if (!merged.duration && fallback.duration) merged.duration = fallback.duration;
+    if (!merged.estMin && fallback.estMin) merged.estMin = fallback.estMin;
+    return merged;
+  }
+
+  function getTaskDedupeKey(task){
+    if (!task || typeof task !== 'object') return null;
+    const orderId = task.orderId || '';
+    const processId = task.processId || '';
+    const operationId = task.operationId || '';
+    const opLabel = (task.opName || task.name || '').toLowerCase();
+    const seq = typeof task.seq === 'number' ? task.seq : (typeof task.seq === 'string' ? task.seq : '');
+    if (!orderId && !opLabel && !operationId) return null;
+    return `${orderId}||${processId}||${operationId}||${opLabel}||${seq}`;
+  }
+
+  function dedupeTasksState(targetState){
+    const tasks = Array.isArray(targetState.tasks) ? targetState.tasks : [];
+    if (tasks.length < 2) return { removed: 0 };
+    const deduped = [];
+    const keyToIndex = new Map();
+    const removedIds = [];
+
+    tasks.forEach(task => {
+      if (!task || typeof task !== 'object') return;
+      const key = getTaskDedupeKey(task);
+      if (!key) {
+        deduped.push(task);
+        return;
+      }
+      const existingIndex = keyToIndex.get(key);
+      if (existingIndex === undefined) {
+        keyToIndex.set(key, deduped.length);
+        deduped.push(task);
+        return;
+      }
+
+      const existingTask = deduped[existingIndex];
+      const existingScore = scoreTaskForDedupe(existingTask);
+      const candidateScore = scoreTaskForDedupe(task);
+
+      if (candidateScore > existingScore) {
+        const merged = mergeTaskData(task, existingTask);
+        deduped[existingIndex] = merged;
+        if (existingTask && existingTask.id) removedIds.push(existingTask.id);
+      } else {
+        const merged = mergeTaskData(existingTask, task);
+        deduped[existingIndex] = merged;
+        if (task.id) removedIds.push(task.id);
+      }
+    });
+
+    if (removedIds.length) {
+      targetState.tasks = deduped;
+      if (targetState.taskProcessMap && typeof targetState.taskProcessMap === 'object') {
+        removedIds.forEach(id => { if (id && id in targetState.taskProcessMap) delete targetState.taskProcessMap[id]; });
+      }
+      if (targetState.taskOrderMap && typeof targetState.taskOrderMap === 'object') {
+        removedIds.forEach(id => { if (id && id in targetState.taskOrderMap) delete targetState.taskOrderMap[id]; });
+      }
+      console.log('[store] dedupeTasksState removed duplicates:', removedIds.length);
+    }
+
+    return { removed: removedIds.length };
+  }
+
   function loadState(){ 
     try{ 
       const raw = localStorage.getItem(storeKey); 
@@ -397,6 +504,14 @@
       console.log('[store-migrate] hydrateAfterFromOrders done:', hydratedAfter);
       const hydratedOrders = hydrateOrdersFromAfter(state);
       console.log('[store-migrate] hydrateOrdersFromAfter done:', hydratedOrders);
+      const dedupeStats = dedupeTasksState(state);
+      if (dedupeStats.removed){
+        try {
+          localStorage.setItem(storeKey, JSON.stringify(state));
+        } catch(dedupeSyncErr){
+          console.warn('[store] nie udało się zapisać stanu po deduplikacji', dedupeSyncErr && dedupeSyncErr.message);
+        }
+      }
       const shouldPersist = (mergeStats.mergedOrders + mergeStats.updatedOrders + mergeStats.mergedAfter + mergeStats.updatedAfter + hydratedAfter + hydratedOrders) > 0;
       if (shouldPersist){
         try {
@@ -432,6 +547,7 @@
         console.error('state.tasks nie jest tablicą przed zapisem!', state.tasks);
         state.tasks = [];
       }
+      dedupeTasksState(state);
       
       localStorage.setItem(storeKey, JSON.stringify(state));
       console.log('Stan zapisany:', {

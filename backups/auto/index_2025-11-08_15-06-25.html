@@ -775,10 +775,6 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
         <span style="font-size:13px;color:#fed7aa;text-transform:uppercase;letter-spacing:0.08em">Operacje</span>
         <span id="dash-ops" style="font-size:28px;font-weight:700;color:#ffffff">0</span>
       </div>
-      <div style="background:rgba(168,85,247,0.18);border:1px solid rgba(168,85,247,0.35);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:6px;box-shadow:0 4px 14px rgba(15,23,42,0.45)">
-        <span style="font-size:13px;color:#e9d5ff;text-transform:uppercase;letter-spacing:0.08em">Magazyn</span>
-        <span id="dash-warehouse" style="font-size:28px;font-weight:700;color:#ffffff">0</span>
-      </div>
     </div>
 
     <div id="deadline-alerts" style="margin-top:16px">
@@ -1886,11 +1882,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   let state={storage:{mode:'firebase',appId:'doors-demo',userId:'hala-1',fbConfig:JSON.parse(JSON.stringify(DEFAULT_FIREBASE_CONFIG))},
     employees:[],operationsCatalog:[],processes:[],orders:[],tasks:[],after:[],PROC_TMP:[],page:'dash',_timers:{}};
   state.uiShowTasksByEmpTable = false;
-  
-  // 🔒 FLAGA SYNCHRONIZACJI - Blokuje loadFromDB() podczas usuwania danych
-  window._isSyncingDelete = false;
-  window._syncDeleteTimeout = null;
-  
   // migracja istniejących tasków (dodanie nowych pól jeśli brak)
   try{ if(window.scheduleCore){ window.scheduleCore.migrateTasks(state); } }catch(e){ console.warn('migrateTasks warn', e.message); }
   // migracja orderów - pole tasksGenerated
@@ -2566,59 +2557,51 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           
           console.log('🗑️ Usuwanie zlecenia:', id);
           
-          // KROK 1: Usuń z lokalnego state
-          const removedOrder = state.orders.find(x => x.id === id);
-          const removedTasksCount = state.tasks.filter(t => t.orderId === id).length;
-          
+          // Usuń z lokalnego state
           state.orders = state.orders.filter(x => x.id !== id); 
           state.tasks = state.tasks.filter(t => t.orderId !== id); 
           state.after = state.after.filter(a => a.order !== id); 
           
-          console.log(`  Usunięto: zlecenie ${removedOrder?.name || id}, ${removedTasksCount} zadań`);
-          
-          // KROK 2: Zaktualizuj timestamp i WYMUŚ kolejne wczytanie z Firebase
+          // KRYTYCZNE: Zaktualizuj timestamp ostatniej modyfikacji
           state.lastModified = Date.now();
-          state.storage.lastRemoteSync = 0; // WYMUSZAMY następne wczytanie z Firebase!
+          state.storage.lastRemoteSync = Date.now(); // Oznacz jako zsynchronizowane
           
           // Zaktualizuj window.state
           window.state = state;
           
-          // KROK 3: Zapisz do localStorage
+          // Zapisz do localStorage
           save();
-          console.log('  ✅ Zapisano do localStorage');
           
-          // 🔒 KROK 4: USTAW FLAGĘ SYNCHRONIZACJI - Blokuje loadFromDB()
-          window._isSyncingDelete = true;
-          console.log('  � Flaga _isSyncingDelete = true (blokuję loadFromDB)');
-          
-          // Wyczyść stary timeout jeśli istnieje
-          if (window._syncDeleteTimeout) {
-            clearTimeout(window._syncDeleteTimeout);
-          }
-          
-          // KROK 5: Synchronizuj z Firebase - saveToDB automatycznie usuwa z Firebase to czego nie ma lokalnie
-          if (state.storage && state.storage.mode === 'firebase' && typeof window.saveToDB === 'function') {
-            console.log('  🔄 Synchronizuję usunięcie z Firebase...');
-            window.saveToDB().then(() => {
-              console.log('  ✅ Zlecenie i zadania usunięte z Firebase');
+          // Synchronizuj z Firebase NATYCHMIAST (nie przez kolejkę)
+          if (state.storage && state.storage.mode === 'firebase') {
+            console.log('🔄 Synchronizuję usunięcie z Firebase...');
+            
+            // Wywołaj natychmiastowy zapis do Firebase
+            if (typeof window.saveToDB === 'function') {
+              window.saveToDB().then(() => {
+                console.log('✅ Zlecenie usunięte z Firebase');
+                
+                // Dodatkowo usuń dokument zlecenia z Firebase
+                if (window.fbRoot) {
+                  const root = window.fbRoot();
+                  root.collection('orders').doc(id).delete()
+                    .then(() => console.log('✅ Dokument zlecenia usunięty z Firebase'))
+                    .catch(err => console.error('❌ Błąd usuwania dokumentu:', err));
+                }
+              }).catch(err => {
+                console.error('❌ Błąd synchronizacji z Firebase:', err);
+              });
+            }
+            
+            // Backup: Użyj kolejki jeśli dostępna
+            if (window.FirebaseSyncQueue) {
+              window.FirebaseSyncQueue.enqueue('delete', {
+                collection: 'orders',
+                documentId: id
+              }, 20);
               
-              // 🔓 WZNÓW FLAGE PO POMYŚLNYM ZAPISANIU
-              // Poczekaj 2s na pewność że Firebase się zsynchronizuje
-              window._syncDeleteTimeout = setTimeout(() => {
-                window._isSyncingDelete = false;
-                console.log('  🔓 Flaga _isSyncingDelete = false (odblokuję loadFromDB)');
-              }, 2000);
-            }).catch(err => {
-              console.error('  ❌ Błąd synchronizacji:', err);
-              // Nawet przy błędzie, odblokuj po 3s
-              window._syncDeleteTimeout = setTimeout(() => {
-                window._isSyncingDelete = false;
-                console.log('  🔓 Flaga _isSyncingDelete = false (błąd - odblokuję loadFromDB)');
-              }, 3000);
-            });
-          } else {
-            // Nie mamy Firebase, wyłącz flagę natychmiast
-            window._isSyncingDelete = false;
+              window.FirebaseSyncQueue.enqueue('save', { state }, 10);
+            }
           }
           
           // Wymuszenie odświeżenia wszystkich widoków
@@ -6764,28 +6747,10 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     }
   }
   function fbRoot(){return firebase.firestore().collection('planner').doc(state.storage.appId).collection('users').doc(state.storage.userId);}
-  
-  // Debounce flag dla saveToDB - zapobiega wielokrotnemu zapisywaniu
-  let _saveToDBInProgress = false;
-  let _saveToDBTimeout = null;
-  
   async function saveToDB(customState){
     if(state.storage.mode!=='firebase'){qs('#set-info').textContent='Tryb localStorage (offline)';return;}
-    
-    // Jeśli już trwa zapis, anuluj poprzedni timeout i zaplanuj nowy
-    if(_saveToDBInProgress) {
-      console.log('⏸️ saveToDB już w toku - odkładam');
-      clearTimeout(_saveToDBTimeout);
-      _saveToDBTimeout = setTimeout(() => saveToDB(customState), 1500);
-      return;
-    }
-    
-    _saveToDBInProgress = true;
-    clearTimeout(_saveToDBTimeout);
-    
-    try {
-      const ok=await ensureFirebase(); if(!ok){_saveToDBInProgress = false; return;}
-      const targetState = customState || state;
+    const ok=await ensureFirebase(); if(!ok){return;}
+    const targetState = customState || state;
     try {
       const db=firebase.firestore();
       const batch=db.batch();
@@ -6797,8 +6762,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         { name: 'processes', items: targetState.processes || [] },
         { name: 'orders', items: targetState.orders || [] },
         { name: 'tasks', items: targetState.tasks || [] },
-        { name: 'after', items: targetState.after || [] },
-        { name: 'warehouseItems', items: window.warehouseItems || [] }
+        { name: 'after', items: targetState.after || [] }
       ];
 
       // Pobierz aktualne dokumenty zdalne, aby usunąć te, których już nie ma lokalnie
@@ -6833,34 +6797,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         const toDelete = [];
         remoteDocs.forEach(doc => {
           if(!localIds.has(doc.id)){
-            // 🔒 OCHRONA: Nie usuwaj danych rzeczywistych - usuwaj TYLKO testowe dane
-            // dla kolekcji: employees, operationsCatalog, processes
-            if(col.name === 'employees'){
-              const isTestEmployee = /^emp\d+$/.test(doc.id) || (doc.id && doc.id.startsWith('emp_test_'));
-              if(!isTestEmployee){
-                console.warn(`⚠️ [saveToDB] NIE USUWAM pracownika '${doc.id}' - to dane rzeczywiste! Dodaję do lokalnych.`);
-                // Nie usuwamy rzeczywistych pracowników - przywracamy je lokalnie
-                localIds.add(doc.id);
-                return;
-              }
-            }
-            if(col.name === 'operationsCatalog'){
-              const isTestOp = /^op_test_/.test(doc.id);
-              if(!isTestOp){
-                console.warn(`⚠️ [saveToDB] NIE USUWAM operacji '${doc.id}' - to dane rzeczywiste!`);
-                localIds.add(doc.id);
-                return;
-              }
-            }
-            if(col.name === 'processes'){
-              const isTestProc = /^proc_test_/.test(doc.id);
-              if(!isTestProc){
-                console.warn(`⚠️ [saveToDB] NIE USUWAM procesu '${doc.id}' - to dane rzeczywiste!`);
-                localIds.add(doc.id);
-                return;
-              }
-            }
-            
             toDelete.push(doc.id);
             batch.delete(r.collection(col.name).doc(doc.id));
           }
@@ -6905,8 +6841,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     } catch(e) {
       console.error('❌ Błąd zapisu do Firebase:', e.message);
       qs('#set-info').textContent='❌ Błąd zapisu do DB: '+e.message;
-    } finally {
-      _saveToDBInProgress = false;
     }
   }
   try {
@@ -6980,12 +6914,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     const options = opts || {};
     const forceLoad = options.forceLoad || false;
     const reason = options.reason || 'manual';
-    
-    // 🔒 BLOKADA PODCZAS USUWANIA - Nie wczytuj starych danych gdy usuwamy (TYLKO dla orders/tasks)
-    if (window._isSyncingDelete) {
-      console.log('🔒 [loadFromDB] Blokowanie tylko dla orders/tasks. Pracownicy mogą się synchronizować.');
-      // Flaga blokuje pełne loadFromDB dla orders/tasks, ale pracownicy są zarządzani niezależnie
-    }
     
     if(state.storage.mode!=='firebase'){qs('#set-info').textContent='Tryb localStorage (offline)';return;}
     const ok=await ensureFirebase(); if(!ok){return;}
@@ -7080,11 +7008,11 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       }
       
       const getAll=async(name)=>(await r.collection(name).get()).docs.map(d=>({id:d.id,...d.data()}));
-      const [employees,operationsCatalog,processes,orders,tasks,after,warehouseItems]=await Promise.all([
-        getAll('employees'),getAll('operationsCatalog'),getAll('processes'),getAll('orders'),getAll('tasks'),getAll('after'),getAll('warehouseItems')
+      const [employees,operationsCatalog,processes,orders,tasks,after]=await Promise.all([
+        getAll('employees'),getAll('operationsCatalog'),getAll('processes'),getAll('orders'),getAll('tasks'),getAll('after')
       ]);
 
-      const remoteCollections = { employees, operationsCatalog, processes, orders, tasks, after, warehouseItems };
+      const remoteCollections = { employees, operationsCatalog, processes, orders, tasks, after };
 
       const remoteCountTotal = Object.values(remoteCollections)
         .reduce((sum, collection)=> sum + (Array.isArray(collection) ? collection.length : (collection && typeof collection === 'object' ? Object.keys(collection).length : 0)), 0);
@@ -7108,13 +7036,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         const remoteLen = Array.isArray(collection) ? collection.length : (collection && typeof collection === 'object' ? Object.keys(collection).length : 0);
         const localLen = Array.isArray(localCollections[key]) ? localCollections[key].length : (localCollections[key] && typeof localCollections[key] === 'object' ? Object.keys(localCollections[key]).length : 0);
 
-        // 🔒 BLOKADA PODCZAS USUWANIA - Nie nadpisuj orders/tasks gdy usuwamy
-        if (window._isSyncingDelete && (key === 'orders' || key === 'tasks')) {
-          console.log(`🔒 [loadFromDB] Blokuję aktualizację ${key} (trwa synchronizacja usunięcia)`);
-          skipped.push(key);
-          return;
-        }
-
         if(remoteLen === 0 && localLen > 0){
           console.log(`⏭️ Pominięto kolekcję '${key}' (zdalna pusta, lokalna ma ${localLen} elementów)`);
           skipped.push(key);
@@ -7122,38 +7043,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         }
 
         console.log(`📝 Aktualizuję kolekcję '${key}': lokalna=${localLen}, zdalna=${remoteLen}`);
-        let dataToLoad = Array.isArray(collection) ? collection.slice() : (collection ? JSON.parse(JSON.stringify(collection)) : Array.isArray(state[key]) ? [] : {});
-        
-        // 🔄 DEDUPLIKACJA: Usunięcie duplikatów pracowników (ten sam imię/nazwisko)
-        if(key === 'employees' && Array.isArray(dataToLoad)){
-          const seenNames = new Set();
-          const dedupedEmployees = [];
-          dataToLoad.forEach(emp => {
-            const nameKey = `${emp.name}||${emp.role || 'Inne'}`.toLowerCase();
-            if(!seenNames.has(nameKey)){
-              seenNames.add(nameKey);
-              dedupedEmployees.push(emp);
-              console.log(`  ✅ Pracownik: ${emp.name} (ID: ${emp.id})`);
-            } else {
-              console.warn(`  🔄 [DEDUPLIKACJA] Usunięty duplikat pracownika: ${emp.name} (ID: ${emp.id}) - zachowuję pierwszego`);
-            }
-          });
-          
-          if(dedupedEmployees.length < dataToLoad.length){
-            console.log(`  ⚠️ [DEDUPLIKACJA PRACOWNIKÓW] Usunięto ${dataToLoad.length - dedupedEmployees.length} duplikatów`);
-            dataToLoad = dedupedEmployees;
-          }
-        }
-        
-        // Specjalna obsługa dla warehouseItems - przypisz do window.warehouseItems
-        if(key === 'warehouseItems' && Array.isArray(dataToLoad)){
-          console.log(`📦 [loadFromDB] Wczytaję magazyn: ${dataToLoad.length} pozycji`);
-          window.warehouseItems = dataToLoad;
-          localStorage.setItem('warehouseItems', JSON.stringify(dataToLoad));
-          console.log(`✅ [loadFromDB] Magazyn zsynchronizowany z Firebase (${dataToLoad.length} pozycji)`);
-        }
-        
-        state[key] = dataToLoad;
+        state[key] = Array.isArray(collection) ? collection.slice() : (collection ? JSON.parse(JSON.stringify(collection)) : Array.isArray(state[key]) ? [] : {});
         updated.push(key);
       });
 
@@ -8531,11 +8421,6 @@ function loadWarehouseFromStorage() {
   
   // Zaktualizuj badge listy zakupów
   updateShoppingListBadge();
-  
-  // Zaktualizuj licznik magazynu na dashboardzie
-  if (typeof renderDash === 'function') {
-    renderDash(window.state);
-  }
 }
 
 // Napraw checklisty w zleceniach - znajdź itemId po nazwie materiału
@@ -8917,7 +8802,6 @@ function showEditWarehouseModal(index) {
         };
         saveWarehouseToStorage();
         renderWarehouse();
-        renderDash();
       }
     }
   ]);
@@ -8933,7 +8817,6 @@ function deleteWarehouseItem(index) {
     window.warehouseItems.splice(index, 1);
     saveWarehouseToStorage();
     renderWarehouse();
-    renderDash();
   }
 }
 
@@ -9022,7 +8905,6 @@ function showAdjustQuantityModal(index) {
 }
 
 function showAddWarehouseModal() {
-  console.log('🧪 [showAddWarehouseModal] Otwieranie modalu');
   const content = `
     <div style="display: flex; flex-direction: column; gap: 16px;">
       <div>
@@ -9082,14 +8964,11 @@ function showAddWarehouseModal() {
     {
       text: 'Dodaj',
       action: () => {
-        console.log('🧪 [showAddWarehouseModal] Kliknęto przycisk "Dodaj"');
         const name = document.getElementById('wh-modal-name').value.trim();
         const quantity = parseFloat(document.getElementById('wh-modal-quantity').value);
         const unit = document.getElementById('wh-modal-unit').value;
         const price = parseFloat(document.getElementById('wh-modal-price').value);
         const minStock = parseFloat(document.getElementById('wh-modal-min-stock').value) || 0;
-
-        console.log('📝 Dane: ', { name, quantity, unit, price, minStock });
 
         if (!name) {
           alert('Nazwa pozycji jest wymagana!');
@@ -9115,7 +8994,7 @@ function showAddWarehouseModal() {
         const rack = document.getElementById('wh-modal-rack').value.trim();
         const sector = document.getElementById('wh-modal-sector').value.trim();
 
-        const newItem = { 
+        window.warehouseItems.push({ 
           id: generateId(),
           name, 
           quantity, 
@@ -9123,32 +9002,9 @@ function showAddWarehouseModal() {
           price, 
           minStock,
           location: { shelf, rack, sector }
-        };
-        
-        console.log('✅ [showAddWarehouseModal] Nowa pozycja:', newItem);
-        console.log('📊 [showAddWarehouseModal] Liczba pozycji przed: ', window.warehouseItems.length);
-        
-        window.warehouseItems.push(newItem);
-        
-        console.log('📊 [showAddWarehouseModal] Liczba pozycji po: ', window.warehouseItems.length);
-        console.log('💾 [showAddWarehouseModal] Zachowuję do localStorage...');
-        
+        });
         saveWarehouseToStorage();
-        
-        console.log('📢 [showAddWarehouseModal] Renderuję magazyn...');
-        try {
-          renderWarehouse();
-        } catch (e) {
-          console.error('❌ [showAddWarehouseModal] renderWarehouse error:', e);
-        }
-        
-        try {
-          renderDash();
-        } catch (e) {
-          console.error('❌ [showAddWarehouseModal] renderDash error:', e);
-        }
-        
-        console.log('✅ [showAddWarehouseModal] Pozycja dodana - koniec');
+        renderWarehouse();
       }
     }
   ]);
@@ -12333,25 +12189,16 @@ function renderWarehouse() {
       </thead>
       <tbody>
         ${filteredItems.map((item, index) => {
-          const qtyValue = typeof item.quantity === 'number' ? item.quantity : Number(item.quantity || 0);
-          const priceValue = typeof item.price === 'number' ? item.price : Number(item.price || 0);
-          const hasMinStock = item.minStock !== undefined && item.minStock !== null && item.minStock !== '';
-          const minStockValue = hasMinStock ? Number(item.minStock) : null;
-          const isLowStock = hasMinStock && qtyValue <= minStockValue;
+          const isLowStock = item.minStock && item.quantity <= item.minStock;
           const rowStyle = isLowStock ? 'background:#c0392b' : (index % 2 === 0 ? 'background:#34495e' : 'background:#2c3e50');
-
-          const qtyDisplay = Number.isFinite(qtyValue) ? qtyValue : '-';
-          const priceDisplay = Number.isFinite(priceValue) ? priceValue.toFixed(2) : '-';
-          const minStockDisplay = hasMinStock && Number.isFinite(minStockValue) ? minStockValue : '-';
-
-          // Lokalizacja (może nie istnieć)
-          const location = item.location || {};
+          
+          // Lokalizacja
           let locationStr = '-';
-          if (location.shelf || location.rack || location.sector) {
+          if (item.location && (item.location.shelf || item.location.rack || item.location.sector)) {
             const parts = [];
-            if (location.shelf) parts.push(`R:${location.shelf}`);
-            if (location.rack) parts.push(`P:${location.rack}`);
-            if (location.sector) parts.push(`S:${location.sector}`);
+            if (item.location.shelf) parts.push(`R:${item.location.shelf}`);
+            if (item.location.rack) parts.push(`P:${item.location.rack}`);
+            if (item.location.sector) parts.push(`S:${item.location.sector}`);
             locationStr = parts.join(' • ');
           }
           
@@ -12361,10 +12208,10 @@ function renderWarehouse() {
                 <div style="font-weight:600;font-size:15px;color:#ffffff !important">${item.name}</div>
                 ${isLowStock ? '<div style="font-size:12px;color:#ffeb3b !important;font-weight:700;margin-top:2px">⚠️ DO ZAMÓWIENIA</div>' : ''}
               </td>
-              <td style="padding:12px;text-align:center;font-weight:700;font-size:15px;color:${isLowStock ? '#ffeb3b' : '#ffffff'} !important">${qtyDisplay}</td>
-              <td style="padding:12px;text-align:center;font-size:14px;color:#ffffff !important">${item.unit || '-'}</td>
-              <td style="padding:12px;text-align:right;font-weight:600;font-size:14px;color:#ffffff !important">${priceDisplay}</td>
-              <td style="padding:12px;text-align:center;font-size:14px;color:#ffffff !important">${minStockDisplay}</td>
+              <td style="padding:12px;text-align:center;font-weight:700;font-size:15px;color:${isLowStock ? '#ffeb3b' : '#ffffff'} !important">${item.quantity}</td>
+              <td style="padding:12px;text-align:center;font-size:14px;color:#ffffff !important">${item.unit}</td>
+              <td style="padding:12px;text-align:right;font-weight:600;font-size:14px;color:#ffffff !important">${item.price.toFixed(2)}</td>
+              <td style="padding:12px;text-align:center;font-size:14px;color:#ffffff !important">${item.minStock || '-'}</td>
               <td style="padding:12px;font-size:14px;color:#ffffff !important">${locationStr}</td>
               <td style="padding:12px;text-align:center">
                 <div style="display:flex;gap:4px;justify-content:center">
