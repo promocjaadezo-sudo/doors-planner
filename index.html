@@ -986,7 +986,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
       </div>
     </div>
     
-    <div class="table"><table><thead><tr><th>Imię i nazwisko</th><th>Rola</th><th>Telefon</th><th>cap%</th><th>h/d</th><th>Akcje</th></tr></thead><tbody id="emp-tb"></tbody></table></div>
+    <div class="table"><table><thead><tr><th>Imię i nazwisko</th><th>Rola</th><th>Telefon</th><th>cap%</th><th>h/d</th><th>Montaż</th><th>Akcje</th></tr></thead><tbody id="emp-tb"></tbody></table></div>
   </div>
 
   <div class="card hidden" id="p-as">
@@ -4255,8 +4255,17 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     const tb=qs('#emp-tb'); 
     tb.innerHTML=''; 
     (state.employees||[]).forEach(e=>{ 
-      const tr=document.createElement('tr'); 
-      tr.innerHTML='<td>'+e.name+'</td><td>'+(e.role||'—')+'</td><td>'+(e.phone||'—')+'</td><td>'+(e.cap||100)+'</td><td>'+(e.hoursPerDay||8)+'</td><td><button class="btn" data-emp-ed="'+e.id+'">Edytuj</button> <button class="btn red" data-emp-del="'+e.id+'">Usuń</button></td>'; 
+      const tr=document.createElement('tr');
+      // Znajdź wszystkie montaże przypisane do tego pracownika
+      const assignedMontaze = (state.after||[]).filter(a => {
+        const empIds = a.employeeIds || (a.employeeId ? [a.employeeId] : []);
+        return empIds.includes(e.id);
+      });
+      // Wyświetl montaże jako lista
+      const montazeText = assignedMontaze.length > 0
+        ? assignedMontaze.map(m => m.type + ' ' + (m.installDate || '')).join('; ')
+        : '—';
+      tr.innerHTML='<td>'+e.name+'</td><td>'+(e.role||'—')+'</td><td>'+(e.phone||'—')+'</td><td>'+(e.cap||100)+'</td><td>'+(e.hoursPerDay||8)+'</td><td>'+montazeText+'</td><td><button class="btn" data-emp-ed="'+e.id+'">Edytuj</button> <button class="btn red" data-emp-del="'+e.id+'">Usuń</button></td>'; 
       tb.appendChild(tr); 
     }); 
   }
