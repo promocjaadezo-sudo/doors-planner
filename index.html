@@ -6595,7 +6595,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
             operationId: 'montaż-block', 
             opName: `Montaż: ${orderObj?.name || order}`,
             name: `Montaż: ${orderObj?.name || order}`,
-            assignees: [{id: employeeId, name: emp.name}],
+            employeeId, 
             startPlanned: startTime, 
             endPlanned: endTime, 
             status: 'planned', 
