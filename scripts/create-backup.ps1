@@ -1,7 +1,8 @@
 param(
     [string[]]$SourceFiles = @("index.html"),
     [string]$BackupsRoot = "backups",
-    [switch]$CreateZip = $false
+    [switch]$CreateZip = $false,
+    [switch]$FullWorkspace = $false
 )
 
 if (-not (Test-Path $BackupsRoot)) {
@@ -10,6 +11,21 @@ if (-not (Test-Path $BackupsRoot)) {
 }
 
 $timestamp = Get-Date -Format "yyyy-MM-dd_HHmmss"
+
+if ($FullWorkspace) {
+    $workspaceRoot = Split-Path $PSScriptRoot -Parent
+    $zipPath = Join-Path $BackupsRoot ("$timestamp-workspace.zip")
+    Write-Host "[backup] Creating full workspace archive: $zipPath"
+    try {
+        Compress-Archive -Path (Join-Path $workspaceRoot '*') -DestinationPath $zipPath -Force
+        Write-Host "[backup] Full archive ready at $zipPath"
+        return
+    } catch {
+        Write-Error "[backup] Failed to create full archive: $($_.Exception.Message)"
+        exit 1
+    }
+}
+
 $targetDir = Join-Path $BackupsRoot $timestamp
 
 Write-Host "Creating backup folder: $targetDir"

@@ -423,22 +423,8 @@
     const operationId = task.operationId || '';
     const opLabel = (task.opName || task.name || '').toLowerCase();
     const seq = typeof task.seq === 'number' ? task.seq : (typeof task.seq === 'string' ? task.seq : '');
-    let employeeKey = '';
-    if (operationId === 'montaż-block') {
-      if (Array.isArray(task.assignees) && task.assignees.length) {
-        const firstAssignee = task.assignees[0];
-        if (firstAssignee && typeof firstAssignee === 'object') {
-          employeeKey = firstAssignee.id || firstAssignee.employeeId || '';
-        } else if (firstAssignee) {
-          employeeKey = firstAssignee;
-        }
-      }
-      if (!employeeKey && task.employeeId) {
-        employeeKey = task.employeeId;
-      }
-    }
     if (!orderId && !opLabel && !operationId) return null;
-    return `${orderId}||${processId}||${operationId}||${opLabel}||${seq}||${employeeKey}`;
+    return `${orderId}||${processId}||${operationId}||${opLabel}||${seq}`;
   }
 
   function dedupeTasksState(targetState){
@@ -500,26 +486,6 @@
       if (!Array.isArray(state.orders)) state.orders = [];
       if (!Array.isArray(state.processes)) state.processes = [];
       if (!Array.isArray(state.after)) state.after = [];
-      if (!Array.isArray(state.employees)) state.employees = [];
-      // Ensure assembly tasks keep per-employee assignment metadata
-      const employeeLookup = new Map();
-      (state.employees||[]).forEach(emp => {
-        if (emp && emp.id) {
-          employeeLookup.set(emp.id, emp);
-        }
-      });
-      (state.tasks||[]).forEach(task => {
-        if (!task || task.operationId !== 'montaż-block') return;
-        if (!task.seq && task.employeeId) {
-          task.seq = task.employeeId;
-        }
-        if (!Array.isArray(task.assignees) || task.assignees.length === 0) {
-          const emp = task.employeeId ? employeeLookup.get(task.employeeId) : null;
-          if (task.employeeId) {
-            task.assignees = [{ id: task.employeeId, name: emp?.name || task.employeeId }];
-          }
-        }
-      });
     if (!Array.isArray(state._resourceConflicts)) state._resourceConflicts = [];
       if (!state.scheduleConfig) {
         state.scheduleConfig = JSON.parse(JSON.stringify(defaultState.scheduleConfig));
