@@ -26,18 +26,33 @@
         .button:hover {
             background-color: #0056b3;
         }
+        .button.secondary {
+            background-color: #10b981;
+        }
+        .button.secondary:hover {
+            background-color: #059669;
+        }
+        .info-text {
+            margin-top: 40px;
+            color: #666;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
     <h1>🚪 Doors Planner</h1>
     <p>Witaj w aplikacji do zarządzania projektami montażu drzwi</p>
     
-    <a href="worker-app.html" class="button">
-        👷 Aplikacja dla pracownika
+    <a href="worker-panel.html" class="button">
+        👷 Panel pracownika (online)
     </a>
-    
-    <p style="margin-top: 40px; color: #666; font-size: 14px;">
-        Dla planera: otwórz <code>index.html</code> lokalnie z folderu głównego
+
+    <a href="../index.html" class="button secondary">
+        🗂️ Planner produkcji (pełna wersja)
+    </a>
+
+    <p class="info-text">
+        Dla planera lokalnego: uruchom <code>index.html</code> z katalogu głównego projektu.
     </p>
 </body>
 </html>
