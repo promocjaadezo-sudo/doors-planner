@@ -13,7 +13,8 @@
     "test:unit:watch": "node state/tests/watch-tests.js",
     "test:unit:menu": "powershell -ExecutionPolicy Bypass -File state/tests/test-menu.ps1",
     "lint": "eslint tests/e2e playwright.config.ts scripts/test-server.js --ext .ts,.js",
-    "prepush": "node scripts/prepush-checks.js"
+    "prepush": "node scripts/prepush-checks.js",
+    "sync:planer": "powershell -ExecutionPolicy Bypass -File scripts/sync-planer-6.0.0.ps1"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.10.0",
