@@ -12734,7 +12734,7 @@ function generateOrderProposals() {
   modal.innerHTML = `
     <div style="background:white;padding:24px;border-radius:12px;max-width:800px;max-height:80vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
       <h2 style="margin:0 0 16px 0;color:#0f172a">📋 Propozycje zamówień</h2>
-      <pre style="background:#f8fafc;padding:16px;border-radius:8px;font-size:13px;line-height:1.6;overflow:auto;max-height:400px">${proposal}</pre>
+      <pre style="background:#f8fafc;padding:16px;border-radius:8px;font-size:13px;line-height:1.6;overflow:auto;max-height:400px;color:#000000">${proposal}</pre>
       <div style="display:flex;gap:12px;margin-top:16px">
         <button class="btn blue" onclick="navigator.clipboard.writeText(\`${proposal.replace(/`/g, '\\`')}\`); alert('✅ Skopiowano do schowka!')">📋 Kopiuj do schowka</button>
         <button class="btn green" onclick="downloadOrderProposal(\`${proposal.replace(/`/g, '\\`')}\`)">💾 Pobierz jako TXT</button>
