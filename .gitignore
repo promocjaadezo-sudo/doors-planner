@@ -1,0 +1,36 @@
+# Raporty testów jednostkowych
+state/tests/reports/*.json
+tests/reports/*.json
+
+# Node modules (jeśli będą)
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Coverage reports (future)
+coverage/
+.nyc_output/
+
+# Build outputs
+dist/
+build/

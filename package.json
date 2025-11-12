@@ -1,0 +1,25 @@
+{
+  "name": "doors-planner",
+  "version": "1.0.0",
+  "description": "Automation scripts for building, testing and linting the Doors Planner project.",
+  "private": true,
+  "scripts": {
+    "build": "node -e \"console.log('Static build: nothing to compile')\"",
+    "test": "playwright test",
+    "test:playwright": "playwright test",
+    "test:playwright:ui": "playwright test --ui",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:unit": "node state/tests/run-tests-node.js",
+    "test:unit:watch": "node state/tests/watch-tests.js",
+    "test:unit:menu": "powershell -ExecutionPolicy Bypass -File state/tests/test-menu.ps1",
+    "lint": "eslint tests/e2e playwright.config.ts scripts/test-server.js --ext .ts,.js",
+    "prepush": "node scripts/prepush-checks.js"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.10.0",
+    "@typescript-eslint/parser": "^8.10.0",
+    "@types/node": "^20.16.5",
+    "@playwright/test": "^1.48.2",
+    "eslint": "^8.57.0"
+  }
+}
