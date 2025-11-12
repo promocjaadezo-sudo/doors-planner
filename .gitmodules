@@ -1,0 +1,6 @@
+[submodule "planer_6.0.0"]
+	path = planer_6.0.0
+	url = https://github.com/promocjaadezo-sudo/doors-planner.git
+[submodule "planer_6.0.1"]
+	path = planer_6.0.1
+	url = https://github.com/promocjaadezo-sudo/doors-planner.git
