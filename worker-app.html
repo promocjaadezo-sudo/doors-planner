@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#2563eb">
-    <title>Worker App - Lista Zadań</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Worker App v2 - Lista Zadań (z wylogowaniem)</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -503,8 +506,35 @@
     </div>
 
     <div class="header">
-        <h1>📋 Lista Zadań</h1>
+        <h1>📋 Lista Zadań <span style="font-size: 0.6em; color: var(--muted);">v2.0</span></h1>
         <div class="date" id="current-date"></div>
+        <div style="margin-top: 12px;">
+            <select id="employee-select" onchange="onEmployeeChange()" style="
+                width: 100%;
+                padding: 10px;
+                background: var(--bg);
+                color: var(--text);
+                border: 1px solid rgba(148, 163, 184, 0.4);
+                border-radius: 8px;
+                font-size: 1rem;
+                cursor: pointer;
+            ">
+                <option value="">Ładowanie pracowników...</option>
+            </select>
+            <div id="worker-info" style="display: none; margin-top: 12px; padding: 10px; background: rgba(37, 99, 235, 0.1); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <span id="logged-worker-name" style="color: var(--accent); font-weight: bold;"></span>
+                <button onclick="logoutWorker()" style="
+                    padding: 6px 12px;
+                    background: var(--error);
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 0.9rem;
+                    font-weight: 600;
+                ">🚪 Wyloguj</button>
+            </div>
+        </div>
     </div>
 
     <div class="stats">
@@ -538,10 +568,23 @@
     </div>
 
     <script>
+        // Firebase Config (wbudowana)
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyD93UqqsHWoAUBV7g8OVKAnajIfGDX_ZdY",
+            authDomain: "doors-planner.firebaseapp.com",
+            projectId: "doors-planner",
+            storageBucket: "doors-planner.appspot.com",
+            messagingSenderId: "513098608067",
+            appId: "1:513098608067:web:1fe3855b3470ca7ef22176"
+        };
+
         // Dane aplikacji
-    let tasks = [];
-    let currentUser = { id: 'emp1', name: "Jan Kowalski" };
+        let tasks = [];
+        let allEmployees = [];
+        let currentUser = null;
         let isOnline = navigator.onLine;
+        let firebaseApp = null;
+        let firestore = null;
         
         // Ustawienia powiadomień
         let notificationSettings = {
@@ -580,12 +623,346 @@
             return `<a href="tel:${normalized}" style="color: var(--accent); text-decoration: none;">${escapeHtml(trimmed)}</a>`;
         }
 
+        // Inicjalizacja Firebase
+        async function initializeFirebase() {
+            try {
+                // Dynamiczne ładowanie Firebase SDK
+                const script1 = document.createElement('script');
+                script1.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js';
+                document.head.appendChild(script1);
+
+                const script2 = document.createElement('script');
+                script2.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js';
+                document.head.appendChild(script2);
+
+                const script3 = document.createElement('script');
+                script3.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js';
+                document.head.appendChild(script3);
+
+                // Czekaj na załadowanie
+                await new Promise(resolve => {
+                    script3.onload = resolve;
+                });
+
+                // Inicjalizuj Firebase
+                firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+                firestore = firebase.firestore();
+                
+                // Włącz persistence
+                await firestore.enablePersistence({ synchronizeTabs: true });
+
+                // Zaloguj anonimowo
+                await firebase.auth().signInAnonymously();
+
+                console.log('✅ Firebase zainicjalizowany');
+                
+                // Pobierz pracowników i zadania
+                await loadEmployeesFromFirebase();
+                await loadTasksFromFirebase();
+                
+            } catch (error) {
+                console.error('❌ Błąd Firebase:', error);
+            }
+        }
+
+        // Pobieranie pracowników z Firebase
+        async function loadEmployeesFromFirebase() {
+            try {
+                // Pobierz appId i userId z localStorage planera
+                let appId = localStorage.getItem('planner-app-id');
+                let userId = null;
+                
+                // Jeśli nie ma, użyj domyślnych wartości
+                if (!appId) {
+                    // Sprawdź w różnych kluczach localStorage
+                    const keys = Object.keys(localStorage);
+                    for (const key of keys) {
+                        if (key.includes('planner') || key.includes('app')) {
+                            try {
+                                const data = JSON.parse(localStorage.getItem(key));
+                                if (data && data.appId) {
+                                    appId = data.appId;
+                                    userId = data.userId;
+                                    break;
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                }
+                
+                // Jeśli nadal nie ma, użyj prostego query do kolekcji głównej
+                if (!appId || !userId) {
+                    // Pobierz z pierwszego dostępnego dokumentu planner
+                    const plannerSnap = await firestore.collection('planner').limit(1).get();
+                    if (!plannerSnap.empty) {
+                        appId = plannerSnap.docs[0].id;
+                        const usersSnap = await firestore.collection('planner').doc(appId).collection('users').limit(1).get();
+                        if (!usersSnap.empty) {
+                            userId = usersSnap.docs[0].id;
+                        }
+                    }
+                }
+
+                if (!appId || !userId) {
+                    console.warn('⚠️ Nie znaleziono appId/userId. Używam danych lokalnych.');
+                    loadEmployeesFromLocalStorage();
+                    return;
+                }
+
+                // Pobierz pracowników z właściwej ścieżki
+                const snapshot = await firestore
+                    .collection('planner')
+                    .doc(appId)
+                    .collection('users')
+                    .doc(userId)
+                    .collection('employees')
+                    .get();
+
+                allEmployees = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                // Aktualizuj dropdown
+                const select = document.getElementById('employee-select');
+                select.innerHTML = '<option value="">Wybierz pracownika...</option>';
+                
+                allEmployees.forEach(emp => {
+                    const option = document.createElement('option');
+                    option.value = emp.id;
+                    option.textContent = emp.name;
+                    select.appendChild(option);
+                });
+
+                // Przywróć ostatnio wybranego pracownika
+                const savedUserId = localStorage.getItem('worker-current-employee-id');
+                if (savedUserId) {
+                    select.value = savedUserId;
+                    currentUser = allEmployees.find(e => e.id === savedUserId);
+                    if (currentUser) {
+                        showWorkerInfo(currentUser.name);
+                        loadTasks();
+                        updateStats();
+                    }
+                }
+
+                console.log(`✅ Załadowano ${allEmployees.length} pracowników`);
+            } catch (error) {
+                console.error('❌ Błąd pobierania pracowników:', error);
+                loadEmployeesFromLocalStorage();
+            }
+        }
+
+        // Fallback - załaduj pracowników z localStorage
+        function loadEmployeesFromLocalStorage() {
+            const plannerData = localStorage.getItem('planner-state');
+            if (plannerData) {
+                try {
+                    const state = JSON.parse(plannerData);
+                    if (state.employees && Array.isArray(state.employees)) {
+                        allEmployees = state.employees;
+                        
+                        const select = document.getElementById('employee-select');
+                        select.innerHTML = '<option value="">Wybierz pracownika...</option>';
+                        
+                        allEmployees.forEach(emp => {
+                            const option = document.createElement('option');
+                            option.value = emp.id;
+                            option.textContent = emp.name;
+                            select.appendChild(option);
+                        });
+                        
+                        // Przywróć zalogowanego pracownika
+                        const savedUserId = localStorage.getItem('worker-current-employee-id');
+                        if (savedUserId) {
+                            select.value = savedUserId;
+                            currentUser = allEmployees.find(e => e.id === savedUserId);
+                            if (currentUser) {
+                                showWorkerInfo(currentUser.name);
+                            }
+                        }
+                        
+                        console.log(`✅ Załadowano ${allEmployees.length} pracowników z localStorage`);
+                    }
+                } catch (e) {
+                    console.error('Błąd parsowania localStorage:', e);
+                }
+            }
+        }
+
+        // Pobieranie zadań z Firebase
+        async function loadTasksFromFirebase() {
+            try {
+                // Pobierz appId i userId (tak samo jak w loadEmployeesFromFirebase)
+                let appId = localStorage.getItem('planner-app-id');
+                let userId = null;
+                
+                if (!appId) {
+                    const keys = Object.keys(localStorage);
+                    for (const key of keys) {
+                        if (key.includes('planner') || key.includes('app')) {
+                            try {
+                                const data = JSON.parse(localStorage.getItem(key));
+                                if (data && data.appId) {
+                                    appId = data.appId;
+                                    userId = data.userId;
+                                    break;
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                }
+                
+                if (!appId || !userId) {
+                    const plannerSnap = await firestore.collection('planner').limit(1).get();
+                    if (!plannerSnap.empty) {
+                        appId = plannerSnap.docs[0].id;
+                        const usersSnap = await firestore.collection('planner').doc(appId).collection('users').limit(1).get();
+                        if (!usersSnap.empty) {
+                            userId = usersSnap.docs[0].id;
+                        }
+                    }
+                }
+
+                if (!appId || !userId) {
+                    console.warn('⚠️ Nie znaleziono appId/userId dla zadań');
+                    return;
+                }
+
+                const snapshot = await firestore
+                    .collection('planner')
+                    .doc(appId)
+                    .collection('users')
+                    .doc(userId)
+                    .collection('tasks')
+                    .get();
+
+                const allTasks = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                console.log(`✅ Załadowano ${allTasks.length} zadań z Firebase`);
+                
+                // Zapisz wszystkie zadania
+                localStorage.setItem('worker-all-tasks', JSON.stringify(allTasks));
+                
+                // Jeśli jest wybrany pracownik, przefiltruj zadania
+                if (currentUser) {
+                    tasks = filterTasksForEmployee(allTasks, currentUser.id);
+                    saveTasks();
+                    loadTasks();
+                    updateStats();
+                }
+            } catch (error) {
+                console.error('❌ Błąd pobierania zadań:', error);
+            }
+        }
+
+        // Filtrowanie zadań dla pracownika
+        function filterTasksForEmployee(allTasks, employeeId) {
+            return allTasks.filter(task => {
+                // Sprawdź pole employeeId
+                if (task.employeeId === employeeId) return true;
+                
+                // Sprawdź tablicę assignees
+                if (Array.isArray(task.assignees) && task.assignees.includes(employeeId)) return true;
+                
+                return false;
+            });
+        }
+
+        // Obsługa zmiany pracownika
+        function onEmployeeChange() {
+            const select = document.getElementById('employee-select');
+            const employeeId = select.value;
+            
+            if (!employeeId) {
+                currentUser = null;
+                tasks = [];
+                localStorage.removeItem('worker-current-employee-id');
+                hideWorkerInfo();
+                loadTasks();
+                updateStats();
+                return;
+            }
+
+            currentUser = allEmployees.find(e => e.id === employeeId);
+            localStorage.setItem('worker-current-employee-id', employeeId);
+            
+            // Przefiltruj zadania
+            const allTasksStr = localStorage.getItem('worker-all-tasks');
+            if (allTasksStr) {
+                const allTasks = JSON.parse(allTasksStr);
+                tasks = filterTasksForEmployee(allTasks, employeeId);
+                saveTasks();
+            }
+            
+            showWorkerInfo(currentUser.name);
+            loadTasks();
+            updateStats();
+            
+            console.log(`✅ Wybrano pracownika: ${currentUser.name}`);
+        }
+
+        // Pokazanie informacji o zalogowanym pracowniku
+        function showWorkerInfo(workerName) {
+            const workerInfo = document.getElementById('worker-info');
+            const workerNameSpan = document.getElementById('logged-worker-name');
+            const select = document.getElementById('employee-select');
+            
+            if (workerInfo && workerNameSpan) {
+                workerNameSpan.textContent = `👤 ${workerName}`;
+                workerInfo.style.display = 'flex';
+                select.style.display = 'none';
+            }
+        }
+
+        // Ukrycie informacji o zalogowanym pracowniku
+        function hideWorkerInfo() {
+            const workerInfo = document.getElementById('worker-info');
+            const select = document.getElementById('employee-select');
+            
+            if (workerInfo) {
+                workerInfo.style.display = 'none';
+                select.style.display = 'block';
+            }
+        }
+
+        // Wylogowanie pracownika
+        function logoutWorker() {
+            if (confirm('Czy na pewno chcesz wylogować tego pracownika?\n\nUwaga: Po wylogowaniu pracownik straci dostęp do aplikacji na tym urządzeniu.')) {
+                // Usuń dane zalogowanego pracownika
+                localStorage.removeItem('worker-current-employee-id');
+                localStorage.removeItem('worker-tasks');
+                
+                // Reset stanu
+                currentUser = null;
+                tasks = [];
+                
+                // Ukryj info i pokaż select
+                hideWorkerInfo();
+                
+                // Zresetuj select
+                const select = document.getElementById('employee-select');
+                if (select) {
+                    select.value = '';
+                }
+                
+                // Odśwież widok
+                loadTasks();
+                updateStats();
+                
+                alert('✅ Pracownik został wylogowany.\n\nMożna teraz zalogować innego pracownika.');
+                console.log('🚪 Pracownik wylogowany');
+            }
+        }
+
         // Inicjalizacja aplikacji
         document.addEventListener('DOMContentLoaded', function() {
             initializeApp();
-            loadTasks();
-            updateStats();
             updateDate();
+            initializeFirebase(); // Uruchom Firebase
         });
 
         // Sprawdzanie połączenia internetowego
@@ -604,11 +981,6 @@
             const savedTasks = localStorage.getItem('worker-tasks');
             if (savedTasks) {
                 tasks = JSON.parse(savedTasks);
-            }
-
-            const savedUser = localStorage.getItem('worker-user');
-            if (savedUser) {
-                currentUser = JSON.parse(savedUser);
             }
 
             const plannerState = loadPlannerState();
