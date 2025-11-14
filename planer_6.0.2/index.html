@@ -3036,6 +3036,42 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           }
           
           console.log(`  Usunięto: zlecenie ${removedOrder?.name || id}, ${removedTasksCount} zadań`);
+
+          // Usuń powiązane dane magazynowe (rezerwacje, zadania)
+          let warehouseDataChanged = false;
+          let warehouseTasksChanged = false;
+          if (Array.isArray(window.warehouseReservations)) {
+            const before = window.warehouseReservations.length;
+            window.warehouseReservations = window.warehouseReservations.filter(res => res && res.orderId !== id);
+            const removedReservations = before - window.warehouseReservations.length;
+            if (removedReservations > 0) {
+              warehouseDataChanged = true;
+              console.log(`  🧹 Usunięto ${removedReservations} rezerwacji magazynowych dla ${removedOrder?.name || id}`);
+            }
+          }
+          if (Array.isArray(window.warehouseTasks)) {
+            const beforeTasks = window.warehouseTasks.length;
+            window.warehouseTasks = window.warehouseTasks.filter(task => task && task.orderId !== id);
+            const removedWarehouseTasks = beforeTasks - window.warehouseTasks.length;
+            if (removedWarehouseTasks > 0) {
+              warehouseTasksChanged = true;
+              console.log(`  🧹 Usunięto ${removedWarehouseTasks} zadań magazynowych dla ${removedOrder?.name || id}`);
+            }
+          }
+          if (warehouseDataChanged && typeof window.saveWarehouseToStorage === 'function') {
+            try {
+              window.saveWarehouseToStorage();
+            } catch (warehouseErr) {
+              console.warn('  ⚠️ saveWarehouseToStorage error po usunięciu zlecenia', warehouseErr);
+            }
+          }
+          if (warehouseTasksChanged) {
+            try {
+              localStorage.setItem('warehouseTasks', JSON.stringify(window.warehouseTasks || []));
+            } catch (warehouseTasksErr) {
+              console.warn('  ⚠️ Nie udało się zaktualizować localStorage dla zadań magazynowych', warehouseTasksErr);
+            }
+          }
           
           // KROK 2: Zaktualizuj timestamp i WYMUŚ kolejne wczytanie z Firebase
           state.lastModified = Date.now();
@@ -3098,6 +3134,10 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
             renderDash(window.state||state); 
             renderGantt();
             updateTasksBadge();
+            if (typeof renderWarehouse === 'function') { try { renderWarehouse(); } catch (warehouseRenderErr) { console.warn('[order-delete] renderWarehouse error', warehouseRenderErr); } }
+            if (typeof renderWarehouseWork === 'function') { try { renderWarehouseWork(); } catch (warehouseWorkErr) { console.warn('[order-delete] renderWarehouseWork error', warehouseWorkErr); } }
+            if (typeof renderReservations === 'function') { try { renderReservations(); } catch (reservationsErr) { console.warn('[order-delete] renderReservations error', reservationsErr); } }
+            if (typeof updateWarehouseWorkBadge === 'function') { try { updateWarehouseWorkBadge(); } catch (badgeErr) { console.warn('[order-delete] updateWarehouseWorkBadge error', badgeErr); } }
           }, 50);
           break;
         }
@@ -7550,8 +7590,14 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       const col = fbRoot().collection('tasks');
       window._tasksUnsub = col.onSnapshot(snapshot=>{
         try{
+          const deletedOrdersSet = new Set(Array.isArray(state.deletedOrders) ? state.deletedOrders : []);
+          const syncingDelete = !!window._isSyncingDelete;
           snapshot.docChanges().forEach(ch=>{
             const data = Object.assign({id: ch.doc.id}, ch.doc.data());
+            if((ch.type === 'added' || ch.type === 'modified') && (syncingDelete || (data.orderId && deletedOrdersSet.has(data.orderId)))){
+              console.log('🛡️ [subscribeToTaskUpdates] Pomijam aktualizację zadania powiązanego ze skasowanym zleceniem', data.id);
+              return;
+            }
             if(ch.type === 'added' || ch.type === 'modified'){
               const idx = (state.tasks||[]).findIndex(t=>t.id === data.id);
               if(idx >= 0){ state.tasks[idx] = Object.assign({}, state.tasks[idx], data); }
@@ -7579,9 +7625,17 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     const reason = options.reason || 'manual';
     
     // 🔒 BLOKADA PODCZAS USUWANIA - Nie wczytuj starych danych gdy usuwamy (TYLKO dla orders/tasks)
-    if (window._isSyncingDelete) {
-      console.log('🔒 [loadFromDB] Blokowanie tylko dla orders/tasks. Pracownicy mogą się synchronizować.');
-      // Flaga blokuje pełne loadFromDB dla orders/tasks, ale pracownicy są zarządzani niezależnie
+    if (window._isSyncingDelete && !options.allowDuringDelete) {
+      console.log('🔒 [loadFromDB] Pomijam wczytywanie z Firebase (trwa synchronizacja usunięcia)', {
+        reason,
+        forceLoad,
+        lastRemoteSync: state && state.storage ? state.storage.lastRemoteSync : undefined
+      });
+      const infoEl = qs('#set-info');
+      if (infoEl) {
+        infoEl.textContent = '🔒 Trwa synchronizacja usunięcia – pobieranie odroczone.';
+      }
+      return { skipped: true, reason: 'sync-delete-in-progress' };
     }
     
     if(state.storage.mode!=='firebase'){qs('#set-info').textContent='Tryb localStorage (offline)';return;}

@@ -3036,6 +3036,42 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           }
           
           console.log(`  Usunięto: zlecenie ${removedOrder?.name || id}, ${removedTasksCount} zadań`);
+
+          // Usuń powiązane dane magazynowe (rezerwacje, zadania)
+          let warehouseDataChanged = false;
+          let warehouseTasksChanged = false;
+          if (Array.isArray(window.warehouseReservations)) {
+            const before = window.warehouseReservations.length;
+            window.warehouseReservations = window.warehouseReservations.filter(res => res && res.orderId !== id);
+            const removedReservations = before - window.warehouseReservations.length;
+            if (removedReservations > 0) {
+              warehouseDataChanged = true;
+              console.log(`  🧹 Usunięto ${removedReservations} rezerwacji magazynowych dla ${removedOrder?.name || id}`);
+            }
+          }
+          if (Array.isArray(window.warehouseTasks)) {
+            const beforeTasks = window.warehouseTasks.length;
+            window.warehouseTasks = window.warehouseTasks.filter(task => task && task.orderId !== id);
+            const removedWarehouseTasks = beforeTasks - window.warehouseTasks.length;
+            if (removedWarehouseTasks > 0) {
+              warehouseTasksChanged = true;
+              console.log(`  🧹 Usunięto ${removedWarehouseTasks} zadań magazynowych dla ${removedOrder?.name || id}`);
+            }
+          }
+          if (warehouseDataChanged && typeof window.saveWarehouseToStorage === 'function') {
+            try {
+              window.saveWarehouseToStorage();
+            } catch (warehouseErr) {
+              console.warn('  ⚠️ saveWarehouseToStorage error po usunięciu zlecenia', warehouseErr);
+            }
+          }
+          if (warehouseTasksChanged) {
+            try {
+              localStorage.setItem('warehouseTasks', JSON.stringify(window.warehouseTasks || []));
+            } catch (warehouseTasksErr) {
+              console.warn('  ⚠️ Nie udało się zaktualizować localStorage dla zadań magazynowych', warehouseTasksErr);
+            }
+          }
           
           // KROK 2: Zaktualizuj timestamp i WYMUŚ kolejne wczytanie z Firebase
           state.lastModified = Date.now();
@@ -3098,6 +3134,10 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
             renderDash(window.state||state); 
             renderGantt();
             updateTasksBadge();
+            if (typeof renderWarehouse === 'function') { try { renderWarehouse(); } catch (warehouseRenderErr) { console.warn('[order-delete] renderWarehouse error', warehouseRenderErr); } }
+            if (typeof renderWarehouseWork === 'function') { try { renderWarehouseWork(); } catch (warehouseWorkErr) { console.warn('[order-delete] renderWarehouseWork error', warehouseWorkErr); } }
+            if (typeof renderReservations === 'function') { try { renderReservations(); } catch (reservationsErr) { console.warn('[order-delete] renderReservations error', reservationsErr); } }
+            if (typeof updateWarehouseWorkBadge === 'function') { try { updateWarehouseWorkBadge(); } catch (badgeErr) { console.warn('[order-delete] updateWarehouseWorkBadge error', badgeErr); } }
           }, 50);
           break;
         }
@@ -3261,7 +3301,11 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         if(t.dataset.taskPause) {
           const id = t.dataset.taskPause; const task = state.tasks.find(x => x.id === id); if (!task) return;
           if (state._timers[id]) { task.elapsedMin = (task.elapsedMin || 0) + (Date.now() - state._timers[id]) / 60000; delete state._timers[id]; }
-          task.status = 'todo'; save(); try{ updateOrderProgress(task.orderId); }catch(_){ } renderTasks(); break;
+          task.status = 'paused'; save(); try{ updateOrderProgress(task.orderId); }catch(_){ } renderTasks(); maybeAutoSave('task-pause'); break;
+        }
+        if(t.dataset.taskResume) {
+          const id = t.dataset.taskResume; const task = state.tasks.find(x => x.id === id); if (!task) return;
+          task.status = 'run'; save(); try{ updateOrderProgress(task.orderId); }catch(_){ } renderTasks(); maybeAutoSave('task-resume'); break;
         }
         if(t.dataset.taskDone) {
           const id = t.dataset.taskDone; const task = state.tasks.find(x => x.id === id); if (!task) return;
@@ -3349,6 +3393,20 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           if(typeof task.elapsedMin === 'undefined') task.elapsedMin = 0;
           save(); try{ renderTasks(); renderMonitor && renderMonitor(); }catch(_){ }
           maybeAutoSave('task-start');
+          break;
+        }
+        if(t.dataset.taskPause){
+          const id = t.dataset.taskPause; const task = (state.tasks||[]).find(x=>x.id===id); if(!task) break;
+          task.status = 'paused';
+          save(); try{ renderTasks(); renderMonitor && renderMonitor(); }catch(_){ }
+          maybeAutoSave('task-pause');
+          break;
+        }
+        if(t.dataset.taskResume){
+          const id = t.dataset.taskResume; const task = (state.tasks||[]).find(x=>x.id===id); if(!task) break;
+          task.status = 'run';
+          save(); try{ renderTasks(); renderMonitor && renderMonitor(); }catch(_){ }
+          maybeAutoSave('task-resume');
           break;
         }
         if(t.dataset.taskDone){
@@ -4317,13 +4375,14 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
             ${t.processName ? ` • Proces: ${t.processName} (${t.opIndex + 1}/${(state.processes.find(p=>p.id===t.processId)?.operations||[]).length})` : ''}
           </span>
           <div>${formatTaskAssignmentInfo(t)}</div>
-          <div class="muted">Status: ${t.status||'todo'} • Plan: ${plannedDur} • Real: ${Math.round(t.elapsedMin||0)}m ${typeof t.slackMs==='number'?('• Slack: '+Math.round(t.slackMs/60000)+'m'):''} ${t.critical?'• CRITICAL':''}</div>
+          <div class="muted">Status: <span style="${t.status==='paused'?'color:#f97316;font-weight:bold':''}">${t.status||'todo'}</span> • Plan: ${plannedDur} • Real: ${Math.round(t.elapsedMin||0)}m ${typeof t.slackMs==='number'?('• Slack: '+Math.round(t.slackMs/60000)+'m'):''} ${t.critical?'• CRITICAL':''}</div>
         <div class="muted">StartP: ${startP} • EndP: ${endP}</div>
         <div class="muted">${t.startedBy?('Rozpoczął: '+t.startedBy):''} ${t.closedBy?('Zamknął: '+t.closedBy):''} ${t.startedAt?(' • start: '+(new Date(t.startedAt)).toLocaleTimeString()):''}</div></div>
         <div class="row">
           ${/* start button green when running */''}
-          <button class="${t.status==='run'?'btn green':'btn gray'}" data-task-start="${t.id}" ${t.status==='run'?'disabled':''}>Start</button>
-          <button class="btn" data-task-pause="${t.id}" ${t.status!=='run'?'disabled':''}>Pauza</button>
+          <button class="${t.status==='run'?'btn green':'btn gray'}" data-task-start="${t.id}" ${t.status==='run'||t.status==='paused'?'disabled':''}>Start</button>
+          <button class="${t.status==='paused'?'btn orange':'btn'}" data-task-pause="${t.id}" ${t.status!=='run'?'disabled':''}>Pauza</button>
+          <button class="${t.status==='paused'?'btn green':'btn'}" data-task-resume="${t.id}" ${t.status!=='paused'?'disabled':''}>Wznów</button>
           <button class="btn amber" data-task-repeat="${t.id}">Powtórz</button>
           <button class="${t.status==='done'?'btn green':'btn gray'}" data-task-done="${t.id}" ${t.status==='done'?'disabled':''}>Zamknij</button>
           ${t._syncError?`<button class="btn amber" data-task-retry="${t.id}" title="Ponów synchronizację">Retry</button>`:''}
@@ -7550,13 +7609,28 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       const col = fbRoot().collection('tasks');
       window._tasksUnsub = col.onSnapshot(snapshot=>{
         try{
+          const deletedOrdersSet = new Set(Array.isArray(state.deletedOrders) ? state.deletedOrders : []);
+          const syncingDelete = !!window._isSyncingDelete;
           snapshot.docChanges().forEach(ch=>{
             const data = Object.assign({id: ch.doc.id}, ch.doc.data());
+            if ((ch.type === 'added' || ch.type === 'modified') && (syncingDelete || (data.orderId && deletedOrdersSet.has(data.orderId)))) {
+              console.log('🛡️ [subscribeToTaskUpdates] Pomijam aktualizację zadania powiązanego ze skasowanym zleceniem', data.id);
+              return;
+            }
             if(ch.type === 'added' || ch.type === 'modified'){
+              console.log(`🔄 [Firebase] ${ch.type} zadanie:`, data.id, 'status:', data.status);
               const idx = (state.tasks||[]).findIndex(t=>t.id === data.id);
-              if(idx >= 0){ state.tasks[idx] = Object.assign({}, state.tasks[idx], data); }
-              else if(!isInitialLoad || ch.type === 'modified') { state.tasks = state.tasks || []; state.tasks.push(data); }
+              if(idx >= 0){ 
+                console.log(`✏️ [Firebase] Aktualizuję istniejące zadanie na pozycji ${idx}`);
+                state.tasks[idx] = Object.assign({}, state.tasks[idx], data); 
+              }
+              else if(!isInitialLoad || ch.type === 'modified') { 
+                console.log(`➕ [Firebase] Dodaję nowe zadanie do listy`);
+                state.tasks = state.tasks || []; 
+                state.tasks.push(data); 
+              }
             } else if(ch.type === 'removed'){
+              console.log(`🗑️ [Firebase] Usuwam zadanie:`, data.id);
               state.tasks = (state.tasks||[]).filter(t=>t.id !== data.id);
             }
           });
@@ -7579,9 +7653,17 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     const reason = options.reason || 'manual';
     
     // 🔒 BLOKADA PODCZAS USUWANIA - Nie wczytuj starych danych gdy usuwamy (TYLKO dla orders/tasks)
-    if (window._isSyncingDelete) {
-      console.log('🔒 [loadFromDB] Blokowanie tylko dla orders/tasks. Pracownicy mogą się synchronizować.');
-      // Flaga blokuje pełne loadFromDB dla orders/tasks, ale pracownicy są zarządzani niezależnie
+    if (window._isSyncingDelete && !options.allowDuringDelete) {
+      console.log('🔒 [loadFromDB] Pomijam wczytywanie z Firebase (trwa synchronizacja usunięcia)', {
+        reason,
+        forceLoad,
+        lastRemoteSync: state && state.storage ? state.storage.lastRemoteSync : undefined
+      });
+      const infoEl = qs('#set-info');
+      if (infoEl) {
+        infoEl.textContent = '🔒 Trwa synchronizacja usunięcia – pobieranie odroczone.';
+      }
+      return { skipped: true, reason: 'sync-delete-in-progress' };
     }
     
     if(state.storage.mode!=='firebase'){qs('#set-info').textContent='Tryb localStorage (offline)';return;}

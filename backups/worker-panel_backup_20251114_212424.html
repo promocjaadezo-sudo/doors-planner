@@ -2273,18 +2273,9 @@
 
         function completeTask(taskId) {
             console.log('🏁 completeTask wywołane z taskId:', taskId);
-            
-            // Blokada
-            if (taskOperationInProgress.has(taskId)) {
-                console.log('⏳ Operacja już w toku dla:', taskId);
-                return;
-            }
-            taskOperationInProgress.add(taskId);
-            
             const task = findTaskById(taskId);
             if (!task) {
                 console.error('❌ Nie znaleziono zadania:', taskId);
-                taskOperationInProgress.delete(taskId);
                 handleMissingTask('completeTask', taskId);
                 return;
             }
@@ -2318,11 +2309,6 @@
             if (navigator.vibrate) {
                 navigator.vibrate([200, 100, 200]);
             }
-            
-            // Odblokuj po 1 sekundzie
-            setTimeout(() => {
-                taskOperationInProgress.delete(taskId);
-            }, 1000);
         }
 
         function pauseTask(taskId) {

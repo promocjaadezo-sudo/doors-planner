@@ -54,6 +54,141 @@
             font-size: 0.9rem;
         }
 
+        .worker-access {
+            margin-top: 12px;
+        }
+
+        .login-card {
+            background: rgba(148, 163, 184, 0.08);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            text-align: left;
+        }
+
+        .login-title {
+            color: var(--text);
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .login-subtitle {
+            color: var(--muted);
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 1rem;
+            outline: none;
+            transition: border 0.2s, box-shadow 0.2s;
+        }
+
+        .login-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+        }
+
+        .login-button {
+            width: 100%;
+            margin-top: 12px;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            background: var(--accent);
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .login-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .login-button:hover:not(:disabled) {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .login-error {
+            margin-top: 10px;
+            color: var(--error);
+            font-size: 0.85rem;
+            display: none;
+        }
+
+        .employee-select {
+            width: 100%;
+            padding: 10px;
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .worker-info {
+            display: none;
+            margin-top: 12px;
+            padding: 10px;
+            background: rgba(37, 99, 235, 0.1);
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .worker-name {
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .logout-button {
+            padding: 6px 12px;
+            background: var(--error);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .logout-button:hover {
+            background: #b91c1c;
+            transform: translateY(-1px);
+        }
+
+        .version-badge {
+            font-size: 0.6em;
+            color: var(--muted);
+        }
+
+        .task-placeholder {
+            text-align: center;
+            padding: 40px;
+            color: var(--muted);
+        }
+
+        .last-sync {
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
         .stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -506,33 +641,22 @@
     </div>
 
     <div class="header">
-        <h1>📋 Lista Zadań <span style="font-size: 0.6em; color: var(--muted);">v2.0</span></h1>
+    <h1>📋 Lista Zadań <span class="version-badge">v2.0</span></h1>
         <div class="date" id="current-date"></div>
-        <div style="margin-top: 12px;">
-            <select id="employee-select" onchange="onEmployeeChange()" style="
-                width: 100%;
-                padding: 10px;
-                background: var(--bg);
-                color: var(--text);
-                border: 1px solid rgba(148, 163, 184, 0.4);
-                border-radius: 8px;
-                font-size: 1rem;
-                cursor: pointer;
-            ">
+        <div class="worker-access">
+            <div id="login-card" class="login-card">
+                <div class="login-title">🔐 Zaloguj się</div>
+                <div class="login-subtitle" id="login-subtitle">Wpisz kod pracownika (PIN) przypisany w plannerze.</div>
+                <input id="pin-input" class="login-input" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="Ładowanie pracowników..." aria-label="Kod PIN pracownika" disabled>
+                <button id="login-submit" class="login-button" onclick="submitPin()" disabled>Zaloguj</button>
+                <div class="login-error" id="login-error"></div>
+            </div>
+            <select id="employee-select" class="employee-select" onchange="onEmployeeChange()" aria-label="Wybierz pracownika" hidden>
                 <option value="">Ładowanie pracowników...</option>
             </select>
-            <div id="worker-info" style="display: none; margin-top: 12px; padding: 10px; background: rgba(37, 99, 235, 0.1); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-                <span id="logged-worker-name" style="color: var(--accent); font-weight: bold;"></span>
-                <button onclick="logoutWorker()" style="
-                    padding: 6px 12px;
-                    background: var(--error);
-                    color: white;
-                    border: none;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-size: 0.9rem;
-                    font-weight: 600;
-                ">🚪 Wyloguj</button>
+            <div id="worker-info" class="worker-info">
+                <span id="logged-worker-name" class="worker-name"></span>
+                <button class="logout-button" onclick="logoutWorker()">🚪 Wyloguj</button>
             </div>
         </div>
     </div>
@@ -553,7 +677,7 @@
     </div>
 
     <div id="task-list" class="task-list">
-        <div style="text-align: center; padding: 40px; color: var(--muted);">
+        <div class="task-placeholder">
             Ładowanie zadań...
         </div>
     </div>
@@ -561,8 +685,9 @@
     <div class="sync-section">
         <div>Import zadań z systemu głównego</div>
         <button class="sync-btn" onclick="importTasksFromMainApp()">� Importuj zadania</button>
+        <button class="sync-btn" id="reload-firebase-tasks" onclick="reloadTasksFromFirebase()">🔄 Przeładuj z Firebase</button>
         <button class="sync-btn secondary" onclick="clearWorkerCache()">🧹 Wyczyść dane lokalne</button>
-        <div style="margin-top: 8px; font-size: 0.8rem; color: var(--muted);" id="last-sync">
+        <div class="last-sync" id="last-sync">
             Brak zaimportowanych zadań
         </div>
     </div>
@@ -585,6 +710,26 @@
         let isOnline = navigator.onLine;
         let firebaseApp = null;
         let firestore = null;
+    const LOGIN_PROOF_KEY = 'worker-login-proof';
+    const PIN_FIELDS = ['pin', 'loginPin', 'pinCode', 'code', 'passcode', 'accessCode', 'securityCode', 'badgeCode', 'workerCode', 'loginCode'];
+    const NESTED_PIN_SOURCES = ['security', 'credentials', 'auth', 'login'];
+        const USER_COLLECTION_ALIASES = ['users', 'użytkowników', 'uzytkownikow'];
+        const EMPLOYEE_COLLECTION_ALIASES = ['employees', 'pracownicy'];
+        const TASK_COLLECTION_ALIASES = ['tasks', 'zadania'];
+        const DEFAULT_COLLECTION_MAP = {
+            'drzwi-demo': {
+                users: 'użytkowników',
+                employees: 'pracownicy',
+                tasks: 'zadania'
+            },
+            'doors-demo': {
+                users: 'users',
+                employees: 'employees',
+                tasks: 'tasks'
+            }
+        };
+    let allowDemoTasks = false;
+    let cachedPlannerUserDoc = null;
         
         // Ustawienia powiadomień
         let notificationSettings = {
@@ -621,6 +766,614 @@
             const normalized = trimmed.replace(/[^0-9+]/g, '');
             if (!normalized) return escapeHtml(trimmed);
             return `<a href="tel:${normalized}" style="color: var(--accent); text-decoration: none;">${escapeHtml(trimmed)}</a>`;
+        }
+
+        function normalizeIdentifier(value) {
+            if (value === undefined || value === null) return '';
+            let str = String(value).trim();
+            if (!str) return '';
+            if ((str.startsWith('"') && str.endsWith('"')) || (str.startsWith("'") && str.endsWith("'"))) {
+                str = str.slice(1, -1).trim();
+            }
+            return str;
+        }
+
+        function firstValue() {
+            for (let i = 0; i < arguments.length; i++) {
+                const value = arguments[i];
+                if (value !== undefined && value !== null) {
+                    return value;
+                }
+            }
+            return undefined;
+        }
+
+        function toTimestampMillis(value) {
+            if (value === undefined || value === null) return null;
+            if (typeof value === 'number' && Number.isFinite(value)) return value;
+            if (value instanceof Date) {
+                return Number.isFinite(value.getTime()) ? value.getTime() : null;
+            }
+            if (typeof value === 'string') {
+                const parsed = Date.parse(value);
+                return Number.isFinite(parsed) ? parsed : null;
+            }
+            if (typeof value === 'object') {
+                if (typeof value.toDate === 'function') {
+                    const date = value.toDate();
+                    return Number.isFinite(date.getTime()) ? date.getTime() : null;
+                }
+                if (typeof value.seconds === 'number') {
+                    const millis = (value.seconds * 1000) + Math.floor((value.nanoseconds || 0) / 1e6);
+                    return Number.isFinite(millis) ? millis : null;
+                }
+            }
+            return null;
+        }
+
+        function toDisplayTime(value) {
+            const millis = toTimestampMillis(value);
+            if (millis !== null) {
+                return new Date(millis).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+            }
+            if (typeof value === 'string' && value.trim()) {
+                return value;
+            }
+            return '-';
+        }
+
+        function normalizeFirebaseTask(rawTask) {
+            if (!rawTask || typeof rawTask !== 'object') return rawTask;
+            const normalizedId = normalizeIdentifier(rawTask.id || rawTask.taskId || rawTask.code || rawTask.reference || rawTask.uid || rawTask.name);
+            const primaryEmployee = rawTask.employee || rawTask.assignee || rawTask.worker || {};
+            const normalizedEmployeeId = normalizeIdentifier(
+                rawTask.employeeId ||
+                rawTask.assignedEmployeeId ||
+                rawTask.workerId ||
+                rawTask.executorId ||
+                primaryEmployee.id ||
+                primaryEmployee.code ||
+                primaryEmployee.employeeId ||
+                ''
+            );
+
+            const listFields = [rawTask.assignees, rawTask.assigneeIds, rawTask.workerIds, rawTask.assignedEmployees];
+            const normalizedAssignees = [];
+            for (let i = 0; i < listFields.length; i++) {
+                const entry = listFields[i];
+                if (!entry) continue;
+
+                if (Array.isArray(entry)) {
+                    for (let j = 0; j < entry.length; j++) {
+                        const normalized = normalizeIdentifier((entry[j] && (entry[j].id || entry[j].employeeId || entry[j].code || entry[j].workerId)) || entry[j]);
+                        if (normalized) {
+                            normalizedAssignees.push(normalized);
+                        }
+                    }
+                    continue;
+                }
+
+                if (typeof entry === 'object') {
+                    for (const key in entry) {
+                        if (!Object.prototype.hasOwnProperty.call(entry, key)) continue;
+                        const value = entry[key];
+                        const normalized = normalizeIdentifier((value && (value.id || value.employeeId || value.code || value.workerId)) || value);
+                        if (normalized) {
+                            normalizedAssignees.push(normalized);
+                        }
+                    }
+                    continue;
+                }
+
+                const single = normalizeIdentifier(entry);
+                if (single) {
+                    normalizedAssignees.push(single);
+                }
+            }
+
+            const estimatedSource = firstValue(rawTask.estimatedTime, rawTask.estMin, rawTask.estimate, rawTask.duration, rawTask.plannedMinutes);
+            const estimatedTime = typeof estimatedSource === 'string' ? parseInt(estimatedSource, 10) : estimatedSource;
+            const order = rawTask.order || {};
+
+            const normalizeNotes = function(value) {
+                if (!value) return '';
+                if (Array.isArray(value)) return value.join('\n');
+                if (typeof value === 'object') {
+                    const parts = [];
+                    for (const key in value) {
+                        if (Object.prototype.hasOwnProperty.call(value, key)) {
+                            parts.push(value[key]);
+                        }
+                    }
+                    return parts.join('\n');
+                }
+                return String(value);
+            };
+
+            const normalizedTask = {};
+            for (const key in rawTask) {
+                if (Object.prototype.hasOwnProperty.call(rawTask, key)) {
+                    normalizedTask[key] = rawTask[key];
+                }
+            }
+            normalizedTask.id = normalizedId || rawTask.id;
+            normalizedTask.title = rawTask.title || rawTask.name || rawTask.taskName || rawTask.opName || ('Zadanie ' + (normalizedId || rawTask.id || ''));
+            normalizedTask.status = mapPlannerStatus(rawTask.status || rawTask.state || rawTask.stage || rawTask.currentStatus || rawTask.progress || rawTask.phase || 'pending');
+            normalizedTask.employeeId = normalizedEmployeeId || rawTask.employeeId || '';
+            normalizedTask.assignees = normalizedAssignees.length ? normalizedAssignees : rawTask.assignees;
+            normalizedTask.quantity = firstValue(rawTask.quantity, rawTask.qty, rawTask.amount, order.quantity, 1);
+            normalizedTask.unit = rawTask.unit || rawTask.unitName || 'szt';
+            normalizedTask.deadline = toDisplayTime(rawTask.deadline || rawTask.dueTime || rawTask.dueAt || rawTask.endPlanned);
+            normalizedTask.estimatedTime = Number.isFinite(estimatedTime) ? estimatedTime : null;
+            normalizedTask.orderId = rawTask.orderId || order.id || rawTask.orderCode || rawTask.orderNumber || '-';
+            normalizedTask.startPlanned = toTimestampMillis(rawTask.startPlanned || rawTask.planStart || rawTask.startDate || order.startPlanned);
+            normalizedTask.endPlanned = toTimestampMillis(rawTask.endPlanned || rawTask.planEnd || rawTask.endDate || rawTask.dueAt || order.endPlanned);
+            normalizedTask.startTime = toTimestampMillis(rawTask.startTime || rawTask.startedAt || rawTask.started || rawTask.startTimestamp);
+            normalizedTask.endTime = toTimestampMillis(rawTask.endTime || rawTask.completedAt || rawTask.finishedAt || rawTask.endTimestamp);
+            normalizedTask.client = rawTask.client || order.client || '';
+            normalizedTask.address = rawTask.address || order.address || '';
+            normalizedTask.postalCode = rawTask.postalCode || order.postalCode || '';
+            normalizedTask.contactPhone = rawTask.contactPhone || rawTask.phone || order.phone || '';
+            normalizedTask.leadEmployeeId = rawTask.leadEmployeeId || order.leadEmployeeId || '';
+            normalizedTask.leadEmployeeName = rawTask.leadEmployeeName || order.leadEmployeeName || '';
+            normalizedTask.installDate = toTimestampMillis(rawTask.installDate || order.installDate || rawTask.installationDate);
+            normalizedTask.orderNotes = normalizeNotes(rawTask.orderNotes || rawTask.notes || order.notes || '');
+
+            return normalizedTask;
+        }
+
+        function normalizePin(value) {
+            if (value === undefined || value === null) return '';
+            return String(value).trim().replace(/\s+/g, '');
+        }
+
+        function isValidPinValue(value) {
+            const normalized = normalizePin(value);
+            if (!normalized) return false;
+            return /^[a-zA-Z0-9]{3,12}$/.test(normalized);
+        }
+
+        function getEmployeePins(employee) {
+            if (!employee || typeof employee !== 'object') return [];
+            const pins = new Set();
+
+            PIN_FIELDS.forEach(field => {
+                if (Object.prototype.hasOwnProperty.call(employee, field) && isValidPinValue(employee[field])) {
+                    pins.add(normalizePin(employee[field]));
+                }
+            });
+
+            NESTED_PIN_SOURCES.forEach(source => {
+                const nested = employee[source];
+                if (nested && typeof nested === 'object') {
+                    PIN_FIELDS.forEach(field => {
+                        if (Object.prototype.hasOwnProperty.call(nested, field) && isValidPinValue(nested[field])) {
+                            pins.add(normalizePin(nested[field]));
+                        }
+                    });
+                    if (isValidPinValue(nested.pin)) pins.add(normalizePin(nested.pin));
+                    if (isValidPinValue(nested.code)) pins.add(normalizePin(nested.code));
+                }
+            });
+
+            const metadata = employee.metadata;
+            if (metadata && typeof metadata === 'object') {
+                if (isValidPinValue(metadata.pin)) pins.add(normalizePin(metadata.pin));
+                if (isValidPinValue(metadata.code)) pins.add(normalizePin(metadata.code));
+            }
+
+            return Array.from(pins);
+        }
+
+        function hasLoginPins() {
+            return allEmployees.some(emp => getEmployeePins(emp).length > 0);
+        }
+
+        async function resolvePlannerUserDoc(appId, userId) {
+            const normalizedAppId = normalizeIdentifier(appId);
+            const normalizedUserId = normalizeIdentifier(userId);
+            if (!firestore || !normalizedAppId || !normalizedUserId) return null;
+
+            const defaultConfig = DEFAULT_COLLECTION_MAP[normalizedAppId];
+            const preferredCollections = defaultConfig ? defaultConfig.users : undefined;
+
+            if (cachedPlannerUserDoc && cachedPlannerUserDoc.appId === normalizedAppId && cachedPlannerUserDoc.userId === normalizedUserId) {
+                return cachedPlannerUserDoc.docRef;
+            }
+
+            const plannerRef = firestore.collection('planner').doc(normalizedAppId);
+            let collectionOrder = USER_COLLECTION_ALIASES;
+            if (preferredCollections) {
+                const others = USER_COLLECTION_ALIASES.filter(function(name) {
+                    return name !== preferredCollections;
+                });
+                collectionOrder = [preferredCollections].concat(others);
+            }
+
+            for (const collectionName of collectionOrder) {
+                try {
+                    const candidateRef = plannerRef.collection(collectionName).doc(normalizedUserId);
+                    const candidateSnap = await candidateRef.get();
+                    if (candidateSnap.exists) {
+                        localStorage.setItem('planner-app-id', normalizedAppId);
+                        localStorage.setItem('planner-user-id', normalizedUserId);
+                        cachedPlannerUserDoc = { appId: normalizedAppId, userId: normalizedUserId, docRef: candidateRef };
+                        return candidateRef;
+                    }
+
+                    for (const possibleSub of EMPLOYEE_COLLECTION_ALIASES) {
+                        try {
+                            const subSnapshot = await candidateRef.collection(possibleSub).limit(1).get();
+                            if (!subSnapshot.empty) {
+                                localStorage.setItem('planner-app-id', normalizedAppId);
+                                localStorage.setItem('planner-user-id', normalizedUserId);
+                                cachedPlannerUserDoc = { appId: normalizedAppId, userId: normalizedUserId, docRef: candidateRef };
+                                return candidateRef;
+                            }
+                        } catch (subError) {
+                            console.warn('Nie udało się sprawdzić podkolekcji', possibleSub, 'dla', collectionName, subError);
+                        }
+                    }
+
+                    const collectionSnap = await plannerRef.collection(collectionName).get();
+                    const fallbackDoc = collectionSnap.docs.find(doc => normalizeIdentifier(doc.id).toLowerCase() === normalizedUserId.toLowerCase());
+                    if (fallbackDoc) {
+                        const fallbackRef = plannerRef.collection(collectionName).doc(fallbackDoc.id);
+                        const resolvedUserId = normalizeIdentifier(fallbackDoc.id);
+                        localStorage.setItem('planner-app-id', normalizedAppId);
+                        localStorage.setItem('planner-user-id', resolvedUserId);
+                        cachedPlannerUserDoc = { appId: normalizedAppId, userId: resolvedUserId, docRef: fallbackRef };
+                        return fallbackRef;
+                    }
+                } catch (error) {
+                    console.warn('Nie udało się sprawdzić kolekcji użytkowników:', collectionName, error);
+                }
+            }
+
+            return null;
+        }
+
+        async function fetchFromFirstAvailableCollection(docRef, collectionAliases, type) {
+            if (!docRef) return { items: [], usedCollection: null };
+            let preferred = null;
+            if (type) {
+                const cachedAppId = cachedPlannerUserDoc ? cachedPlannerUserDoc.appId : null;
+                const activeAppId = normalizeIdentifier(localStorage.getItem('planner-app-id')) || cachedAppId;
+                if (activeAppId && DEFAULT_COLLECTION_MAP[activeAppId]) {
+                    preferred = DEFAULT_COLLECTION_MAP[activeAppId][type];
+                }
+            }
+            let collectionOrder = collectionAliases;
+            if (preferred) {
+                const others = collectionAliases.filter(function(name) {
+                    return name !== preferred;
+                });
+                collectionOrder = [preferred].concat(others);
+            }
+            for (const collectionName of collectionOrder) {
+                try {
+                    const snapshot = await docRef.collection(collectionName).get();
+                    if (!snapshot.empty) {
+                        const mappedItems = snapshot.docs.map(function(doc) {
+                            const data = doc.data();
+                            const item = { id: doc.id };
+                            for (const key in data) {
+                                if (Object.prototype.hasOwnProperty.call(data, key)) {
+                                    item[key] = data[key];
+                                }
+                            }
+                            return item;
+                        });
+                        return {
+                            items: mappedItems,
+                            usedCollection: collectionName
+                        };
+                    }
+                } catch (error) {
+                    console.warn('Nie udało się pobrać kolekcji', collectionName, error);
+                }
+            }
+            return { items: [], usedCollection: null };
+        }
+
+        async function findAnyUserId(appId) {
+            const normalizedAppId = normalizeIdentifier(appId);
+            if (!firestore || !normalizedAppId) return null;
+            const plannerRef = firestore.collection('planner').doc(normalizedAppId);
+            const mappedConfig = DEFAULT_COLLECTION_MAP[normalizedAppId];
+            const preferredCollection = mappedConfig ? mappedConfig.users : undefined;
+            let collectionOrder = USER_COLLECTION_ALIASES;
+            if (preferredCollection) {
+                const others = USER_COLLECTION_ALIASES.filter(function(name) {
+                    return name !== preferredCollection;
+                });
+                collectionOrder = [preferredCollection].concat(others);
+            }
+
+            for (const collectionName of collectionOrder) {
+                try {
+                    const usersSnap = await plannerRef.collection(collectionName).limit(1).get();
+                    if (!usersSnap.empty) {
+                        return normalizeIdentifier(usersSnap.docs[0].id);
+                    }
+                } catch (error) {
+                    console.warn('Nie udało się pobrać listy użytkowników z kolekcji', collectionName, error);
+                }
+            }
+            return null;
+        }
+
+        function populateEmployeeSelect() {
+            const select = document.getElementById('employee-select');
+            if (!select) return;
+
+            const selectedId = currentUser ? currentUser.id : select.value;
+            select.innerHTML = '<option value="">Wybierz pracownika...</option>';
+
+            const employees = allEmployees.slice();
+            employees.sort((a, b) => {
+                const labelA = (a.name || a.displayName || a.shortName || a.id || '').toLocaleLowerCase('pl-PL');
+                const labelB = (b.name || b.displayName || b.shortName || b.id || '').toLocaleLowerCase('pl-PL');
+                return labelA.localeCompare(labelB, 'pl-PL');
+            });
+
+            employees.forEach(emp => {
+                const option = document.createElement('option');
+                option.value = emp.id;
+                option.textContent = emp.name || emp.displayName || emp.shortName || emp.id || 'Pracownik';
+                select.appendChild(option);
+            });
+
+            if (currentUser) {
+                select.value = currentUser.id;
+            } else if (selectedId && employees.some(emp => emp.id === selectedId)) {
+                select.value = selectedId;
+            } else {
+                select.value = '';
+            }
+        }
+
+        function showLoginError(message) {
+            const errorEl = document.getElementById('login-error');
+            if (!errorEl) return;
+            if (!message) {
+                errorEl.style.display = 'none';
+                errorEl.textContent = '';
+                return;
+            }
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+        }
+
+        function updateLoginUI() {
+            const loginCard = document.getElementById('login-card');
+            const select = document.getElementById('employee-select');
+            const pinInput = document.getElementById('pin-input');
+            const loginButton = document.getElementById('login-submit');
+
+            if (!loginCard || !select || !pinInput || !loginButton) return;
+
+            const employeesLoaded = Array.isArray(allEmployees) && allEmployees.length > 0;
+            const enablePinLogin = employeesLoaded && hasLoginPins();
+
+            if (currentUser) {
+                loginCard.style.display = 'none';
+                select.hidden = true;
+                pinInput.value = '';
+                showLoginError('');
+                loginButton.disabled = false;
+                return;
+            }
+
+            if (!employeesLoaded) {
+                loginCard.style.display = 'block';
+                select.hidden = true;
+                pinInput.value = '';
+                pinInput.disabled = true;
+                loginButton.disabled = true;
+                showLoginError('');
+                return;
+            }
+
+            pinInput.disabled = !enablePinLogin;
+            loginButton.disabled = !enablePinLogin;
+            pinInput.placeholder = enablePinLogin ? 'Kod pracownika' : 'Brak kodów – wybierz z listy';
+
+            if (enablePinLogin) {
+                loginCard.style.display = 'block';
+                select.hidden = true;
+            } else {
+                loginCard.style.display = 'none';
+                select.hidden = false;
+            }
+
+            showLoginError('');
+        }
+
+        function findEmployeeByPin(pin) {
+            const target = normalizePin(pin);
+            if (!target) return null;
+            return allEmployees.find(emp => getEmployeePins(emp).some(stored => stored.toLowerCase() === target.toLowerCase())) || null;
+        }
+
+        async function hashLoginProof(employeeId, pin) {
+            const normalized = normalizePin(pin);
+            if (!normalized) return '';
+            if (window.crypto && window.crypto.subtle && window.TextEncoder) {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(`${employeeId}::${normalized}`);
+                const digest = await window.crypto.subtle.digest('SHA-256', data);
+                return Array.from(new Uint8Array(digest)).map(byte => byte.toString(16).padStart(2, '0')).join('');
+            }
+            return `${employeeId}::${normalized}`;
+        }
+
+        function rememberLoginProof(employeeId, pin) {
+            if (!pin) return;
+            hashLoginProof(employeeId, pin)
+                .then(hash => {
+                    localStorage.setItem(LOGIN_PROOF_KEY, hash);
+                })
+                .catch(() => {
+                    localStorage.setItem(LOGIN_PROOF_KEY, `${employeeId}::${normalizePin(pin)}`);
+                });
+        }
+
+        async function tryAutoLoginWithProof() {
+            const savedId = localStorage.getItem('worker-current-employee-id');
+            const savedProof = localStorage.getItem(LOGIN_PROOF_KEY);
+            if (!savedId || !savedProof) return false;
+
+            const employee = allEmployees.find(emp => emp.id === savedId);
+            if (!employee) {
+                localStorage.removeItem(LOGIN_PROOF_KEY);
+                return false;
+            }
+
+            const pins = getEmployeePins(employee);
+            for (const pin of pins) {
+                try {
+                    const hash = await hashLoginProof(employee.id, pin);
+                    if (hash === savedProof) {
+                        setCurrentEmployee(employee.id, { skipProofUpdate: true });
+                        return true;
+                    }
+                } catch (err) {
+                    console.warn('Błąd walidacji kodu pracownika:', err);
+                }
+            }
+
+            localStorage.removeItem(LOGIN_PROOF_KEY);
+            return false;
+        }
+
+        function setCurrentEmployee(employeeId, options = {}) {
+            const select = document.getElementById('employee-select');
+
+            if (!employeeId) {
+                currentUser = null;
+                tasks = [];
+                if (!options.skipStorage) {
+                    localStorage.removeItem('worker-current-employee-id');
+                    localStorage.removeItem(LOGIN_PROOF_KEY);
+                }
+                if (select) select.value = '';
+                hideWorkerInfo();
+                document.title = 'Worker App';
+                saveTasks();
+                loadTasks();
+                updateStats();
+                updateLoginUI();
+                return false;
+            }
+
+            const employee = allEmployees.find(emp => emp.id === employeeId);
+            if (!employee) {
+                showLoginError('Nie znaleziono pracownika.');
+                return false;
+            }
+
+            currentUser = employee;
+            if (!options.skipStorage) {
+                localStorage.setItem('worker-current-employee-id', employeeId);
+            }
+
+            if (options.pin) {
+                rememberLoginProof(employeeId, options.pin);
+            } else if (options.clearProof) {
+                localStorage.removeItem(LOGIN_PROOF_KEY);
+            } else if (!options.skipProofUpdate && !hasLoginPins()) {
+                localStorage.removeItem(LOGIN_PROOF_KEY);
+            }
+
+            if (select) select.value = employeeId;
+            showWorkerInfo(employee.name || employee.displayName || employeeId);
+            document.title = `Worker App - ${employee.name || employee.displayName || employeeId}`;
+
+            const allTasksStr = localStorage.getItem('worker-all-tasks');
+            if (allTasksStr) {
+                try {
+                    const allTasks = JSON.parse(allTasksStr);
+                    tasks = filterTasksForEmployee(allTasks, employeeId);
+                    saveTasks();
+                } catch (error) {
+                    console.warn('Błąd parsowania listy zadań dla pracownika:', error);
+                    tasks = [];
+                    saveTasks();
+                }
+            } else {
+                tasks = [];
+                saveTasks();
+            }
+
+            loadTasks();
+            updateStats();
+            startRemindersForActiveTasks();
+            updateLoginUI();
+            return true;
+        }
+
+        async function finalizeEmployeesLoad() {
+            populateEmployeeSelect();
+            const loginAvailable = hasLoginPins();
+
+            if (loginAvailable) {
+                const autoLogged = await tryAutoLoginWithProof();
+                if (!autoLogged) {
+                    setCurrentEmployee(null, { skipStorage: true, skipProofUpdate: true });
+                }
+            } else {
+                const savedId = localStorage.getItem('worker-current-employee-id');
+                if (savedId) {
+                    const employee = allEmployees.find(emp => emp.id === savedId);
+                    if (employee) {
+                        setCurrentEmployee(employee.id, { clearProof: true });
+                    }
+                } else {
+                    setCurrentEmployee(null, { skipStorage: true, skipProofUpdate: true });
+                }
+            }
+
+            updateLoginUI();
+        }
+
+        function submitPin() {
+            const pinInput = document.getElementById('pin-input');
+            const loginButton = document.getElementById('login-submit');
+            if (!pinInput || !loginButton) return;
+
+            const pin = normalizePin(pinInput.value);
+            if (!pin) {
+                showLoginError('Wpisz kod pracownika.');
+                return;
+            }
+
+            if (!allEmployees.length) {
+                showLoginError('Pracownicy jeszcze się wczytują.');
+                return;
+            }
+
+            const employee = findEmployeeByPin(pin);
+            if (!employee) {
+                showLoginError('Nieprawidłowy kod lub pracownik nie istnieje.');
+                return;
+            }
+
+            showLoginError('');
+            setCurrentEmployee(employee.id, { pin });
+            pinInput.value = '';
+        }
+
+        function setupLoginInteractions() {
+            const pinInput = document.getElementById('pin-input');
+            if (pinInput) {
+                pinInput.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        submitPin();
+                    }
+                });
+            }
         }
 
         // Inicjalizacja Firebase
@@ -686,8 +1439,8 @@
         async function loadEmployeesFromFirebase() {
             try {
                 // Pobierz appId i userId z localStorage planera
-                let appId = localStorage.getItem('planner-app-id');
-                let userId = localStorage.getItem('planner-user-id');
+                let appId = normalizeIdentifier(localStorage.getItem('planner-app-id'));
+                let userId = normalizeIdentifier(localStorage.getItem('planner-user-id'));
                 
                 console.log('🔍 loadEmployeesFromFirebase - appId:', appId, 'userId:', userId);
                 
@@ -700,8 +1453,8 @@
                             try {
                                 const data = JSON.parse(localStorage.getItem(key));
                                 if (data && data.appId) {
-                                    appId = data.appId;
-                                    userId = data.userId;
+                                    appId = normalizeIdentifier(data.appId);
+                                    userId = normalizeIdentifier(data.userId);
                                     break;
                                 }
                             } catch (e) {}
@@ -714,107 +1467,80 @@
                     // Pobierz z pierwszego dostępnego dokumentu planner
                     const plannerSnap = await firestore.collection('planner').limit(1).get();
                     if (!plannerSnap.empty) {
-                        appId = plannerSnap.docs[0].id;
-                        const usersSnap = await firestore.collection('planner').doc(appId).collection('users').limit(1).get();
-                        if (!usersSnap.empty) {
-                            userId = usersSnap.docs[0].id;
+                        appId = normalizeIdentifier(plannerSnap.docs[0].id);
+                        const candidateUserId = await findAnyUserId(appId);
+                        if (candidateUserId) {
+                            userId = normalizeIdentifier(candidateUserId);
                         }
                     }
                 }
 
                 if (!appId || !userId) {
                     console.warn('⚠️ Nie znaleziono appId/userId. Używam danych lokalnych.');
-                    loadEmployeesFromLocalStorage();
+                    await loadEmployeesFromLocalStorage();
                     return;
                 }
 
-                // Pobierz pracowników z właściwej ścieżki
-                const snapshot = await firestore
-                    .collection('planner')
-                    .doc(appId)
-                    .collection('users')
-                    .doc(userId)
-                    .collection('employees')
-                    .get();
+                localStorage.setItem('planner-app-id', appId);
+                localStorage.setItem('planner-user-id', userId);
 
-                allEmployees = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-
-                // Aktualizuj dropdown
-                const select = document.getElementById('employee-select');
-                select.innerHTML = '<option value="">Wybierz pracownika...</option>';
-                
-                allEmployees.forEach(emp => {
-                    const option = document.createElement('option');
-                    option.value = emp.id;
-                    option.textContent = emp.name;
-                    select.appendChild(option);
-                });
-
-                // Przywróć ostatnio wybranego pracownika
-                const savedUserId = localStorage.getItem('worker-current-employee-id');
-                if (savedUserId) {
-                    select.value = savedUserId;
-                    currentUser = allEmployees.find(e => e.id === savedUserId);
-                    if (currentUser) {
-                        showWorkerInfo(currentUser.name);
-                        loadTasks();
-                        updateStats();
-                    }
+                const userDocRef = await resolvePlannerUserDoc(appId, userId);
+                if (!userDocRef) {
+                    console.warn('⚠️ Nie udało się odnaleźć dokumentu użytkownika w Firestore.');
+                    await loadEmployeesFromLocalStorage();
+                    return;
                 }
 
-                console.log(`✅ Załadowano ${allEmployees.length} pracowników`);
+                const employeeResult = await fetchFromFirstAvailableCollection(userDocRef, EMPLOYEE_COLLECTION_ALIASES, 'employees');
+                const employeeItems = employeeResult && Array.isArray(employeeResult.items) ? employeeResult.items : [];
+                const usedCollection = employeeResult ? employeeResult.usedCollection : null;
+                allEmployees = employeeItems;
+
+                if (!allEmployees.length) {
+                    console.warn('⚠️ Brak pracowników w Firestore – spróbuję użyć danych lokalnych.');
+                    await loadEmployeesFromLocalStorage();
+                    return;
+                }
+
+                const collectionInfo = usedCollection ? ' z kolekcji "' + usedCollection + '"' : '';
+                console.log(`✅ Załadowano ${allEmployees.length} pracowników${collectionInfo}`);
+                await finalizeEmployeesLoad();
             } catch (error) {
                 console.error('❌ Błąd pobierania pracowników:', error);
-                loadEmployeesFromLocalStorage();
+                await loadEmployeesFromLocalStorage();
             }
         }
 
         // Fallback - załaduj pracowników z localStorage
-        function loadEmployeesFromLocalStorage() {
+        async function loadEmployeesFromLocalStorage() {
             const plannerData = localStorage.getItem('planner-state');
             if (plannerData) {
                 try {
                     const state = JSON.parse(plannerData);
                     if (state.employees && Array.isArray(state.employees)) {
                         allEmployees = state.employees;
-                        
-                        const select = document.getElementById('employee-select');
-                        select.innerHTML = '<option value="">Wybierz pracownika...</option>';
-                        
-                        allEmployees.forEach(emp => {
-                            const option = document.createElement('option');
-                            option.value = emp.id;
-                            option.textContent = emp.name;
-                            select.appendChild(option);
-                        });
-                        
-                        // Przywróć zalogowanego pracownika
-                        const savedUserId = localStorage.getItem('worker-current-employee-id');
-                        if (savedUserId) {
-                            select.value = savedUserId;
-                            currentUser = allEmployees.find(e => e.id === savedUserId);
-                            if (currentUser) {
-                                showWorkerInfo(currentUser.name);
-                            }
-                        }
-                        
                         console.log(`✅ Załadowano ${allEmployees.length} pracowników z localStorage`);
+                        await finalizeEmployeesLoad();
+                        return;
                     }
                 } catch (e) {
                     console.error('Błąd parsowania localStorage:', e);
                 }
             }
+
+            allEmployees = [];
+            await finalizeEmployeesLoad();
         }
 
         // Pobieranie zadań z Firebase
-        async function loadTasksFromFirebase() {
+        async function loadTasksFromFirebase(options) {
+            const opts = options || {};
+            const hasShowToast = Object.prototype.hasOwnProperty.call(opts, 'showToast');
+            const showToast = hasShowToast ? opts.showToast : false;
             try {
                 // Pobierz appId i userId (tak samo jak w loadEmployeesFromFirebase)
-                let appId = localStorage.getItem('planner-app-id');
-                let userId = null;
+                let appId = normalizeIdentifier(localStorage.getItem('planner-app-id'));
+                let userId = normalizeIdentifier(localStorage.getItem('planner-user-id'));
                 
                 if (!appId) {
                     const keys = Object.keys(localStorage);
@@ -823,8 +1549,8 @@
                             try {
                                 const data = JSON.parse(localStorage.getItem(key));
                                 if (data && data.appId) {
-                                    appId = data.appId;
-                                    userId = data.userId;
+                                    appId = normalizeIdentifier(data.appId);
+                                    userId = normalizeIdentifier(data.userId);
                                     break;
                                 }
                             } catch (e) {}
@@ -835,10 +1561,10 @@
                 if (!appId || !userId) {
                     const plannerSnap = await firestore.collection('planner').limit(1).get();
                     if (!plannerSnap.empty) {
-                        appId = plannerSnap.docs[0].id;
-                        const usersSnap = await firestore.collection('planner').doc(appId).collection('users').limit(1).get();
-                        if (!usersSnap.empty) {
-                            userId = usersSnap.docs[0].id;
+                        appId = normalizeIdentifier(plannerSnap.docs[0].id);
+                        const candidateUserId = await findAnyUserId(appId);
+                        if (candidateUserId) {
+                            userId = normalizeIdentifier(candidateUserId);
                         }
                     }
                 }
@@ -848,18 +1574,23 @@
                     return;
                 }
 
-                const snapshot = await firestore
-                    .collection('planner')
-                    .doc(appId)
-                    .collection('users')
-                    .doc(userId)
-                    .collection('tasks')
-                    .get();
+                localStorage.setItem('planner-app-id', appId);
+                localStorage.setItem('planner-user-id', userId);
 
-                const allTasks = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+                const userDocRef = await resolvePlannerUserDoc(appId, userId);
+                if (!userDocRef) {
+                    console.warn('⚠️ Nie udało się odnaleźć dokumentu użytkownika dla zadań');
+                    return;
+                }
+
+                const taskResult = await fetchFromFirstAvailableCollection(userDocRef, TASK_COLLECTION_ALIASES, 'tasks');
+                const taskItems = taskResult && Array.isArray(taskResult.items) ? taskResult.items : [];
+                const usedCollection = taskResult ? taskResult.usedCollection : null;
+                const allTasks = taskItems.map(function(task) { return normalizeFirebaseTask(task); });
+
+                if (usedCollection) {
+                    console.log(`ℹ️ Zadania pobrane z kolekcji "${usedCollection}"`);
+                }
 
                 console.log(`✅ Załadowano ${allTasks.length} zadań z Firebase`);
                 
@@ -869,112 +1600,138 @@
                 // Jeśli jest wybrany pracownik, przefiltruj zadania
                 if (currentUser) {
                     tasks = filterTasksForEmployee(allTasks, currentUser.id);
-                    tasks.forEach(task => {
-                        task.status = mapPlannerStatus(task.status);
-                    });
                     saveTasks();
                     loadTasks();
                     updateStats();
                 }
+
+                updateLastSync();
+
+                if (showToast) {
+                    const employeeTaskCount = currentUser ? tasks.length : allTasks.length;
+                    showNotification(`🔄 Odświeżono zadania z Firebase (${employeeTaskCount})`, 'success');
+                    if (notificationSettings.task) {
+                        playNotificationSound('success');
+                        if (navigator.vibrate) {
+                            navigator.vibrate([120, 60, 120]);
+                        }
+                    }
+                }
             } catch (error) {
                 console.error('❌ Błąd pobierania zadań:', error);
+                if (showToast) {
+                    showNotification('❌ Nie udało się odświeżyć zadań z Firebase', 'error');
+                }
             }
         }
 
         // Filtrowanie zadań dla pracownika
         function filterTasksForEmployee(allTasks, employeeId) {
+            const normalizedTarget = normalizeIdentifier(employeeId).toLowerCase();
+            if (!normalizedTarget) return [];
+
+            function matchesValue(value) {
+                if (value === null || value === undefined) return false;
+                if (typeof value === 'object') {
+                    return matchesValue(value.id || value.employeeId || value.workerId || value.code);
+                }
+                const normalized = normalizeIdentifier(value);
+                if (!normalized) return false;
+                return normalized.toLowerCase() === normalizedTarget;
+            }
+
+            function matchesCollection(collection) {
+                if (!collection) return false;
+                if (Array.isArray(collection)) {
+                    return collection.some(item => matchesValue(item));
+                }
+                if (typeof collection === 'object') {
+                    return Object.values(collection).some(item => matchesValue(item));
+                }
+                return matchesValue(collection);
+            }
+
+            const directFields = ['employeeId', 'employee_id', 'assignedEmployeeId', 'assignedTo', 'workerId', 'executorId'];
+            const collectionFields = ['assignees', 'assignedEmployees', 'workers', 'workerIds', 'assigneeIds'];
+            const objectFields = ['employee', 'assignee', 'worker'];
+
             return allTasks.filter(task => {
-                // Sprawdź pole employeeId
-                if (task.employeeId === employeeId) return true;
-                
-                // Sprawdź tablicę assignees
-                if (Array.isArray(task.assignees) && task.assignees.includes(employeeId)) return true;
-                
+                for (const field of directFields) {
+                    if (matchesValue(task[field])) return true;
+                }
+
+                for (const field of collectionFields) {
+                    if (matchesCollection(task[field])) return true;
+                }
+
+                for (const field of objectFields) {
+                    if (matchesValue(task[field])) return true;
+                }
+
                 return false;
             });
+        }
+
+        async function reloadTasksFromFirebase() {
+            const button = document.getElementById('reload-firebase-tasks');
+            if (button) {
+                button.disabled = true;
+            }
+            try {
+                await loadTasksFromFirebase({ showToast: true });
+            } finally {
+                if (button) {
+                    setTimeout(() => {
+                        button.disabled = false;
+                    }, 500);
+                }
+            }
         }
 
         // Obsługa zmiany pracownika
         function onEmployeeChange() {
             const select = document.getElementById('employee-select');
+            if (!select) return;
             const employeeId = select.value;
-            
             if (!employeeId) {
-                currentUser = null;
-                tasks = [];
-                localStorage.removeItem('worker-current-employee-id');
-                hideWorkerInfo();
-                loadTasks();
-                updateStats();
-                return;
+                setCurrentEmployee(null, { clearProof: true });
+            } else {
+                setCurrentEmployee(employeeId, { clearProof: true });
             }
-
-            currentUser = allEmployees.find(e => e.id === employeeId);
-            localStorage.setItem('worker-current-employee-id', employeeId);
-            
-            // Przefiltruj zadania
-            const allTasksStr = localStorage.getItem('worker-all-tasks');
-            if (allTasksStr) {
-                const allTasks = JSON.parse(allTasksStr);
-                tasks = filterTasksForEmployee(allTasks, employeeId);
-                saveTasks();
-            }
-            
-            showWorkerInfo(currentUser.name);
-            loadTasks();
-            updateStats();
-            
-            console.log(`✅ Wybrano pracownika: ${currentUser.name}`);
         }
 
         // Pokazanie informacji o zalogowanym pracowniku
         function showWorkerInfo(workerName) {
             const workerInfo = document.getElementById('worker-info');
             const workerNameSpan = document.getElementById('logged-worker-name');
-            const select = document.getElementById('employee-select');
             
             if (workerInfo && workerNameSpan) {
                 workerNameSpan.textContent = `👤 ${workerName}`;
                 workerInfo.style.display = 'flex';
-                select.style.display = 'none';
             }
         }
 
         // Ukrycie informacji o zalogowanym pracowniku
         function hideWorkerInfo() {
             const workerInfo = document.getElementById('worker-info');
-            const select = document.getElementById('employee-select');
             
             if (workerInfo) {
                 workerInfo.style.display = 'none';
-                select.style.display = 'block';
             }
         }
 
         // Wylogowanie pracownika
         function logoutWorker() {
             if (confirm('Czy na pewno chcesz wylogować tego pracownika?\n\nUwaga: Po wylogowaniu pracownik straci dostęp do aplikacji na tym urządzeniu.')) {
-                // Usuń dane zalogowanego pracownika
                 localStorage.removeItem('worker-current-employee-id');
                 localStorage.removeItem('worker-tasks');
-                
-                // Reset stanu
-                currentUser = null;
-                tasks = [];
-                
-                // Ukryj info i pokaż select
-                hideWorkerInfo();
-                
-                // Zresetuj select
+                localStorage.removeItem(LOGIN_PROOF_KEY);
+                setCurrentEmployee(null, { skipStorage: true, skipProofUpdate: true });
                 const select = document.getElementById('employee-select');
                 if (select) {
                     select.value = '';
                 }
-                
-                // Odśwież widok
-                loadTasks();
-                updateStats();
-                
+                showLoginError('');
                 alert('✅ Pracownik został wylogowany.\n\nMożna teraz zalogować innego pracownika.');
                 console.log('🚪 Pracownik wylogowany');
             }
@@ -1018,7 +1775,18 @@
             // Wczytanie ustawień powiadomień
             const savedSettings = localStorage.getItem('worker-notifications');
             if (savedSettings) {
-                notificationSettings = { ...notificationSettings, ...JSON.parse(savedSettings) };
+                try {
+                    const parsedSettings = JSON.parse(savedSettings);
+                    if (parsedSettings && typeof parsedSettings === 'object') {
+                        for (const key in parsedSettings) {
+                            if (Object.prototype.hasOwnProperty.call(parsedSettings, key)) {
+                                notificationSettings[key] = parsedSettings[key];
+                            }
+                        }
+                    }
+                } catch (settingsError) {
+                    console.warn('Nie udało się odczytać ustawień powiadomień:', settingsError);
+                }
                 updateNotificationUI();
             }
 
@@ -1031,6 +1799,8 @@
             
             // Uruchomienie przypomnień dla aktywnych zadań
             startRemindersForActiveTasks();
+            setupLoginInteractions();
+            updateLoginUI();
         }
 
         function updateDate() {
@@ -1046,7 +1816,51 @@
         }
 
         function loadTasks() {
-            // Symulacja ładowania zadań (w rzeczywistości będzie z API)
+            if (tasks.length === 0 && allowDemoTasks) {
+                tasks = [
+                    {
+                        id: 1,
+                        title: "Cięcie drzwi #1234",
+                        model: "DREWNO-001",
+                        quantity: 5,
+                        unit: "szt",
+                        deadline: "14:00",
+                        status: "pending",
+                        startTime: null,
+                        endTime: null,
+                        estimatedTime: 120,
+                        priority: "high"
+                    },
+                    {
+                        id: 2,
+                        title: "Montaż okuć #1235",
+                        model: "DREWNO-002",
+                        quantity: 3,
+                        unit: "szt",
+                        deadline: "16:00",
+                        status: "pending",
+                        startTime: null,
+                        endTime: null,
+                        estimatedTime: 90,
+                        priority: "medium"
+                    },
+                    {
+                        id: 3,
+                        title: "Lakierowanie #1236",
+                        model: "DREWNO-003",
+                        quantity: 8,
+                        unit: "szt",
+                        deadline: "12:00",
+                        status: "in-progress",
+                        startTime: Date.now() - 3600000,
+                        endTime: null,
+                        estimatedTime: 180,
+                        priority: "high"
+                    }
+                ];
+                saveTasks();
+            }
+
             renderTasks();
         }
 
@@ -1055,7 +1869,7 @@
 
             if (tasks.length === 0) {
                 taskList.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: var(--muted);">
+                    <div class="task-placeholder">
                         Brak zadań na dziś 🎉<br>
                         <small>Świetna robota!</small>
                     </div>
@@ -1063,16 +1877,9 @@
                 return;
             }
 
-            let statusAdjusted = false;
-
             taskList.innerHTML = tasks.map(task => {
-                const normalizedStatus = mapPlannerStatus(task.status);
-                if (task.status !== normalizedStatus) {
-                    task.status = normalizedStatus;
-                    statusAdjusted = true;
-                }
-                const statusClass = `status-${normalizedStatus}`;
-                const statusText = getStatusText(normalizedStatus);
+                const statusClass = `status-${task.status}`;
+                const statusText = getStatusText(task.status);
                 const elapsedTime = task.startTime ? getElapsedTime(task.startTime) : '';
                 const plannedWindow = escapeHtml(getPlannedWindow(task));
                 const title = escapeHtml(task.title || `Zadanie ${task.id}`);
@@ -1162,58 +1969,20 @@
             }).join('');
 
             updateStats();
-
-            if (statusAdjusted) {
-                saveTasks();
-            }
         }
 
         function getStatusText(status) {
-            const normalizedStatus = mapPlannerStatus(status);
             const statusMap = {
                 'pending': 'Oczekuje',
                 'in-progress': 'W trakcie',
                 'completed': 'Ukończone',
                 'paused': 'Wstrzymane'
             };
-            return statusMap[normalizedStatus] || normalizedStatus;
-        }
-
-        function toTimestampMillis(value) {
-            if (value === null || value === undefined) return null;
-            if (typeof value === 'number' && Number.isFinite(value)) return value;
-            if (value instanceof Date) {
-                const millis = value.getTime();
-                return Number.isFinite(millis) ? millis : null;
-            }
-            if (typeof value === 'string' && value.trim()) {
-                const parsed = Date.parse(value);
-                return Number.isFinite(parsed) ? parsed : null;
-            }
-            if (typeof value === 'object') {
-                if (typeof value.toMillis === 'function') {
-                    const millis = value.toMillis();
-                    return Number.isFinite(millis) ? millis : null;
-                }
-                if (typeof value.toDate === 'function') {
-                    const date = value.toDate();
-                    if (date instanceof Date) {
-                        const millis = date.getTime();
-                        return Number.isFinite(millis) ? millis : null;
-                    }
-                }
-                if (typeof value.seconds === 'number') {
-                    const millis = (value.seconds * 1000) + Math.floor((value.nanoseconds || 0) / 1e6);
-                    return Number.isFinite(millis) ? millis : null;
-                }
-            }
-            return null;
+            return statusMap[status] || status;
         }
 
         function getElapsedTime(startTime) {
-            const startMillis = toTimestampMillis(startTime);
-            if (startMillis === null) return '';
-            const elapsed = Date.now() - startMillis;
+            const elapsed = Date.now() - startTime;
             const minutes = Math.floor(elapsed / 60000);
             const hours = Math.floor(minutes / 60);
             const mins = minutes % 60;
@@ -1250,12 +2019,8 @@
         }
 
         function getTaskActions(task) {
-            const normalizedStatus = mapPlannerStatus(task.status);
-            if (task.status !== normalizedStatus) {
-                task.status = normalizedStatus;
-            }
             const taskId = JSON.stringify(task.id);
-            switch (normalizedStatus) {
+            switch (task.status) {
                 case 'pending':
                     return `<button class="btn btn-primary" onclick="startTask(${taskId})">▶️ Rozpocznij</button>`;
 
@@ -1272,18 +2037,12 @@
                     return `<button class="btn btn-primary" onclick="resumeTask(${taskId})">▶️ Wznów</button>`;
 
                 default:
-                    return `<button class="btn btn-primary" onclick="startTask(${taskId})">▶️ Rozpocznij</button>`;
+                    return '';
             }
         }
 
-        function findTaskById(taskId) {
-            if (taskId === null || taskId === undefined) return null;
-            const target = String(taskId);
-            return tasks.find(task => String(task.id) === target) || null;
-        }
-
         function startTask(taskId) {
-            const task = findTaskById(taskId);
+            const task = tasks.find(t => t.id === taskId);
             if (task) {
                 task.status = 'in-progress';
                 task.startTime = Date.now();
@@ -1299,7 +2058,7 @@
         }
 
         function completeTask(taskId) {
-            const task = findTaskById(taskId);
+            const task = tasks.find(t => t.id === taskId);
             if (task) {
                 task.status = 'completed';
                 task.endTime = Date.now();
@@ -1322,7 +2081,7 @@
         }
 
         function pauseTask(taskId) {
-            const task = findTaskById(taskId);
+            const task = tasks.find(t => t.id === taskId);
             if (task) {
                 task.status = 'paused';
                 saveTasks();
@@ -1337,7 +2096,7 @@
         }
 
         function resumeTask(taskId) {
-            const task = findTaskById(taskId);
+            const task = tasks.find(t => t.id === taskId);
             if (task) {
                 task.status = 'in-progress';
                 saveTasks();
@@ -1348,8 +2107,8 @@
 
         function updateStats() {
             const total = tasks.length;
-            const completed = tasks.filter(t => mapPlannerStatus(t.status) === 'completed').length;
-            const inProgress = tasks.filter(t => mapPlannerStatus(t.status) === 'in-progress').length;
+            const completed = tasks.filter(t => t.status === 'completed').length;
+            const inProgress = tasks.filter(t => t.status === 'in-progress').length;
 
             document.getElementById('total-tasks').textContent = total;
             document.getElementById('completed-tasks').textContent = completed;
@@ -1424,31 +2183,14 @@
         }
 
         function mapPlannerStatus(status) {
-            if (status === null || status === undefined) {
-                return 'pending';
-            }
-            const normalized = String(status).trim().toLowerCase();
-            switch (normalized) {
+            switch (status) {
                 case 'run':
-                case 'running':
                 case 'in-progress':
-                case 'in_progress':
-                case 'started':
-                case 'start':
-                case 'active':
                     return 'in-progress';
                 case 'done':
                 case 'completed':
-                case 'complete':
-                case 'finished':
-                case 'closed':
                     return 'completed';
                 case 'paused':
-                case 'pause':
-                case 'on-hold':
-                case 'onhold':
-                case 'hold':
-                case 'stopped':
                     return 'paused';
                 default:
                     return 'pending';
@@ -1540,7 +2282,7 @@
                 }
             }
 
-            // Fallback: import przez plik JSON
+            // Utwórz selektor plików JSON do importu z dysku
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.json';
@@ -1559,7 +2301,9 @@
                                 );
                                 
                                 if (newTasks.length > 0) {
-                                    tasks.push(...newTasks);
+                                    for (let index = 0; index < newTasks.length; index++) {
+                                        tasks.push(newTasks[index]);
+                                    }
                                     saveTasks();
                                     renderTasks();
                                     startRemindersForActiveTasks();
@@ -1718,7 +2462,7 @@
         }
 
         function showCompleteConfirmation(taskId) {
-            const task = findTaskById(taskId);
+            const task = tasks.find(t => t.id === taskId);
             if (!task) return;
 
             // Wypełnij informacje o zadaniu
@@ -1727,10 +2471,7 @@
                 `${task.model} • ${task.quantity} ${task.unit} • Termin: ${task.deadline}`;
 
             // Zapisz ID zadania do potwierdzenia
-            const confirmBtn = document.getElementById('confirm-complete-btn');
-            if (confirmBtn) {
-                confirmBtn.setAttribute('data-task-id', String(task.id));
-            }
+            document.getElementById('confirm-complete-btn').setAttribute('data-task-id', taskId);
 
             // Pokaż modal
             const modal = document.getElementById('confirmation-modal');
@@ -1748,11 +2489,7 @@
         }
 
         function confirmCompleteTask() {
-            const confirmBtn = document.getElementById('confirm-complete-btn');
-            if (!confirmBtn) {
-                return;
-            }
-            const taskId = confirmBtn.getAttribute('data-task-id');
+            const taskId = parseInt(document.getElementById('confirm-complete-btn').getAttribute('data-task-id'));
             hideConfirmationModal();
             completeTask(taskId);
         }
@@ -1798,13 +2535,12 @@
             reminderIntervals.clear();
 
             // Znajdź zadania w trakcie
-            const activeTasks = tasks.filter(task => mapPlannerStatus(task.status) === 'in-progress');
+            const activeTasks = tasks.filter(task => task.status === 'in-progress');
 
             activeTasks.forEach(task => {
-                const startMillis = toTimestampMillis(task.startTime);
-                if (startMillis !== null) {
+                if (task.startTime) {
                     // Sprawdź czy zadanie trwa już dłużej niż szacowany czas
-                    const elapsedMinutes = (Date.now() - startMillis) / 60000;
+                    const elapsedMinutes = (Date.now() - task.startTime) / 60000;
                     const estimatedMinutes = task.estimatedTime;
 
                     if (elapsedMinutes > estimatedMinutes) {
@@ -1814,11 +2550,7 @@
 
                     // Ustaw timer przypomnień co 30 minut
                     const intervalId = setInterval(() => {
-                        const normalizedStart = toTimestampMillis(task.startTime);
-                        if (normalizedStart === null) {
-                            return;
-                        }
-                        const currentElapsed = (Date.now() - normalizedStart) / 60000;
+                        const currentElapsed = (Date.now() - task.startTime) / 60000;
                         
                         if (currentElapsed > estimatedMinutes) {
                             const overtime = Math.floor(currentElapsed - estimatedMinutes);

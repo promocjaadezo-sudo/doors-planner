@@ -626,40 +626,23 @@
         // Inicjalizacja Firebase
         async function initializeFirebase() {
             try {
-                // Dynamiczne ładowanie Firebase SDK - czekaj na wszystkie skrypty
-                await new Promise((resolve, reject) => {
-                    let loaded = 0;
-                    const scripts = [
-                        'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
-                        'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js',
-                        'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js'
-                    ];
-                    
-                    scripts.forEach((src, index) => {
-                        const script = document.createElement('script');
-                        script.src = src;
-                        script.onload = () => {
-                            loaded++;
-                            console.log(`✅ Loaded ${index + 1}/${scripts.length}: ${src.split('/').pop()}`);
-                            if (loaded === scripts.length) resolve();
-                        };
-                        script.onerror = () => reject(new Error(`Failed to load ${src}`));
-                        document.head.appendChild(script);
-                    });
+                // Dynamiczne ładowanie Firebase SDK
+                const script1 = document.createElement('script');
+                script1.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js';
+                document.head.appendChild(script1);
+
+                const script2 = document.createElement('script');
+                script2.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js';
+                document.head.appendChild(script2);
+
+                const script3 = document.createElement('script');
+                script3.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js';
+                document.head.appendChild(script3);
+
+                // Czekaj na załadowanie
+                await new Promise(resolve => {
+                    script3.onload = resolve;
                 });
-
-                // Czekaj aż firebase będzie dostępny globalnie
-                let attempts = 0;
-                while ((typeof firebase === 'undefined' || typeof firebase.firestore !== 'function') && attempts < 50) {
-                    await new Promise(r => setTimeout(r, 100));
-                    attempts++;
-                }
-
-                if (typeof firebase === 'undefined' || typeof firebase.firestore !== 'function') {
-                    throw new Error('Firebase SDK nie załadował się poprawnie');
-                }
-
-                console.log('🔥 Firebase SDK załadowany, inicjalizacja...');
 
                 // Inicjalizuj Firebase
                 firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
@@ -687,12 +670,10 @@
             try {
                 // Pobierz appId i userId z localStorage planera
                 let appId = localStorage.getItem('planner-app-id');
-                let userId = localStorage.getItem('planner-user-id');
-                
-                console.log('🔍 loadEmployeesFromFirebase - appId:', appId, 'userId:', userId);
+                let userId = null;
                 
                 // Jeśli nie ma, użyj domyślnych wartości
-                if (!appId || !userId) {
+                if (!appId) {
                     // Sprawdź w różnych kluczach localStorage
                     const keys = Object.keys(localStorage);
                     for (const key of keys) {
@@ -869,9 +850,6 @@
                 // Jeśli jest wybrany pracownik, przefiltruj zadania
                 if (currentUser) {
                     tasks = filterTasksForEmployee(allTasks, currentUser.id);
-                    tasks.forEach(task => {
-                        task.status = mapPlannerStatus(task.status);
-                    });
                     saveTasks();
                     loadTasks();
                     updateStats();
@@ -1022,12 +1000,8 @@
                 updateNotificationUI();
             }
 
-            // Ustawienie nazwy użytkownika w tytule (tylko jeśli currentUser istnieje)
-            if (currentUser && currentUser.name) {
-                document.title = `Worker App - ${currentUser.name}`;
-            } else {
-                document.title = 'Worker App';
-            }
+            // Ustawienie nazwy użytkownika w tytule
+            document.title = `Worker App - ${currentUser.name}`;
             
             // Uruchomienie przypomnień dla aktywnych zadań
             startRemindersForActiveTasks();
@@ -1047,6 +1021,52 @@
 
         function loadTasks() {
             // Symulacja ładowania zadań (w rzeczywistości będzie z API)
+            if (tasks.length === 0) {
+                // Przykładowe zadania do demonstracji
+                tasks = [
+                    {
+                        id: 1,
+                        title: "Cięcie drzwi #1234",
+                        model: "DREWNO-001",
+                        quantity: 5,
+                        unit: "szt",
+                        deadline: "14:00",
+                        status: "pending",
+                        startTime: null,
+                        endTime: null,
+                        estimatedTime: 120, // minuty
+                        priority: "high"
+                    },
+                    {
+                        id: 2,
+                        title: "Montaż okuć #1235",
+                        model: "DREWNO-002",
+                        quantity: 3,
+                        unit: "szt",
+                        deadline: "16:00",
+                        status: "pending",
+                        startTime: null,
+                        endTime: null,
+                        estimatedTime: 90,
+                        priority: "medium"
+                    },
+                    {
+                        id: 3,
+                        title: "Lakierowanie #1236",
+                        model: "DREWNO-003",
+                        quantity: 8,
+                        unit: "szt",
+                        deadline: "12:00",
+                        status: "in-progress",
+                        startTime: Date.now() - 3600000, // 1 godzina temu
+                        endTime: null,
+                        estimatedTime: 180,
+                        priority: "high"
+                    }
+                ];
+                saveTasks();
+            }
+
             renderTasks();
         }
 
@@ -1063,16 +1083,9 @@
                 return;
             }
 
-            let statusAdjusted = false;
-
             taskList.innerHTML = tasks.map(task => {
-                const normalizedStatus = mapPlannerStatus(task.status);
-                if (task.status !== normalizedStatus) {
-                    task.status = normalizedStatus;
-                    statusAdjusted = true;
-                }
-                const statusClass = `status-${normalizedStatus}`;
-                const statusText = getStatusText(normalizedStatus);
+                const statusClass = `status-${task.status}`;
+                const statusText = getStatusText(task.status);
                 const elapsedTime = task.startTime ? getElapsedTime(task.startTime) : '';
                 const plannedWindow = escapeHtml(getPlannedWindow(task));
                 const title = escapeHtml(task.title || `Zadanie ${task.id}`);
@@ -1162,58 +1175,20 @@
             }).join('');
 
             updateStats();
-
-            if (statusAdjusted) {
-                saveTasks();
-            }
         }
 
         function getStatusText(status) {
-            const normalizedStatus = mapPlannerStatus(status);
             const statusMap = {
                 'pending': 'Oczekuje',
                 'in-progress': 'W trakcie',
                 'completed': 'Ukończone',
                 'paused': 'Wstrzymane'
             };
-            return statusMap[normalizedStatus] || normalizedStatus;
-        }
-
-        function toTimestampMillis(value) {
-            if (value === null || value === undefined) return null;
-            if (typeof value === 'number' && Number.isFinite(value)) return value;
-            if (value instanceof Date) {
-                const millis = value.getTime();
-                return Number.isFinite(millis) ? millis : null;
-            }
-            if (typeof value === 'string' && value.trim()) {
-                const parsed = Date.parse(value);
-                return Number.isFinite(parsed) ? parsed : null;
-            }
-            if (typeof value === 'object') {
-                if (typeof value.toMillis === 'function') {
-                    const millis = value.toMillis();
-                    return Number.isFinite(millis) ? millis : null;
-                }
-                if (typeof value.toDate === 'function') {
-                    const date = value.toDate();
-                    if (date instanceof Date) {
-                        const millis = date.getTime();
-                        return Number.isFinite(millis) ? millis : null;
-                    }
-                }
-                if (typeof value.seconds === 'number') {
-                    const millis = (value.seconds * 1000) + Math.floor((value.nanoseconds || 0) / 1e6);
-                    return Number.isFinite(millis) ? millis : null;
-                }
-            }
-            return null;
+            return statusMap[status] || status;
         }
 
         function getElapsedTime(startTime) {
-            const startMillis = toTimestampMillis(startTime);
-            if (startMillis === null) return '';
-            const elapsed = Date.now() - startMillis;
+            const elapsed = Date.now() - startTime;
             const minutes = Math.floor(elapsed / 60000);
             const hours = Math.floor(minutes / 60);
             const mins = minutes % 60;
@@ -1250,40 +1225,29 @@
         }
 
         function getTaskActions(task) {
-            const normalizedStatus = mapPlannerStatus(task.status);
-            if (task.status !== normalizedStatus) {
-                task.status = normalizedStatus;
-            }
-            const taskId = JSON.stringify(task.id);
-            switch (normalizedStatus) {
+            switch (task.status) {
                 case 'pending':
-                    return `<button class="btn btn-primary" onclick="startTask(${taskId})">▶️ Rozpocznij</button>`;
+                    return `<button class="btn btn-primary" onclick="startTask(${task.id})">▶️ Rozpocznij</button>`;
 
                 case 'in-progress':
                     return `
-                        <button class="btn btn-success" onclick="showCompleteConfirmation(${taskId})">✅ Zakończ</button>
-                        <button class="btn btn-warning" onclick="pauseTask(${taskId})">⏸️ Wstrzymaj</button>
+                        <button class="btn btn-success" onclick="showCompleteConfirmation(${task.id})">✅ Zakończ</button>
+                        <button class="btn btn-warning" onclick="pauseTask(${task.id})">⏸️ Wstrzymaj</button>
                     `;
 
                 case 'completed':
                     return `<button class="btn btn-secondary" disabled>Ukończone</button>`;
 
                 case 'paused':
-                    return `<button class="btn btn-primary" onclick="resumeTask(${taskId})">▶️ Wznów</button>`;
+                    return `<button class="btn btn-primary" onclick="resumeTask(${task.id})">▶️ Wznów</button>`;
 
                 default:
-                    return `<button class="btn btn-primary" onclick="startTask(${taskId})">▶️ Rozpocznij</button>`;
+                    return '';
             }
         }
 
-        function findTaskById(taskId) {
-            if (taskId === null || taskId === undefined) return null;
-            const target = String(taskId);
-            return tasks.find(task => String(task.id) === target) || null;
-        }
-
         function startTask(taskId) {
-            const task = findTaskById(taskId);
+            const task = tasks.find(t => t.id === taskId);
             if (task) {
                 task.status = 'in-progress';
                 task.startTime = Date.now();
@@ -1299,7 +1263,7 @@
         }
 
         function completeTask(taskId) {
-            const task = findTaskById(taskId);
+            const task = tasks.find(t => t.id === taskId);
             if (task) {
                 task.status = 'completed';
                 task.endTime = Date.now();
@@ -1322,7 +1286,7 @@
         }
 
         function pauseTask(taskId) {
-            const task = findTaskById(taskId);
+            const task = tasks.find(t => t.id === taskId);
             if (task) {
                 task.status = 'paused';
                 saveTasks();
@@ -1337,7 +1301,7 @@
         }
 
         function resumeTask(taskId) {
-            const task = findTaskById(taskId);
+            const task = tasks.find(t => t.id === taskId);
             if (task) {
                 task.status = 'in-progress';
                 saveTasks();
@@ -1348,8 +1312,8 @@
 
         function updateStats() {
             const total = tasks.length;
-            const completed = tasks.filter(t => mapPlannerStatus(t.status) === 'completed').length;
-            const inProgress = tasks.filter(t => mapPlannerStatus(t.status) === 'in-progress').length;
+            const completed = tasks.filter(t => t.status === 'completed').length;
+            const inProgress = tasks.filter(t => t.status === 'in-progress').length;
 
             document.getElementById('total-tasks').textContent = total;
             document.getElementById('completed-tasks').textContent = completed;
@@ -1424,31 +1388,14 @@
         }
 
         function mapPlannerStatus(status) {
-            if (status === null || status === undefined) {
-                return 'pending';
-            }
-            const normalized = String(status).trim().toLowerCase();
-            switch (normalized) {
+            switch (status) {
                 case 'run':
-                case 'running':
                 case 'in-progress':
-                case 'in_progress':
-                case 'started':
-                case 'start':
-                case 'active':
                     return 'in-progress';
                 case 'done':
                 case 'completed':
-                case 'complete':
-                case 'finished':
-                case 'closed':
                     return 'completed';
                 case 'paused':
-                case 'pause':
-                case 'on-hold':
-                case 'onhold':
-                case 'hold':
-                case 'stopped':
                     return 'paused';
                 default:
                     return 'pending';
@@ -1718,7 +1665,7 @@
         }
 
         function showCompleteConfirmation(taskId) {
-            const task = findTaskById(taskId);
+            const task = tasks.find(t => t.id === taskId);
             if (!task) return;
 
             // Wypełnij informacje o zadaniu
@@ -1727,10 +1674,7 @@
                 `${task.model} • ${task.quantity} ${task.unit} • Termin: ${task.deadline}`;
 
             // Zapisz ID zadania do potwierdzenia
-            const confirmBtn = document.getElementById('confirm-complete-btn');
-            if (confirmBtn) {
-                confirmBtn.setAttribute('data-task-id', String(task.id));
-            }
+            document.getElementById('confirm-complete-btn').setAttribute('data-task-id', taskId);
 
             // Pokaż modal
             const modal = document.getElementById('confirmation-modal');
@@ -1748,11 +1692,7 @@
         }
 
         function confirmCompleteTask() {
-            const confirmBtn = document.getElementById('confirm-complete-btn');
-            if (!confirmBtn) {
-                return;
-            }
-            const taskId = confirmBtn.getAttribute('data-task-id');
+            const taskId = parseInt(document.getElementById('confirm-complete-btn').getAttribute('data-task-id'));
             hideConfirmationModal();
             completeTask(taskId);
         }
@@ -1798,13 +1738,12 @@
             reminderIntervals.clear();
 
             // Znajdź zadania w trakcie
-            const activeTasks = tasks.filter(task => mapPlannerStatus(task.status) === 'in-progress');
+            const activeTasks = tasks.filter(task => task.status === 'in-progress');
 
             activeTasks.forEach(task => {
-                const startMillis = toTimestampMillis(task.startTime);
-                if (startMillis !== null) {
+                if (task.startTime) {
                     // Sprawdź czy zadanie trwa już dłużej niż szacowany czas
-                    const elapsedMinutes = (Date.now() - startMillis) / 60000;
+                    const elapsedMinutes = (Date.now() - task.startTime) / 60000;
                     const estimatedMinutes = task.estimatedTime;
 
                     if (elapsedMinutes > estimatedMinutes) {
@@ -1814,11 +1753,7 @@
 
                     // Ustaw timer przypomnień co 30 minut
                     const intervalId = setInterval(() => {
-                        const normalizedStart = toTimestampMillis(task.startTime);
-                        if (normalizedStart === null) {
-                            return;
-                        }
-                        const currentElapsed = (Date.now() - normalizedStart) / 60000;
+                        const currentElapsed = (Date.now() - task.startTime) / 60000;
                         
                         if (currentElapsed > estimatedMinutes) {
                             const overtime = Math.floor(currentElapsed - estimatedMinutes);
