@@ -2649,17 +2649,30 @@
             try {
                 reminderIntervals.forEach(interval => clearInterval(interval));
                 reminderIntervals.clear();
+                
+                // Wyczyść wszystkie dane Worker Panel
                 localStorage.removeItem('worker-tasks');
+                localStorage.removeItem('worker-all-tasks'); // WAŻNE - usuń cache wszystkich zadań
                 localStorage.removeItem('worker-notifications');
+                localStorage.removeItem('worker-current-employee-id');
+                
+                // Wyczyść mapy ochronne
+                recentlyEditedTasks.clear();
+                pendingFirebaseUpdates.clear();
+                taskOperationInProgress.clear();
+                
                 // Nie usuwamy worker-user, żeby zachować profil pracownika
                 tasks = [];
+                currentUser = null;
                 renderTasks();
                 updateStats();
+                updateLoginUI();
+                
                 const lastSync = document.getElementById('last-sync');
                 if (lastSync) {
                     lastSync.textContent = 'Pamięć lokalna wyczyszczona — zaimportuj zadania ponownie.';
                 }
-                showNotification('🧹 Pamięć lokalna wyczyszczona. Zaimportuj zadania ponownie.', 'success');
+                showNotification('🧹 Pamięć lokalna wyczyszczona. Zaimportuj zadania i zaloguj się ponownie.', 'success');
             } catch (error) {
                 console.error('Błąd czyszczenia pamięci:', error);
                 showNotification('❌ Nie udało się wyczyścić danych lokalnych', 'error');
