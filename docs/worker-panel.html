@@ -1356,7 +1356,7 @@
                 hideWorkerInfo();
                 document.title = 'Worker App';
                 saveTasks();
-                loadTasks();
+                renderTasks();
                 updateStats();
                 updateLoginUI();
                 return false;
@@ -1401,7 +1401,7 @@
                 saveTasks();
             }
 
-            loadTasks();
+            renderTasks();
             updateStats();
             startRemindersForActiveTasks();
             updateLoginUI();
@@ -1738,7 +1738,7 @@
                     }
                     
                     saveTasks();
-                    loadTasks();
+                    renderTasks();  // Renderuj bezpośrednio zamiast loadTasks() który ładuje demo
                     updateStats();
                 }
 
