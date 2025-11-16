@@ -1,0 +1,166 @@
+{
+  "timestamp": "2025-11-02T13:40:50.776Z",
+  "summary": {
+    "total": 31,
+    "passed": 0,
+    "failed": 31,
+    "successRate": 0
+  },
+  "tests": [
+    {
+      "name": "powinien utworzyć instancję singletona",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "powinien mieć poprawną strukturę stanu początkowego",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "powinien mieć ustawioną stałą MAX_HISTORIA_SIZE",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "powinien dodać wiadomość do historii",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "powinien zwrócić obiekt z dodanej wiadomości",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "powinien dodać wiele wiadomości po kolei",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "powinien dodać timestamp do wiadomości",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "timestamp powinien być w formacie ISO 8601",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "timestamp powinien być aktualny (w ciągu 5 sekund)",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "kolejne timestampy powinny rosnąć monotonnie",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "powinien zachować historię poniżej limitu",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "powinien ograniczyć historię do MAX_HISTORIA_SIZE przy przekroczeniu",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "powinien zachować najnowsze wpisy po przekroczeniu limitu",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "powinien zwrócić kopię stanu, nie referencję",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "modyfikacja zwróconego stanu nie powinna wpłynąć na oryginalny",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "modyfikacja tablicy historiaCzatu na kopii nie powinna wpłynąć na oryginał",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "powinien zaimportować poprawny JSON",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "powinien odrzucić JSON gdzie historiaCzatu nie jest tablicą",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "powinien odrzucić JSON gdzie statusAI nie jest stringiem",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "powinien odrzucić JSON gdzie statusAI ma nieprawidłową wartość",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "powinien odrzucić nieprawidłowy JSON (syntax error)",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "powinien zaakceptować starą strukturę (stringi w historii)",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "powinien ustawić status error przy nieudanym imporcie",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "powinien zapisać komunikat błędu w ostatniBlad",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "ustawStatus powinien zapisać błąd",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "powinien wyczyścić błąd przy udanym imporcie",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "ustawSesje powinien ustawić ID sesji",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "ustawStatus powinien zmienić status AI",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "resetujStan powinien zresetować wszystkie pola",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "exportujDoJSON powinien zwrócić string JSON",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    },
+    {
+      "name": "eksportowany JSON powinien być poprawnie parsowany",
+      "status": "FAIL",
+      "error": "CentralnyMagazynStanu is not defined"
+    }
+  ]
+}
