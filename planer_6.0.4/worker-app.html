@@ -7,7 +7,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Worker App v6.0.3 - Lista Zadań (z wylogowaniem)</title>
+    <title>Worker App v6.0.4 - Lista Zadań (z wylogowaniem)</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -654,7 +654,7 @@
     </div>
 
     <div class="header">
-    <h1>📋 Lista Zadań <span class="version-badge">v2,1</span></h1>
+    <h1>📋 Lista Zadań <span class="version-badge">v6.0.4</span></h1>
         <div class="date" id="current-date"></div>
         <div class="worker-access">
             <div id="login-card" class="login-card">
@@ -1718,7 +1718,7 @@
                         const idx = tasks.findIndex(t => t.id === fbTask.id);
                         if (idx >= 0) {
                             const lastEdit = recentlyEditedTasks.get(fbTask.id);
-                            if (lastEdit && (now - lastEdit < 15000)) {
+                            if (lastEdit && (now - lastEdit < 8000)) {
                                 console.log(`🛡️ Ignoruję zmianę z Firebase dla ${fbTask.id} - ostatnio edytowane lokalnie (przed ${Math.round((now - lastEdit) / 1000)}s)`);
                                 return;
                             }
@@ -1929,9 +1929,9 @@
 
             // Ustawienie nazwy użytkownika w tytule (tylko jeśli currentUser istnieje)
             if (currentUser && currentUser.name) {
-                document.title = `Worker App v6.0.3 - ${currentUser.name}`;
+                document.title = `Worker App v6.0.4 - ${currentUser.name}`;
             } else {
-                document.title = 'Worker App v6.0.3';
+                document.title = 'Worker App v6.0.4';
             }
             
             // Uruchomienie przypomnień dla aktywnych zadań
@@ -2252,10 +2252,9 @@
 
             console.log('✅ Znaleziono zadanie:', task);
             task.status = 'run';
-            task.lastStatusChange = new Date().toISOString();
             task.startTime = Date.now();
             task.startedAt = new Date().toISOString();
-            task.startedBy = currentUser ? currentUser.name : 'Worker App v6.0.3';
+            task.startedBy = currentUser ? currentUser.name : 'Worker App v6.0.4';
             
             // Oznacz jako ostatnio edytowane - ignoruj zmiany z Firebase przez 5 sekund
             recentlyEditedTasks.set(task.id, Date.now());
@@ -2266,11 +2265,10 @@
             startRemindersForActiveTasks();
             console.log('✅ Zadanie rozpoczęte:', task.id);
             
-            // Odblokuj po 3 sekundach - czas na synchronizację z Firebase
+            // Odblokuj po 1 sekundzie
             setTimeout(() => {
                 taskOperationInProgress.delete(taskId);
-                console.log('🔓 Odblokowano zadanie:', taskId);
-            }, 3000);
+            }, 1000);
         }
 
         function completeTask(taskId) {
@@ -2294,11 +2292,10 @@
             console.log('✅ Znaleziono zadanie do ukończenia:', task);
             console.log('📊 Status przed:', task.status);
             task.status = 'done';
-            task.lastStatusChange = new Date().toISOString();
             console.log('📊 Status po:', task.status);
             task.endTime = Date.now();
             task.closedAt = new Date().toISOString();
-            task.closedBy = currentUser ? currentUser.name : 'Worker App v6.0.3';
+            task.closedBy = currentUser ? currentUser.name : 'Worker App v6.0.4';
             
             // Oznacz jako ostatnio edytowane
             recentlyEditedTasks.set(task.id, Date.now());
@@ -2322,11 +2319,10 @@
                 navigator.vibrate([200, 100, 200]);
             }
             
-            // Odblokuj po 3 sekundach - czas na pełną synchronizację z Firebase
+            // Odblokuj po 1 sekundzie
             setTimeout(() => {
                 taskOperationInProgress.delete(taskId);
-                console.log('🔓 Odblokowano zadanie:', taskId);
-            }, 3000);
+            }, 1000);
         }
 
         function pauseTask(taskId) {
@@ -2349,7 +2345,6 @@
 
             console.log('✅ Wstrzymuję zadanie:', task);
             task.status = 'paused';
-            task.lastStatusChange = new Date().toISOString();
             
             // Oznacz jako ostatnio edytowane
             recentlyEditedTasks.set(task.id, Date.now());
@@ -2359,11 +2354,10 @@
             updateTaskInFirebase(task);
             console.log('✅ Zadanie wstrzymane:', task.id);
             
-            // Odblokuj po 3 sekundach
+            // Odblokuj po 1 sekundzie
             setTimeout(() => {
                 taskOperationInProgress.delete(taskId);
-                console.log('🔓 Odblokowano zadanie:', taskId);
-            }, 3000);
+            }, 1000);
 
             const reminderKey = getReminderKey(task);
             if (reminderIntervals.has(reminderKey)) {
@@ -2393,7 +2387,6 @@
             console.log('✅ Znaleziono zadanie do wznowienia:', task);
             console.log('📊 Status przed:', task.status);
             task.status = 'run';
-            task.lastStatusChange = new Date().toISOString();
             console.log('📊 Status po:', task.status);
             
             // Oznacz jako ostatnio edytowane - WAŻNE dla stabilności wznowienia!
@@ -2408,11 +2401,10 @@
             startRemindersForActiveTasks();
             console.log('✅ Zadanie wznowione:', task.id);
             
-            // Odblokuj po 3 sekundach
+            // Odblokuj po 1 sekundzie
             setTimeout(() => {
                 taskOperationInProgress.delete(taskId);
-                console.log('🔓 Odblokowano zadanie:', taskId);
-            }, 3000);
+            }, 1000);
         }
 
         function updateStats() {

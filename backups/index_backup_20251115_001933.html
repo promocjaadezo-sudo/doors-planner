@@ -5,8 +5,8 @@
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="last-modified" content="2025-11-16">
-<title>Planner Produkcji Drzwi — v6.0.4 (2025-11-16)</title>
+<meta name="last-modified" content="2025-11-08">
+<title>Planner Produkcji Drzwi — v6.0.3 (2025-11-14)</title>
 <style>
 :root{--bg:#0f172a;--panel:#1f2937;--muted:#94a3b8;--b:#374151;--acc:#2563eb;--ok:#16a34a;--warn:#d97706;--err:#dc2626;--text:#ffffff;--text-secondary:#ffffff}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:#ffffff;line-height:1.5}
@@ -744,7 +744,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
   <div class="row" style="gap:8px;margin-top:8px">
     <input type="text" id="global-search" placeholder="Szukaj zamówień, pracowników, zadań..." style="flex:1;max-width:400px" spellcheck="true" lang="pl">
     <button class="btn" id="search-btn">🔍 Szukaj</button>
-    <a href="planer_6.0.4/worker-app.html" target="_blank" class="btn blue" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px" title="Otwórz panel pracownika">
+    <a href="https://promocjaadezo-sudo.github.io/doors-planner/worker-panel.html" target="_blank" class="btn blue" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px" title="Otwórz panel pracownika">
       <span>👷</span>
       <span>Panel pracownika</span>
     </a>
@@ -762,7 +762,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
 </div>
 
 <div class="wrap">
-  <div class="row" style="justify-content:space-between"><h1>Planner Produkcji Drzwi — v6.0.4</h1></div>
+  <div class="row" style="justify-content:space-between"><h1>Planner Produkcji Drzwi — v6.0.3</h1></div>
 
   <div class="card hidden" id="p-dash">
     <h3>Panel</h3>
@@ -795,7 +795,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
 
     <!-- Przycisk do panelu pracownika -->
     <div style="margin-top:16px;text-align:center">
-      <a href="planer_6.0.4/worker-app.html" target="_blank" class="btn blue" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;font-size:16px;text-decoration:none">
+      <a href="https://promocjaadezo-sudo.github.io/doors-planner/worker-panel.html" target="_blank" class="btn blue" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;font-size:16px;text-decoration:none">
         <span style="font-size:20px">👷</span>
         <span>Panel pracownika</span>
       </a>
@@ -1241,7 +1241,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
       <div class="row" style="gap:8px">
         <button class="btn orange" onclick="toggleOrderFilter()">🔴 Do zamówienia</button>
         <button class="btn blue" onclick="exportWarehouseToCSV()">📊 Eksportuj CSV</button>
-        <button class="btn green" id="wh-add" onclick="addWarehouseItem()">➕ Dodaj pozycję</button>
+        <button class="btn green" id="wh-add">➕ Dodaj pozycję</button>
       </div>
     </div>
     
@@ -2316,7 +2316,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   };
 
   let state={storage:{mode:'firebase',appId:'doors-demo',userId:'hala-1',fbConfig:JSON.parse(JSON.stringify(DEFAULT_FIREBASE_CONFIG))},
-    employees:[],operationsCatalog:[],processes:[],orders:[],tasks:[],after:[],deletedOrders:[],deletedProcesses:[],PROC_TMP:[],page:'dash',_timers:{}};
+    employees:[],operationsCatalog:[],processes:[],orders:[],tasks:[],after:[],deletedOrders:[],PROC_TMP:[],page:'dash',_timers:{}};
   state.uiShowTasksByEmpTable = false;
   
   // 🔒 FLAGA SYNCHRONIZACJI - Blokuje loadFromDB() podczas usuwania danych
@@ -2476,171 +2476,17 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   let saveDebounceTimeout;
   let lastSaveTime = 0;
   const SAVE_DEBOUNCE_MS = 100; // Minimum 100ms między zapisami
-  let skipAutoSaveUntil = (typeof window !== 'undefined' && typeof window.skipAutoSaveUntil === 'number') ? window.skipAutoSaveUntil : 0;
-  window.skipAutoSaveUntil = skipAutoSaveUntil;
-  const WAREHOUSE_COLLECTION = 'pozycjeMagazynu';
-  const LEGACY_WAREHOUSE_COLLECTION = 'warehouseItems';
-  const WAREHOUSE_LOCAL_KEY = 'pozycjeMagazynu';
-  const LEGACY_WAREHOUSE_LOCAL_KEY = 'warehouseItems';
-  const USER_COLLECTION_ALIASES = ['users', 'użytkowników', 'uzytkownikow'];
-  if(typeof window !== 'undefined'){
-    window._pendingLegacyWarehouseCleanup = Array.isArray(window._pendingLegacyWarehouseCleanup) ? window._pendingLegacyWarehouseCleanup : [];
-    try { window.WAREHOUSE_COLLECTION = WAREHOUSE_COLLECTION; } catch(_){ }
-    try { window.LEGACY_WAREHOUSE_COLLECTION = LEGACY_WAREHOUSE_COLLECTION; } catch(_){ }
-    try { window.WAREHOUSE_LOCAL_KEY = WAREHOUSE_LOCAL_KEY; } catch(_){ }
-    try { window.LEGACY_WAREHOUSE_LOCAL_KEY = LEGACY_WAREHOUSE_LOCAL_KEY; } catch(_){ }
-    if(!Array.isArray(window.USER_COLLECTION_ALIASES)){ try { window.USER_COLLECTION_ALIASES = USER_COLLECTION_ALIASES.slice(); } catch(_){ } }
-  }
-  function getSkipAutoSaveUntil(){
-    if(typeof skipAutoSaveUntil !== 'undefined') return skipAutoSaveUntil;
-    if(typeof window !== 'undefined'){
-      if(typeof window.skipAutoSaveUntil === 'number') return window.skipAutoSaveUntil;
-      if(typeof window._plannerSkipAutoSaveUntil === 'number') return window._plannerSkipAutoSaveUntil;
-    }
-    return 0;
-  }
-  try{ window.getSkipAutoSaveUntil = getSkipAutoSaveUntil; }catch(_){ }
-
-  function resolveSkipAutoSaveGuard(){
-    if(typeof getSkipAutoSaveUntil === 'function'){
-      try{ return getSkipAutoSaveUntil(); }catch(_){ }
-    }
-    if(typeof window !== 'undefined'){
-      if(typeof window.getSkipAutoSaveUntil === 'function'){
-        try{ return window.getSkipAutoSaveUntil(); }catch(_){ }
-      }
-      if(typeof window.skipAutoSaveUntil === 'number') return window.skipAutoSaveUntil;
-      if(typeof window._plannerSkipAutoSaveUntil === 'number') return window._plannerSkipAutoSaveUntil;
-    }
-    return 0;
-  }
-  try{ window.resolveSkipAutoSaveGuard = resolveSkipAutoSaveGuard; }catch(_){ }
-
-  function getUserCollectionCandidates(){
-    const storage = (state && state.storage) || (window.state && window.state.storage) || {};
-    const candidates = [];
-    if(storage && typeof storage.userCollection === 'string') candidates.push(storage.userCollection);
-    if(storage && typeof storage.usersCollection === 'string') candidates.push(storage.usersCollection);
-    if(storage && storage.collectionMappings && typeof storage.collectionMappings.users === 'string') {
-      candidates.push(storage.collectionMappings.users);
-    }
-    if(storage && storage.collectionAliases){
-      const alias = storage.collectionAliases.users;
-      if(Array.isArray(alias)) {
-        alias.forEach(name => candidates.push(name));
-      } else if(typeof alias === 'string') {
-        candidates.push(alias);
-      }
-    }
-    if(storage && Array.isArray(storage.userCollectionAliases)){
-      storage.userCollectionAliases.forEach(name => candidates.push(name));
-    }
-    if(Array.isArray(window.USER_COLLECTION_ALIASES)){
-      window.USER_COLLECTION_ALIASES.forEach(name => candidates.push(name));
-    }
-    USER_COLLECTION_ALIASES.forEach(name => candidates.push(name));
-    return [...new Set(candidates.filter(Boolean))];
-  }
-
-  async function detectUserCollectionName(force){
-    const storage = (state && state.storage) || (window.state && window.state.storage) || {};
-    const appId = storage && storage.appId;
-    if(!force && window._activeUserCollection){
-      if(!appId || window._activeUserCollectionApp === appId){
-        return window._activeUserCollection;
-      }
-    }
-    if(typeof firebase === 'undefined' || !firebase.firestore){
-      const fallback = getUserCollectionCandidates()[0] || 'users';
-      window._activeUserCollection = fallback;
-      window._activeUserCollectionApp = appId || null;
-      return fallback;
-    }
-    if(!appId){
-      const fallback = getUserCollectionCandidates()[0] || 'users';
-      window._activeUserCollection = fallback;
-      window._activeUserCollectionApp = null;
-      return fallback;
-    }
-    const userId = storage && storage.userId;
-    const candidates = getUserCollectionCandidates();
-    const db = firebase.firestore();
-    for(const candidate of candidates){
-      try {
-        if(userId){
-          const docSnap = await db.collection('planner').doc(appId).collection(candidate).doc(userId).get();
-          if(docSnap.exists){
-            window._activeUserCollection = candidate;
-            window._activeUserCollectionApp = appId;
-            if(storage) storage.userCollection = candidate;
-            return candidate;
-          }
-        }
-        const snapshot = await db.collection('planner').doc(appId).collection(candidate).limit(1).get();
-        if(snapshot && !snapshot.empty){
-          window._activeUserCollection = candidate;
-          window._activeUserCollectionApp = appId;
-          if(storage) storage.userCollection = candidate;
-          return candidate;
-        }
-      } catch(checkErr){
-        console.warn(`[firebase] Kolekcja '${candidate}' niedostępna:`, checkErr && checkErr.message);
-      }
-    }
-    const fallback = candidates[0] || 'users';
-    window._activeUserCollection = fallback;
-    window._activeUserCollectionApp = appId;
-    if(storage && !storage.userCollection) storage.userCollection = fallback;
-    return fallback;
-  }
-
-  function getUserCollectionNameSync(){
-    const storage = (state && state.storage) || (window.state && window.state.storage) || {};
-    const appId = storage && storage.appId;
-    if(window._activeUserCollection){
-      if(!appId || window._activeUserCollectionApp === appId){
-        return window._activeUserCollection;
-      }
-    }
-    if(storage && typeof storage.userCollection === 'string'){
-      window._activeUserCollection = storage.userCollection;
-      window._activeUserCollectionApp = appId || null;
-      return storage.userCollection;
-    }
-    const candidates = getUserCollectionCandidates();
-    const fallback = candidates[0] || 'users';
-    window._activeUserCollection = fallback;
-    window._activeUserCollectionApp = appId || null;
-    if(storage && !storage.userCollection){
-      storage.userCollection = fallback;
-    }
-    return fallback;
-  }
-  try{ window.detectUserCollectionName = detectUserCollectionName; }catch(_){ }
-  try{ window.getUserCollectionCandidates = getUserCollectionCandidates; }catch(_){ }
-  try{ window.getUserCollectionNameSync = getUserCollectionNameSync; }catch(_){ }
+  let skipAutoSaveUntil = 0;
   let isApplyingRemoteUpdate = false;
   const taskStatusBaseline = window._taskStatusBaseline || new Map();
   window._taskStatusBaseline = taskStatusBaseline;
   const taskStatusSnapshot = window._taskStatusSnapshot || new Map();
   window._taskStatusSnapshot = taskStatusSnapshot;
-
-  function enqueueFirebaseDelete(collection, documentId, priority = 25){
-    if(!collection || !documentId) return;
-    try{
-      if(window.FirebaseSyncQueue && typeof window.FirebaseSyncQueue.enqueue === 'function'){
-        window.FirebaseSyncQueue.enqueue('delete', { collection, documentId }, priority);
-      }
-    }catch(err){
-      console.warn('enqueueFirebaseDelete error', err && err.message);
-    }
-  }
   
   function autoSaveDebounced(){
     clearTimeout(autoSaveTimeout);
     autoSaveTimeout = setTimeout(()=>{
-      const guardValue = resolveSkipAutoSaveGuard();
-      if(guardValue && Date.now() < guardValue){
+      if(skipAutoSaveUntil && Date.now() < skipAutoSaveUntil){
         if(window.logDev || Math.random() < 0.1){ console.log('Auto-save skipped due to recent remote sync'); }
         return;
       }
@@ -2787,8 +2633,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         // Debounce Firebase save (max 1x na 5 sekund)
         clearTimeout(window._firebaseSaveTimeout);
         window._firebaseSaveTimeout = setTimeout(() => {
-          const guardValue = getSkipAutoSaveUntil();
-          if(guardValue && Date.now() < guardValue){
+          if(skipAutoSaveUntil && Date.now() < skipAutoSaveUntil){
             if(window.logDev || Math.random() < 0.1){ console.log('Auto-sync skipped due to recent remote sync'); }
             return;
           }
@@ -3095,7 +2940,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   state.settings = state.settings || {};
   if (typeof state.settings.autoCleanup === 'undefined') state.settings.autoCleanup = true;
   state.deletedOrders = Array.isArray(state.deletedOrders) ? state.deletedOrders : [];
-  state.deletedProcesses = Array.isArray(state.deletedProcesses) ? state.deletedProcesses : [];
   // expose state for debugging and console access
   try{ window.state = state; }catch(e){console.warn('unable to expose state', e);}
 
@@ -3222,7 +3066,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       if(enabled){ saveToDB(); setInfoText('Auto-save: ' + (reason||'sync'), 'default'); }
     }catch(e){ console.warn('maybeAutoSave error', e); }
   }
-  try{ window.maybeAutoSave = maybeAutoSave; }catch(_){ }
   
   function nav(p){
     // AWARYJNE: Przy każdej nawigacji przywracaj normalną delegację kliknięć
@@ -3351,8 +3194,14 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           save();
           console.log('  ✅ Zapisano do localStorage');
 
-          enqueueFirebaseDelete('orders', id, 40);
-          taskIdsToDelete.forEach(taskId => enqueueFirebaseDelete('tasks', taskId, 35));
+          const queueDelete = (collection, documentId, priority = 25) => {
+            if(!collection || !documentId) return;
+            if(window.FirebaseSyncQueue && typeof window.FirebaseSyncQueue.enqueue === 'function'){
+              window.FirebaseSyncQueue.enqueue('delete', { collection, documentId }, priority);
+            }
+          };
+          queueDelete('orders', id, 40);
+          taskIdsToDelete.forEach(taskId => queueDelete('tasks', taskId, 35));
           
           // 🔒 KROK 4: USTAW FLAGĘ SYNCHRONIZACJI - Blokuje loadFromDB()
           window._isSyncingDelete = true;
@@ -3563,25 +3412,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           state.PROC_TMP = (p.operations || []).map(x => ({name: x.name, time: x.time || 0, assignee: x.assignee || null}));
           renderProcOps(); window.scrollTo({top: 0, behavior: 'smooth'}); break;
         }
-        if(t.dataset.pdel2) {
-          const id = t.dataset.pdel2;
-          state.processes = state.processes.filter(x => x.id !== id);
-          state.deletedProcesses = Array.isArray(state.deletedProcesses) ? state.deletedProcesses : [];
-          if (!state.deletedProcesses.includes(id)) {
-            state.deletedProcesses.push(id);
-            if (state.deletedProcesses.length > 200) {
-              state.deletedProcesses = state.deletedProcesses.slice(-200);
-            }
-          }
-          save();
-          renderProcList();
-          if(state.storage && state.storage.mode === 'firebase'){
-            enqueueFirebaseDelete('processes', id, 30);
-            if(!(window.FirebaseSyncQueue && typeof window.FirebaseSyncQueue.enqueue === 'function')){
-              try{ await saveToDB(); }catch(syncErr){ console.warn('process-delete sync error', syncErr && syncErr.message); }
-            }
-          }
-          break; }
+        if(t.dataset.pdel2) { state.processes = state.processes.filter(x => x.id !== t.dataset.pdel2); save(); renderProcList(); break; }
         if(t.dataset.taskStart) {
           const id = t.dataset.taskStart; const task = state.tasks.find(x => x.id === id); if (!task) return;
           task.status = 'run'; state._timers[id] = Date.now(); save(); try{ updateOrderProgress(task.orderId); }catch(_){ } renderTasks(); break;
@@ -7641,11 +7472,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           await auth.signInAnonymously();
           console.log('[firebase] Zalogowano anonimowo na potrzeby synchronizacji.');
         }
-        try {
-          await detectUserCollectionName();
-        } catch(detectErr) {
-          console.warn('[firebase] Nie udało się ustalić nazwy kolekcji użytkowników:', detectErr && detectErr.message);
-        }
       } catch (authErr) {
         console.warn('[firebase] Nie udało się przeprowadzić logowania anonimowego:', authErr && authErr.message);
       }
@@ -7660,26 +7486,10 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       return false;
     }
   }
-  function fbRoot(){
-    const collectionName = getUserCollectionNameSync();
-    return firebase.firestore().collection('planner').doc(state.storage.appId).collection(collectionName).doc(state.storage.userId);
-  }
+  function fbRoot(){return firebase.firestore().collection('planner').doc(state.storage.appId).collection('users').doc(state.storage.userId);}
   async function saveToDB(customState){
     if(state.storage.mode!=='firebase'){qs('#set-info').textContent='Tryb localStorage (offline)';return;}
     const ok=await ensureFirebase(); if(!ok){return;}
-    if(!Array.isArray(window.warehouseItems)){
-      try {
-        if (typeof loadWarehouseFromStorage === 'function') {
-          loadWarehouseFromStorage();
-        }
-      } catch (warehouseLoadErr) {
-        console.warn('[saveToDB] Nie udało się doładować magazynu przed zapisem:', warehouseLoadErr && warehouseLoadErr.message);
-      }
-      if(!Array.isArray(window.warehouseItems)){
-        window.warehouseItems = [];
-      }
-    }
-
     const targetState = customState || state;
     try {
       if(Array.isArray(targetState.operationsCatalog) && targetState.operationsCatalog.length > 1){
@@ -7689,7 +7499,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       const batch=db.batch();
       const tasksWritten = [];
       const tasksDeleted = [];
-      const deletedProcessIdsRemoved = [];
       const r=fbRoot();
 
       const collections = [
@@ -7699,7 +7508,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         { name: 'orders', items: targetState.orders || [] },
         { name: 'tasks', items: targetState.tasks || [] },
         { name: 'after', items: targetState.after || [] },
-        { name: WAREHOUSE_COLLECTION, items: window.warehouseItems || [] }
+        { name: 'warehouseItems', items: window.warehouseItems || [] }
       ];
 
       // Pobierz aktualne dokumenty zdalne, aby usunąć te, których już nie ma lokalnie
@@ -7721,14 +7530,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
             remoteDocMap.set(doc.id, doc.data());
           });
         }
-
-        const isProcessCollection = col.name === 'processes';
-        const processDeletions = isProcessCollection
-          ? (Array.isArray(targetState.deletedProcesses) ? targetState.deletedProcesses
-            : Array.isArray(state.deletedProcesses) ? state.deletedProcesses
-            : [])
-          : null;
-        const deletedProcessesSet = processDeletions ? new Set(processDeletions) : null;
 
         const localIds = new Set(
           localItems
@@ -7756,7 +7557,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         }
         
         // DIAGNOSTYKA dla magazynu
-        if (col.name === WAREHOUSE_COLLECTION) {
+        if (col.name === 'warehouseItems') {
           console.log(`🔍 [saveToDB] DIAGNOSTYKA MAGAZYNU:`);
           console.log(`  📦 Lokalne pozycje: ${localItems.length}`, localItems);
           console.log(`  🌐 Zdalne dokumenty: ${remoteDocs.docs.length}`, remoteDocs.docs.map(d => ({id: d.id, data: d.data()})));
@@ -7786,8 +7587,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
             }
             if(col.name === 'processes'){
               const isTestProc = /^proc_test_/.test(doc.id);
-              const isMarkedForDelete = deletedProcessesSet ? deletedProcessesSet.has(doc.id) : false;
-              if(!isTestProc && !isMarkedForDelete){
+              if(!isTestProc){
                 console.warn(`⚠️ [saveToDB] NIE USUWAM procesu '${doc.id}' - to dane rzeczywiste!`);
                 localIds.add(doc.id);
                 return;
@@ -7798,9 +7598,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
             batch.delete(r.collection(col.name).doc(doc.id));
             if(col.name === 'tasks'){
               tasksDeleted.push(doc.id);
-            }
-            if(col.name === 'processes'){
-              deletedProcessIdsRemoved.push(doc.id);
             }
           }
         });
@@ -7874,22 +7671,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         }
       });
 
-      if(LEGACY_WAREHOUSE_COLLECTION !== WAREHOUSE_COLLECTION){
-        try{
-          const legacySnapshot = await r.collection(LEGACY_WAREHOUSE_COLLECTION).get();
-          const legacyIds = [];
-          legacySnapshot.forEach(doc => {
-            legacyIds.push(doc.id);
-            batch.delete(r.collection(LEGACY_WAREHOUSE_COLLECTION).doc(doc.id));
-          });
-          if(legacyIds.length){
-            console.log(`🧹 [saveToDB] Czyszczę legacy kolekcję '${LEGACY_WAREHOUSE_COLLECTION}' (usuwam ${legacyIds.length} dokumentów)`);
-          }
-        }catch(cleanErr){
-          console.warn(`[saveToDB] Nie udało się odczytać legacy kolekcji '${LEGACY_WAREHOUSE_COLLECTION}':`, cleanErr && cleanErr.message);
-        }
-      }
-
       // ZAWSZE generuj nowy timestamp przy zapisie (zapobiega problemom z wczytywaniem starych danych)
       const lastModified = Date.now();
       
@@ -7917,18 +7698,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           taskStatusBaseline.delete(id);
         }
       });
-      if(deletedProcessIdsRemoved.length){
-        const processedProcesses = new Set(deletedProcessIdsRemoved);
-        if(Array.isArray(state.deletedProcesses)){
-          state.deletedProcesses = state.deletedProcesses.filter(id => !processedProcesses.has(id));
-        }
-        if(targetState !== state && Array.isArray(targetState.deletedProcesses)){
-          targetState.deletedProcesses = targetState.deletedProcesses.filter(id => !processedProcesses.has(id));
-        }
-      }
-      if(typeof window !== 'undefined' && Array.isArray(window._pendingLegacyWarehouseCleanup)){
-        window._pendingLegacyWarehouseCleanup = [];
-      }
 
       state.storage.lastRemoteSync = lastModified;
       try {
@@ -8079,7 +7848,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
             });
 
             skipAutoSaveUntil = Date.now() + 5000;
-            window.skipAutoSaveUntil = skipAutoSaveUntil;
             window._plannerSkipAutoSaveUntil = skipAutoSaveUntil;
 
             save();
@@ -8178,29 +7946,12 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       }
       
       const getAll=async(name)=>(await r.collection(name).get()).docs.map(d=>({id:d.id,...d.data()}));
-      const [employees,operationsCatalog,processes,orders,tasks,after,warehouseItemsPrimary,warehouseItemsLegacy]=await Promise.all([
-        getAll('employees'),
-        getAll('operationsCatalog'),
-        getAll('processes'),
-        getAll('orders'),
-        getAll('tasks'),
-        getAll('after'),
-        getAll(WAREHOUSE_COLLECTION),
-        WAREHOUSE_COLLECTION === LEGACY_WAREHOUSE_COLLECTION ? Promise.resolve([]) : getAll(LEGACY_WAREHOUSE_COLLECTION)
+      const [employees,operationsCatalog,processes,orders,tasks,after,warehouseItems]=await Promise.all([
+        getAll('employees'),getAll('operationsCatalog'),getAll('processes'),getAll('orders'),getAll('tasks'),getAll('after'),getAll('warehouseItems')
       ]);
-
-      let warehouseItems = warehouseItemsPrimary;
-      if((!warehouseItems || warehouseItems.length === 0) && Array.isArray(warehouseItemsLegacy) && warehouseItemsLegacy.length){
-        console.warn(`📦 [loadFromDB] Wykryto legacy kolekcję '${LEGACY_WAREHOUSE_COLLECTION}' – migruję ${warehouseItemsLegacy.length} pozycji do nowej kolekcji '${WAREHOUSE_COLLECTION}'.`);
-        warehouseItems = warehouseItemsLegacy.slice();
-        window._pendingLegacyWarehouseCleanup = warehouseItemsLegacy.map(item => item && item.id).filter(Boolean);
-      } else {
-        window._pendingLegacyWarehouseCleanup = [];
-      }
 
       const remoteCollections = { employees, operationsCatalog, processes, orders, tasks, after, warehouseItems };
       const deletedOrdersSet = new Set(Array.isArray(state.deletedOrders) ? state.deletedOrders : []);
-      const deletedProcessesSet = new Set(Array.isArray(state.deletedProcesses) ? state.deletedProcesses : []);
 
       const remoteCountTotal = Object.values(remoteCollections)
         .reduce((sum, collection)=> sum + (Array.isArray(collection) ? collection.length : (collection && typeof collection === 'object' ? Object.keys(collection).length : 0)), 0);
@@ -8222,7 +7973,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       console.log('  👷 Pracownicy (employees):', employees.length, employees.length > 0 ? employees : 'PUSTE');
       console.log('  📋 Katalog operacji (operationsCatalog):', operationsCatalog.length, operationsCatalog.length > 0 ? operationsCatalog.slice(0, 3) : 'PUSTE');
       console.log('  🔄 Procesy (processes):', processes.length, processes.length > 0 ? processes.slice(0, 2) : 'PUSTE');
-      console.log(`  � Magazyn (${WAREHOUSE_COLLECTION}):`, warehouseItems.length, warehouseItems.length > 0 ? warehouseItems : 'PUSTE');
+      console.log('  � Magazyn (warehouseItems):', warehouseItems.length, warehouseItems.length > 0 ? warehouseItems : 'PUSTE');
       console.log('  �🔗 After (magazyn/montaż):', after ? Object.keys(after) : 'PUSTE', after);
 
       if(remoteCountTotal === 0 && localCountTotal > 0){
@@ -8287,15 +8038,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
             }
           }
         }
-
-        if(key === 'processes' && Array.isArray(dataToLoad) && deletedProcessesSet.size){
-          const beforeLen = dataToLoad.length;
-          dataToLoad = dataToLoad.filter(p => !deletedProcessesSet.has(p.id));
-          const removedLen = beforeLen - dataToLoad.length;
-          if(removedLen>0){
-            console.log(`  🧹 [loadFromDB] Pomijam ${removedLen} zdalnych procesów oznaczonych do usunięcia lokalnie`);
-          }
-        }
         
         if(key === 'employees' && Array.isArray(dataToLoad)){
           dataToLoad = dataToLoad.filter(e => {
@@ -8355,11 +8097,10 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         
         // Specjalna obsługa dla warehouseItems - przypisz do window.warehouseItems
         if(key === 'warehouseItems' && Array.isArray(dataToLoad)){
-          console.log(`📦 [loadFromDB] Wczytuję magazyn (${WAREHOUSE_COLLECTION}): ${dataToLoad.length} pozycji`);
+          console.log(`📦 [loadFromDB] Wczytaję magazyn: ${dataToLoad.length} pozycji`);
           window.warehouseItems = dataToLoad;
-          try{ localStorage.setItem(WAREHOUSE_LOCAL_KEY, JSON.stringify(dataToLoad)); }catch(e){ console.warn('[loadFromDB] Nie udało się zapisać magazynu do nowego klucza localStorage:', e && e.message); }
-          try{ localStorage.setItem(LEGACY_WAREHOUSE_LOCAL_KEY, JSON.stringify(dataToLoad)); }catch(e){ console.warn('[loadFromDB] Nie udało się zaktualizować legacy magazynu w localStorage:', e && e.message); }
-          console.log(`✅ [loadFromDB] Magazyn zsynchronizowany (${dataToLoad.length} pozycji)`);
+          localStorage.setItem('warehouseItems', JSON.stringify(dataToLoad));
+          console.log(`✅ [loadFromDB] Magazyn zsynchronizowany z Firebase (${dataToLoad.length} pozycji)`);
         }
         
         state[key] = dataToLoad;
@@ -8420,16 +8161,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   qs('#set-test').addEventListener('click',async()=>{
     try{
   state.storage.mode=qs('#set-mode').value; state.storage.appId=qs('#set-appid').value.trim(); state.storage.userId=qs('#set-userid').value.trim();
-  if(qs('#set-usercollection')){
-    const customCollection = qs('#set-usercollection').value.trim();
-    if(customCollection){
-      state.storage.userCollection = customCollection;
-    }else{
-      delete state.storage.userCollection;
-    }
-  }
-  window._activeUserCollection = state.storage.userCollection || null;
-  window._activeUserCollectionApp = null;
   if(typeof updateScheduleConfigFromUI === 'function'){ updateScheduleConfigFromUI(); }
   try{ if(window.scheduleCore){ window.scheduleCore.generateSchedule(state); } }catch(e){ console.warn('regen schedule', e.message); }
   renderGantt();
@@ -10578,60 +10309,17 @@ function exportWarehouseData() {
 // Kod DOMContentLoaded dla magazynu usunięty
 
 function saveWarehouseToStorage() {
-  const localKey = (typeof WAREHOUSE_LOCAL_KEY !== 'undefined') ? WAREHOUSE_LOCAL_KEY : (window.WAREHOUSE_LOCAL_KEY || 'pozycjeMagazynu');
-  const legacyKey = (typeof LEGACY_WAREHOUSE_LOCAL_KEY !== 'undefined') ? LEGACY_WAREHOUSE_LOCAL_KEY : (window.LEGACY_WAREHOUSE_LOCAL_KEY || 'warehouseItems');
-  const serializedItems = JSON.stringify(window.warehouseItems);
-  try{ localStorage.setItem(localKey, serializedItems); }catch(e){ console.warn('[warehouse] Nie udało się zapisać magazynu do nowego klucza localStorage:', e && e.message); }
-  try{ localStorage.setItem(legacyKey, serializedItems); }catch(e){ console.warn('[warehouse] Nie udało się zaktualizować legacy magazynu w localStorage:', e && e.message); }
+  localStorage.setItem('warehouseItems', JSON.stringify(window.warehouseItems));
   localStorage.setItem('warehouseTransactions', JSON.stringify(window.warehouseTransactions || []));
   localStorage.setItem('warehouseReservations', JSON.stringify(window.warehouseReservations || []));
   localStorage.setItem('materialTemplates', JSON.stringify(window.materialTemplates || []));
-
-  if(state && typeof state === 'object'){
-    try {
-      state.warehouseItems = Array.isArray(window.warehouseItems) ? window.warehouseItems.map(item => item ? { ...item } : item) : [];
-    } catch(copyErr) {
-      console.warn('[warehouse] Nie udało się zsynchronizować state.warehouseItems:', copyErr && copyErr.message);
-    }
-  }
-  if(typeof window !== 'undefined' && window.state && window.state !== state){
-    try {
-      window.state.warehouseItems = Array.isArray(window.warehouseItems) ? window.warehouseItems.map(item => item ? { ...item } : item) : [];
-    } catch(globCopyErr) {
-      console.warn('[warehouse] Nie udało się zsynchronizować window.state.warehouseItems:', globCopyErr && globCopyErr.message);
-    }
-  }
-
-  if(state && state.storage && state.storage.mode === 'firebase'){
-    if(state.storage.autoSaveAssign && typeof maybeAutoSave === 'function'){
-      try { maybeAutoSave('warehouse-storage'); } catch(autoErr){ console.warn('[warehouse] maybeAutoSave() nie powiodło się:', autoErr && autoErr.message); }
-    } else if(window.FirebaseSyncQueue && typeof window.FirebaseSyncQueue.enqueue === 'function'){
-      window.FirebaseSyncQueue.enqueue('save', { state: window.state }, 15);
-    } else if(typeof saveToDB === 'function'){
-      try { saveToDB(); } catch(syncErr){ console.warn('[warehouse] saveToDB() nie powiodło się po zapisie magazynu:', syncErr && syncErr.message); }
-    } else {
-      console.warn('[warehouse] Brak mechanizmu synchronizacji Firebase – auto-save i kolejka są niedostępne.');
-    }
-  }
 }
 
 function loadWarehouseFromStorage() {
-  const localKey = (typeof WAREHOUSE_LOCAL_KEY !== 'undefined') ? WAREHOUSE_LOCAL_KEY : (window.WAREHOUSE_LOCAL_KEY || 'pozycjeMagazynu');
-  const legacyKey = (typeof LEGACY_WAREHOUSE_LOCAL_KEY !== 'undefined') ? LEGACY_WAREHOUSE_LOCAL_KEY : (window.LEGACY_WAREHOUSE_LOCAL_KEY || 'warehouseItems');
-  const storedNew = localStorage.getItem(localKey);
-  const storedLegacy = storedNew ? null : localStorage.getItem(legacyKey);
-  try{
-    if(storedNew){
-      window.warehouseItems = JSON.parse(storedNew);
-    } else if(storedLegacy){
-      console.warn(`[warehouse] Wczytuję magazyn z legacy klucza localStorage '${legacyKey}'`);
-      window.warehouseItems = JSON.parse(storedLegacy);
-      localStorage.setItem(localKey, storedLegacy);
-    } else {
-      window.warehouseItems = [];
-    }
-  }catch(parseErr){
-    console.warn('[warehouse] Nie udało się odczytać danych magazynu z localStorage:', parseErr && parseErr.message);
+  const stored = localStorage.getItem('warehouseItems');
+  if (stored) {
+    window.warehouseItems = JSON.parse(stored);
+  } else {
     window.warehouseItems = [];
   }
   
@@ -10682,8 +10370,7 @@ window.fixChecklistItemIds = function() {
   const orders = state.orders || [];
   
   // Wczytaj magazyn
-  const warehouseItemsRaw = localStorage.getItem(WAREHOUSE_LOCAL_KEY) || localStorage.getItem(LEGACY_WAREHOUSE_LOCAL_KEY) || '[]';
-  const warehouseItems = JSON.parse(warehouseItemsRaw || '[]');
+  const warehouseItems = JSON.parse(localStorage.getItem('warehouseItems') || '[]');
   
   let fixedCount = 0;
   let totalChecked = 0;
@@ -10821,21 +10508,7 @@ window.fixWarehouseIds = function() {
   });
   
   if (fixedCount > 0) {
-    if (typeof saveWarehouseToStorage === 'function') {
-      try {
-        saveWarehouseToStorage();
-      } catch (storageErr) {
-        console.warn('[fixWarehouseIds] saveWarehouseToStorage() zakończone błędem:', storageErr && storageErr.message);
-      }
-    } else {
-      try {
-        const serialized = JSON.stringify(window.warehouseItems);
-        localStorage.setItem(WAREHOUSE_LOCAL_KEY, serialized);
-        localStorage.setItem(LEGACY_WAREHOUSE_LOCAL_KEY, serialized);
-      } catch (storageErr) {
-        console.warn('[fixWarehouseIds] Nie udało się zapisać magazynu po naprawie ID:', storageErr && storageErr.message);
-      }
-    }
+    localStorage.setItem('warehouseItems', JSON.stringify(window.warehouseItems));
     console.log(`🔧 Naprawiono ${fixedCount} pozycji w magazynie`);
   } else {
     console.log(`✅ Wszystkie pozycje w magazynie mają ID`);
@@ -11180,7 +10853,6 @@ function showAdjustQuantityModal(index) {
 }
 
 function showAddWarehouseModal() {
-  ensureWarehouseArrays();
   console.log('🧪 [showAddWarehouseModal] Otwieranie modalu');
   const content = `
     <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -15583,46 +15255,20 @@ function renderWarehouse() {
 }
 
 // Dodaj event listener po załadowaniu DOM
-let _warehouseUIBound = false;
-
-function bindWarehouseUIEvents(){
-  const addBtn = document.getElementById('wh-add');
-  if (addBtn && !addBtn.dataset.whBound) {
-    addBtn.addEventListener('click', addWarehouseItem);
-    addBtn.dataset.whBound = 'true';
-  } else if (!addBtn) {
-    console.warn('[warehouse] Nie znaleziono przycisku dodawania (wh-add) podczas wiązania UI.');
-  }
-
-  const searchInput = document.getElementById('wh-search');
-  if (searchInput && !searchInput.dataset.whBound) {
-    searchInput.addEventListener('input', renderWarehouse);
-    searchInput.dataset.whBound = 'true';
-  }
-}
-
-function initializeWarehouseUI(){
-  if (!_warehouseUIBound) {
-    try {
-      if (typeof loadWarehouseFromStorage === 'function') {
-        loadWarehouseFromStorage();
-      }
-    } catch (warehouseInitErr) {
-      console.warn('[warehouse] loadWarehouseFromStorage() zakończone błędem podczas inicjalizacji UI:', warehouseInitErr && warehouseInitErr.message);
-    }
-    window.showOnlyLowStock = false;
-    _warehouseUIBound = true;
-  }
-  bindWarehouseUIEvents();
-}
-
 document.addEventListener('DOMContentLoaded', () => {
-  initializeWarehouseUI();
+  loadWarehouseFromStorage();
+  window.showOnlyLowStock = false; // Inicjalizacja filtra pozycji do zamówienia
+  
+  const addBtn = document.getElementById('wh-add');
+  if (addBtn) {
+    addBtn.addEventListener('click', addWarehouseItem);
+  }
+  
+  const searchInput = document.getElementById('wh-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', renderWarehouse);
+  }
 });
-
-if (document.readyState === 'interactive' || document.readyState === 'complete') {
-  setTimeout(initializeWarehouseUI, 0);
-}
 
 // Automatyczne renderowanie przy wejściu do zakładki
 document.addEventListener('click', (e) => {
@@ -15753,8 +15399,7 @@ function startAutoSync() {
   // Automatyczna synchronizacja co 30 sekund
   setInterval(() => {
     if (state.storage.mode === 'firebase') {
-      const guardValue = resolveSkipAutoSaveGuard();
-      if(guardValue && Date.now() < guardValue){
+      if(skipAutoSaveUntil && Date.now() < skipAutoSaveUntil){
         if(window.logDev || Math.random() < 0.1){ console.log('Auto-sync skipped (recent remote update)'); }
         return;
       }

@@ -170,6 +170,14 @@
         throw new Error('Delete operation requires collection and documentId');
       }
 
+      // Upewnij się, że Firebase jest gotowy zanim spróbujemy usunąć dokument
+      if (typeof window !== 'undefined' && typeof window.ensureFirebase === 'function') {
+        const ready = await window.ensureFirebase();
+        if (!ready) {
+          throw new Error('Firebase not ready');
+        }
+      }
+
       // Check if Firebase is initialized
       if (typeof firebase === 'undefined' || !firebase.apps.length) {
         throw new Error('Firebase not initialized');
@@ -197,6 +205,17 @@
       await docRef.delete();
       
       console.log(`[FirebaseSyncQueue] Deleted document ${documentId} from ${collection}`);
+
+      if (collection === 'processes') {
+        try {
+          const currentState = window.state;
+          if (currentState && Array.isArray(currentState.deletedProcesses)) {
+            currentState.deletedProcesses = currentState.deletedProcesses.filter(id => id !== documentId);
+          }
+        } catch (cleanupErr) {
+          console.warn('[FirebaseSyncQueue] Failed to prune deletedProcesses list:', cleanupErr && cleanupErr.message);
+        }
+      }
     }
 
     /**
