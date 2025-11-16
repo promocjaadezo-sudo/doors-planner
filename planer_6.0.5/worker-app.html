@@ -1508,6 +1508,7 @@
             if (allTasksStr) {
                 try {
                     const allTasks = JSON.parse(allTasksStr);
+                    applyDependencyLocks(allTasks);
                     tasks = filterTasksForEmployee(allTasks, employeeId);
                     saveTasks();
                 } catch (error) {
@@ -1858,6 +1859,12 @@
                             if (plannerTask.estMin) {
                                 task.estMin = plannerTask.estMin;
                             }
+                            if (plannerTask.status) {
+                                task.status = plannerTask.status;
+                            }
+                            if (Array.isArray(plannerTask.dependsOn)) {
+                                task.dependsOn = [...plannerTask.dependsOn];
+                            }
                             if (!window._estMinDebugDone) {
                                 window._estMinDebugDone = true;
                                 console.log('🔍 Zadanie z plannerState:', {
@@ -1872,6 +1879,7 @@
                     });
                     console.log('✅ Zmapowano orderNumber, model, client i estMin dla zadań z Firebase');
                 }
+                applyDependencyLocks(allTasks);
                 
                 // Zapisz wszystkie zadania
                 localStorage.setItem('worker-all-tasks', JSON.stringify(allTasks));
@@ -1974,6 +1982,25 @@
                 }
 
                 return false;
+            });
+        }
+
+        function applyDependencyLocks(tasksArray){
+            if(!Array.isArray(tasksArray) || tasksArray.length === 0) return;
+            const tasksMap = new Map(tasksArray.map(t => [t.id, t]));
+            tasksArray.forEach(task => {
+                if(!Array.isArray(task.dependsOn) || task.dependsOn.length === 0) return;
+                const allDepsDone = task.dependsOn.every(depId => {
+                    const depTask = tasksMap.get(depId);
+                    return depTask && depTask.status === 'done';
+                });
+                if(!allDepsDone){
+                    if(task.status !== 'blocked'){
+                        task.status = 'blocked';
+                    }
+                } else if(task.status === 'blocked'){
+                    task.status = 'todo';
+                }
             });
         }
 

@@ -3504,6 +3504,10 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
             // Użyj przypisań z procesu, a jeśli brak to z katalogu operacji
             const assignees = op.assignee ? [op.assignee] : 
                             (catalogOp && catalogOp.defaultAssignees ? catalogOp.defaultAssignees : []);
+            
+            // Użyj czasu z operacji w procesie, a jeśli nie ma to z katalogu operacji
+            const opTime = op.time || (catalogOp && catalogOp.time) || 0;
+            
             newTasks.push({
               id: uid(), 
               orderId: o.id,
@@ -3511,7 +3515,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
               opName: op.name,
               status: 'todo',
               elapsedMin: 0,
-              estMin: op.time || 0,
+              estMin: opTime,
               assignees: assignees,
               processName: p.name, // Dodajemy nazwę procesu
               opIndex: p.operations.indexOf(op) // Dodajemy indeks operacji w procesie

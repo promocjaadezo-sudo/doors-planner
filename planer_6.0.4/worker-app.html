@@ -11,13 +11,19 @@
     <style>
         :root {
             --bg: #0f172a;
-            --panel: #1f2937;
-            --accent: #2563eb;
-            --success: #16a34a;
-            --warning: #d97706;
-            --error: #dc2626;
-            --text: #e5e7eb;
-            --muted: #94a3b8;
+            --panel: #1e293b;
+            --panel-light: #334155;
+            --accent: #3b82f6;
+            --accent-light: #60a5fa;
+            --gold: #fbbf24;
+            --gold-light: #fde047;
+            --success: #10b981;
+            --success-light: #34d399;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --text: #f1f5f9;
+            --text-muted: #cbd5e1;
+            --border: rgba(148, 163, 184, 0.2);
         }
 
         * {
@@ -177,6 +183,15 @@
             color: var(--muted);
         }
 
+        #reload-firebase-tasks {
+            margin-top: 12px;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+        }
+
         .task-placeholder {
             text-align: center;
             padding: 40px;
@@ -202,6 +217,18 @@
             border-radius: 8px;
             text-align: center;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .stat-card.active-filter {
+            border: 2px solid var(--accent);
+            background: linear-gradient(145deg, var(--panel), rgba(255, 215, 0, 0.1));
         }
 
         .stat-number {
@@ -222,42 +249,164 @@
             gap: 12px;
         }
 
-        .task-card {
+        .order-group {
             background: var(--panel);
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+        }
+
+        .order-header {
+            padding: 18px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, rgba(251,191,36,0.15), rgba(245,158,11,0.08));
+            border-bottom: 2px solid rgba(251,191,36,0.25);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .order-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--gold), var(--gold-light));
+        }
+
+        .order-header:hover {
+            background: linear-gradient(135deg, rgba(251,191,36,0.25), rgba(245,158,11,0.15));
+            transform: translateX(2px);
+        }
+
+        .order-header-left {
+            flex: 1;
+        }
+
+        .order-number {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #fbbf24;
+            margin-bottom: 4px;
+        }
+
+        .order-info {
+            font-size: 0.85rem;
+            color: #fde047;
+            display: flex;
+            gap: 16px;
+            margin-top: 6px;
+        }
+
+        .order-toggle {
+            font-size: 1.5rem;
+            color: #fbbf24;
+            transition: transform 0.3s ease;
+        }
+
+        .order-toggle.expanded {
+            transform: rotate(180deg);
+        }
+
+        .order-tasks {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .order-tasks.expanded {
+            max-height: 5000px;
+        }
+
+        .task-card {
+            background: linear-gradient(145deg, var(--panel), var(--bg));
             border-radius: 12px;
             padding: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            transition: transform 0.2s;
+            margin: 10px 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        .task-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, var(--accent), var(--accent-light));
+            border-radius: 12px 0 0 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
         .task-card:hover {
-            transform: translateY(-2px);
+            transform: translateX(4px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .task-card:hover::before {
+            opacity: 1;
         }
 
         .task-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
         }
 
         .task-title {
-            font-size: 1.1rem;
-            font-weight: 600;
+            font-size: 1.3rem;
+            font-weight: 700;
             color: var(--text);
+            line-height: 1.3;
         }
 
         .task-status {
-            padding: 4px 8px;
-            border-radius: 12px;
+            padding: 7px 14px;
+            border-radius: 20px;
             font-size: 0.8rem;
-            font-weight: 500;
+            font-weight: 700;
+            white-space: nowrap;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
 
-        .status-pending { background: var(--warning); color: white; }
-        .status-in-progress { background: var(--accent); color: white; }
-        .status-completed { background: var(--success); color: white; }
-        .status-paused { background: var(--muted); color: var(--bg); }
+        .status-todo { 
+            background: linear-gradient(135deg, var(--warning), #fbbf24); 
+            color: white; 
+        }
+        .status-run { 
+            background: linear-gradient(135deg, var(--accent), var(--accent-light)); 
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        .status-done { 
+            background: linear-gradient(135deg, var(--success), var(--success-light)); 
+            color: white; 
+        }
+        .status-paused { 
+            background: linear-gradient(135deg, #64748b, #94a3b8); 
+            color: white; 
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3); }
+            50% { box-shadow: 0 2px 12px rgba(59, 130, 246, 0.6); }
+        }
 
         .task-details {
             display: grid;
@@ -278,13 +427,17 @@
 
         .detail-label {
             color: var(--muted);
-            font-size: 0.8rem;
-            margin-bottom: 2px;
+            font-size: 0.75rem;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
         }
 
         .detail-value {
             color: var(--text);
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 0.95rem;
         }
 
         .detail-value.notes {
@@ -299,43 +452,56 @@
 
         .btn {
             flex: 1;
-            padding: 10px 16px;
+            padding: 10px 18px;
             border: none;
-            border-radius: 8px;
-            font-weight: 500;
+            border-radius: 10px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
             text-align: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            letter-spacing: 0.3px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
 
         .btn-primary {
-            background: var(--accent);
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
             color: white;
         }
 
         .btn-primary:hover {
-            background: #1d4ed8;
-            transform: translateY(-1px);
+            background: linear-gradient(135deg, #2563eb, var(--accent));
         }
 
         .btn-success {
-            background: var(--success);
+            background: linear-gradient(135deg, var(--success), var(--success-light));
             color: white;
         }
 
         .btn-success:hover {
-            background: #15803d;
-            transform: translateY(-1px);
+            background: linear-gradient(135deg, #059669, var(--success));
         }
 
         .btn-warning {
-            background: var(--warning);
+            background: linear-gradient(135deg, var(--warning), #fbbf24);
             color: white;
         }
 
         .btn-warning:hover {
-            background: #b45309;
-            transform: translateY(-1px);
+            background: linear-gradient(135deg, #d97706, var(--warning));
         }
 
         .btn-large {
@@ -360,39 +526,6 @@
             background: #6b7280;
         }
 
-        .sync-section {
-            background: var(--panel);
-            padding: 16px;
-            border-radius: 12px;
-            margin-top: 16px;
-            text-align: center;
-        }
-
-        .sync-btn {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            margin-top: 8px;
-        }
-
-        .sync-btn:hover {
-            background: #1d4ed8;
-        }
-
-        .sync-btn.secondary {
-            background: var(--panel);
-            color: var(--text);
-            border: 1px solid rgba(148, 163, 184, 0.4);
-        }
-
-        .sync-btn.secondary:hover {
-            background: rgba(148, 163, 184, 0.2);
-        }
-
         .offline-indicator {
             position: fixed;
             top: 10px;
@@ -403,15 +536,6 @@
             border-radius: 4px;
             font-size: 0.8rem;
             display: none;
-        }
-
-        .timer {
-            background: rgba(0,0,0,0.2);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            margin-top: 8px;
-            display: inline-block;
         }
 
         .notification-settings {
@@ -672,18 +796,21 @@
                 <button class="logout-button" onclick="logoutWorker()">🚪 Wyloguj</button>
             </div>
         </div>
+        <button class="btn btn-primary" id="reload-firebase-tasks" onclick="reloadTasksFromFirebase()">
+            🔄 Przeładuj zadania z Firebase
+        </button>
     </div>
 
     <div class="stats">
-        <div class="stat-card">
+        <div class="stat-card" onclick="setFilter('all')">
             <div class="stat-number" id="total-tasks">0</div>
             <div class="stat-label">Razem zadań</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" onclick="setFilter('done')">
             <div class="stat-number" id="completed-tasks">0</div>
             <div class="stat-label">Ukończonych</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" onclick="setFilter('run')">
             <div class="stat-number" id="in-progress-tasks">0</div>
             <div class="stat-label">W trakcie</div>
         </div>
@@ -692,16 +819,6 @@
     <div id="task-list" class="task-list">
         <div class="task-placeholder">
             Ładowanie zadań...
-        </div>
-    </div>
-
-    <div class="sync-section">
-        <div>Import zadań z systemu głównego</div>
-        <button class="sync-btn" onclick="importTasksFromMainApp()">� Importuj zadania</button>
-        <button class="sync-btn" id="reload-firebase-tasks" onclick="reloadTasksFromFirebase()">🔄 Przeładuj z Firebase</button>
-        <button class="sync-btn secondary" onclick="clearWorkerCache()">🧹 Wyczyść dane lokalne</button>
-        <div class="last-sync" id="last-sync">
-            Brak zaimportowanych zadań
         </div>
     </div>
 
@@ -1705,6 +1822,55 @@
 
                 console.log(`✅ Załadowano ${allTasks.length} zadań z Firebase`);
                 
+                // Debug: sprawdź pierwsze zadanie
+                if (allTasks.length > 0) {
+                    console.log('🔍 Przykładowe zadanie:', {
+                        id: allTasks[0].id,
+                        orderId: allTasks[0].orderId,
+                        name: allTasks[0].name,
+                        allKeys: Object.keys(allTasks[0])
+                    });
+                }
+                
+                // Zmapuj orderNumber, model, client i estMin z plannerState
+                const plannerState = loadPlannerState();
+                if (plannerState && plannerState.orders) {
+                    const ordersById = new Map(plannerState.orders.map(o => [o.id, o]));
+                    const tasksById = new Map(plannerState.tasks.map(t => [t.id, t]));
+                    allTasks.forEach(task => {
+                        const order = ordersById.get(task.orderId);
+                        if (order) {
+                            if (order.name) {
+                                task.orderNumber = order.name;
+                            }
+                            if (order.model) {
+                                task.model = order.model;
+                            }
+                            if (order.client) {
+                                task.client = order.client;
+                            }
+                        }
+                        // Zmapuj czas operacji z plannerState.tasks
+                        const plannerTask = tasksById.get(task.id);
+                        if (plannerTask) {
+                            if (plannerTask.estMin) {
+                                task.estMin = plannerTask.estMin;
+                            }
+                            if (!window._estMinDebugDone) {
+                                window._estMinDebugDone = true;
+                                console.log('🔍 Zadanie z plannerState:', {
+                                    id: plannerTask.id,
+                                    name: plannerTask.name || plannerTask.opName,
+                                    estMin: plannerTask.estMin,
+                                    duration: plannerTask.duration,
+                                    allKeys: Object.keys(plannerTask)
+                                });
+                            }
+                        }
+                    });
+                    console.log('✅ Zmapowano orderNumber, model, client i estMin dla zadań z Firebase');
+                }
+                
                 // Zapisz wszystkie zadania
                 localStorage.setItem('worker-all-tasks', JSON.stringify(allTasks));
                 
@@ -1879,6 +2045,7 @@
             initializeApp();
             updateDate();
             initializeFirebase(); // Uruchom Firebase
+            setFilter('all'); // Ustaw domyślny filtr
         });
 
         // Sprawdzanie połączenia internetowego
@@ -1901,12 +2068,18 @@
 
             const plannerState = loadPlannerState();
             if (plannerState) {
+                console.log('🔍 PlannerState załadowany, mapowanie zadań...');
                 const imported = mapPlannerTasks(plannerState);
+                console.log(`📋 Zmapowano ${imported.length} zadań dla użytkownika`);
                 if (imported.length) {
                     mergeIncomingTasks(imported);
                     saveTasks();
                     updateLastSync();
+                } else {
+                    console.warn('⚠️ Brak zadań po mapowaniu - sprawdź czy użytkownik ma przypisane zadania');
                 }
+            } else {
+                console.warn('⚠️ Nie znaleziono plannerState w localStorage');
             }
 
             // Wczytanie ustawień powiadomień
@@ -1936,6 +2109,24 @@
             
             // Uruchomienie przypomnień dla aktywnych zadań
             startRemindersForActiveTasks();
+            
+            // Timer do aktualizacji czasu w aktywnych zadaniach (co 10 sekund)
+            setInterval(() => {
+                const hasActiveTasks = tasks.some(t => t.status === 'run' || t.status === 'paused');
+                if (hasActiveTasks) {
+                    // Aktualizuj tylko liczniki czasu bez przebudowy całego HTML
+                    tasks.forEach(task => {
+                        if (task.status === 'run' || task.status === 'paused') {
+                            const timerElement = document.querySelector(`[data-timer-task-id="${task.id}"]`);
+                            if (timerElement && task.startTime) {
+                                const elapsedTime = getElapsedTime(task.startTime);
+                                timerElement.textContent = elapsedTime;
+                            }
+                        }
+                    });
+                }
+            }, 10000); // 10 sekund
+            
             setupLoginInteractions();
             updateLoginUI();
         }
@@ -2004,106 +2195,128 @@
         function renderTasks() {
             const taskList = document.getElementById('task-list');
 
-            if (tasks.length === 0) {
+            // Filtruj zadania według wybranego filtra
+            let filteredTasks = tasks;
+            if (currentFilter === 'run') {
+                filteredTasks = tasks.filter(t => t.status === 'run' || t.status === 'paused');
+            } else if (currentFilter === 'done') {
+                filteredTasks = tasks.filter(t => t.status === 'done');
+            }
+
+            if (filteredTasks.length === 0) {
+                const message = currentFilter === 'all' ? 'Brak zadań na dziś 🎉' : 
+                               currentFilter === 'run' ? 'Brak zadań w trakcie' : 
+                               'Brak ukończonych zadań';
                 taskList.innerHTML = `
                     <div class="task-placeholder">
-                        Brak zadań na dziś 🎉<br>
-                        <small>Świetna robota!</small>
+                        ${message}<br>
+                        <small>${currentFilter === 'all' ? 'Świetna robota!' : ''}</small>
                     </div>
                 `;
                 return;
             }
 
-            taskList.innerHTML = tasks.map(task => {
-                const statusClass = `status-${task.status}`;
-                const statusText = getStatusText(task.status);
-                const elapsedTime = task.startTime ? getElapsedTime(task.startTime) : '';
-                const plannedWindow = escapeHtml(getPlannedWindow(task));
-                const title = escapeHtml(task.title || `Zadanie ${task.id}`);
-                const model = escapeHtml(task.model || '-');
-                const quantityValue = escapeHtml(`${task.quantity || '-'} ${task.unit || ''}`.trim());
-                const deadlineValue = escapeHtml(task.deadline || '-');
-                const estimatedTime = escapeHtml(task.estimatedTime != null ? `${task.estimatedTime} min` : '-');
-                const orderIdValue = escapeHtml(task.orderId || '-');
-                const client = escapeHtml(task.client || '-');
-                const address = escapeHtml(task.address || '-');
-                const postalCode = escapeHtml(task.postalCode || '-');
-                const leadName = escapeHtml(task.leadEmployeeName || task.leadEmployeeId || '-');
-                const phoneLink = formatPhoneLink(task.contactPhone);
-                const installDate = escapeHtml(formatInstallDate(task.installDate));
-                const orderNotes = task.orderNotes ? escapeHtml(task.orderNotes).replace(/\n/g, '<br>') : '-';
+            // Grupuj zadania według zlecenia
+            const orderGroups = {};
+            filteredTasks.forEach(task => {
+                const orderKey = task.orderNumber || task.orderId || 'brak-zlecenia';
+                if (!orderGroups[orderKey]) {
+                    orderGroups[orderKey] = {
+                        orderNumber: task.orderNumber || task.orderId || '-',
+                        client: task.client || '-',
+                        model: task.model || '-',
+                        deadline: task.deadline || '-',
+                        tasks: []
+                    };
+                }
+                orderGroups[orderKey].tasks.push(task);
+            });
+
+            taskList.innerHTML = Object.entries(orderGroups).map(([orderKey, orderData]) => {
+                const tasksHtml = orderData.tasks.map(task => {
+                    const statusClass = `status-${task.status}`;
+                    const statusText = getStatusText(task.status);
+                    const elapsedTime = task.startTime ? getElapsedTime(task.startTime) : '';
+                    const title = escapeHtml(task.title || `Zadanie ${task.id}`);
+                    const quantityValue = escapeHtml(`${task.quantity || '-'} ${task.unit || ''}`.trim());
+                    const estimatedTime = escapeHtml(task.estimatedTime != null ? `${task.estimatedTime} min` : '-');
+
+                    return `
+                        <div class="task-card">
+                            <div class="task-header">
+                                <div style="flex:1">
+                                    <div style="background:linear-gradient(135deg, rgba(251,191,36,0.12), rgba(245,158,11,0.06));padding:10px 12px;border-radius:10px;border:1.5px solid rgba(251,191,36,0.25);box-shadow:0 2px 8px rgba(251,191,36,0.1)">
+                                        <div style="font-size:0.65rem;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;font-weight:600">⚙️ Zadanie</div>
+                                        <div style="font-size:1rem;color:var(--gold-light);font-weight:700;line-height:1.3">${title}</div>
+                                    </div>
+                                </div>
+                                <div class="task-status ${statusClass}">${statusText}</div>
+                            </div>
+
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0">
+                                <div style="background:linear-gradient(135deg, rgba(59,130,246,0.12), rgba(59,130,246,0.04));padding:12px;border-radius:10px;border:1.5px solid rgba(59,130,246,0.25);text-align:center;box-shadow:0 2px 6px rgba(59,130,246,0.1)">
+                                    <div style="color:var(--accent-light);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">🔢 Ilość</div>
+                                    <div style="font-size:1.1rem;color:var(--accent-light);font-weight:700">${quantityValue}</div>
+                                </div>
+                                <div style="background:linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.04));padding:12px;border-radius:10px;border:1.5px solid rgba(16,185,129,0.25);text-align:center;box-shadow:0 2px 6px rgba(16,185,129,0.1)">
+                                    <div style="color:var(--success-light);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">⏱️ Czas na wykonanie</div>
+                                    <div style="font-size:1.1rem;color:var(--success-light);font-weight:700">${estimatedTime}</div>
+                                </div>
+                            </div>
+
+                            ${(task.status === 'run' || task.status === 'paused') && elapsedTime ?
+                                `<div style="background:linear-gradient(135deg, rgba(16,185,129,0.18), rgba(16,185,129,0.08));padding:16px;border-radius:12px;margin:16px 0;border:2px solid var(--success);text-align:center;box-shadow:0 4px 12px rgba(16,185,129,0.2)">
+                                    <div style="font-size:0.75rem;color:var(--success-light);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:1px">⏱️ CZAS PRACY</div>
+                                    <div style="font-size:2rem;font-weight:900;color:var(--success-light);letter-spacing:3px;text-shadow:0 2px 4px rgba(0,0,0,0.2)" data-timer-task-id="${task.id}">${elapsedTime}</div>
+                                </div>` : ''}
+
+                            <div class="task-actions">
+                                ${getTaskActions(task)}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                const taskCount = orderData.tasks.length;
+                const doneCount = orderData.tasks.filter(t => t.status === 'done').length;
+                const inProgressCount = orderData.tasks.filter(t => t.status === 'run' || t.status === 'paused').length;
 
                 return `
-                    <div class="task-card">
-                        <div class="task-header">
-                            <div class="task-title">${title}</div>
-                            <div class="task-status ${statusClass}">${statusText}</div>
+                    <div class="order-group">
+                        <div class="order-header" onclick="toggleOrder('${orderKey}')">
+                            <div class="order-header-left">
+                                <div class="order-number">📋 Zlecenie <strong>${escapeHtml(orderData.orderNumber)}</strong></div>
+                                <div class="order-info">
+                                    <span style="background:rgba(139,92,246,0.15);padding:4px 10px;border-radius:6px;border:1px solid rgba(139,92,246,0.3)">👤 ${escapeHtml(orderData.client)}</span>
+                                    <span style="background:rgba(59,130,246,0.15);padding:4px 10px;border-radius:6px;border:1px solid rgba(59,130,246,0.3)">📦 ${escapeHtml(orderData.model)}</span>
+                                    <span style="background:rgba(239,68,68,0.15);padding:4px 10px;border-radius:6px;border:1px solid rgba(239,68,68,0.3)">📅 ${escapeHtml(orderData.deadline)}</span>
+                                </div>
+                                <div style="margin-top:8px;font-size:0.75rem;color:var(--gold-light);display:flex;gap:12px;font-weight:600">
+                                    <span>📊 Zadań: <strong>${taskCount}</strong></span>
+                                    <span style="color:var(--success-light)">✓ Ukończono: <strong>${doneCount}</strong></span>
+                                    <span style="color:var(--accent-light)">▶ W trakcie: <strong>${inProgressCount}</strong></span>
+                                </div>
+                            </div>
+                            <div class="order-toggle" id="toggle-${orderKey}">▼</div>
                         </div>
-
-                        <div class="task-details">
-                            <div class="task-detail">
-                                <div class="detail-label">Model</div>
-                                <div class="detail-value">${model}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Ilość</div>
-                                <div class="detail-value">${quantityValue}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Termin</div>
-                                <div class="detail-value">${deadlineValue}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Szacowany czas</div>
-                                <div class="detail-value">${estimatedTime}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Planowany termin</div>
-                                <div class="detail-value">${plannedWindow}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Zlecenie</div>
-                                <div class="detail-value">${orderIdValue}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Klient</div>
-                                <div class="detail-value">${client}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Adres</div>
-                                <div class="detail-value">${address}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Kod pocztowy</div>
-                                <div class="detail-value">${postalCode}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Telefon</div>
-                                <div class="detail-value">${phoneLink}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Prowadzący</div>
-                                <div class="detail-value">${leadName}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Data montażu</div>
-                                <div class="detail-value">${installDate}</div>
-                            </div>
-                            <div class="task-detail full">
-                                <div class="detail-label">Opis / uwagi</div>
-                                <div class="detail-value notes">${orderNotes}</div>
-                            </div>
-                        </div>
-
-                        ${task.status === 'in-progress' && elapsedTime ?
-                            `<div class="timer">⏱️ ${elapsedTime}</div>` : ''}
-
-                        <div class="task-actions">
-                            ${getTaskActions(task)}
+                        <div class="order-tasks" id="tasks-${orderKey}">
+                            ${tasksHtml}
                         </div>
                     </div>
                 `;
             }).join('');
+
+            // Przywróć stan rozwinięcia po renderowaniu
+            setTimeout(() => {
+                expandedOrders.forEach(orderKey => {
+                    const tasksContainer = document.getElementById(`tasks-${orderKey}`);
+                    const toggleIcon = document.getElementById(`toggle-${orderKey}`);
+                    if (tasksContainer && toggleIcon) {
+                        tasksContainer.classList.add('expanded');
+                        toggleIcon.classList.add('expanded');
+                    }
+                });
+            }, 0);
 
             updateStats();
         }
@@ -2159,17 +2372,18 @@
         }
 
         function getTaskActions(task) {
-            const taskId = escapeHtml(String(task.id));
+            const taskId = String(task.id);
+            const safeId = escapeHtml(taskId);
             switch (task.status) {
                 case 'todo':
                 case 'pending':
-                    return `<button class="btn btn-primary btn-large" onclick="startTask('${taskId}')">▶️ Rozpocznij zadanie</button>`;
+                    return `<button class="btn btn-primary btn-large" data-action="start" data-task-id="${safeId}">▶️ Rozpocznij zadanie</button>`;
 
                 case 'run':
                 case 'in-progress':
                     return `
-                        <button class="btn btn-success" onclick="showCompleteConfirmation('${taskId}')">✅ Zakończ</button>
-                        <button class="btn btn-warning" onclick="pauseTask('${taskId}')">⏸️ Wstrzymaj</button>
+                        <button class="btn btn-success" data-action="complete" data-task-id="${safeId}">✅ Zakończ</button>
+                        <button class="btn btn-warning" data-action="pause" data-task-id="${safeId}">⏸️ Wstrzymaj</button>
                     `;
 
                 case 'done':
@@ -2178,14 +2392,45 @@
 
                 case 'paused':
                     return `
-                        <button class="btn btn-primary" onclick="resumeTask('${taskId}')">▶️ Wznów</button>
-                        <button class="btn btn-success" onclick="showCompleteConfirmation('${taskId}')">✅ Zakończ</button>
+                        <button class="btn btn-primary" data-action="resume" data-task-id="${safeId}">▶️ Wznów</button>
+                        <button class="btn btn-success" data-action="complete" data-task-id="${safeId}">✅ Zakończ</button>
                     `;
 
                 default:
                     return '';
             }
         }
+
+        // Event delegation dla przycisków akcji
+        document.addEventListener('click', function(e) {
+            // Ignoruj kliknięcia na nagłówek zlecenia
+            if (e.target.closest('.order-header')) {
+                return;
+            }
+            
+            const btn = e.target.closest('[data-action]');
+            if (!btn) return;
+            
+            const action = btn.getAttribute('data-action');
+            const taskId = btn.getAttribute('data-task-id');
+            
+            if (!taskId) return;
+            
+            switch(action) {
+                case 'start':
+                    startTask(taskId);
+                    break;
+                case 'complete':
+                    showCompleteConfirmation(taskId);
+                    break;
+                case 'pause':
+                    pauseTask(taskId);
+                    break;
+                case 'resume':
+                    resumeTask(taskId);
+                    break;
+            }
+        });
 
         let pendingFirebaseUpdates = new Set();
 
@@ -2407,14 +2652,43 @@
             }, 1000);
         }
 
+        let currentFilter = 'all'; // 'all', 'run', 'done'
+        let expandedOrders = new Set(); // Pamiętaj które zlecenia są rozwinięte
+
+        function toggleOrder(orderKey) {
+            const tasksContainer = document.getElementById(`tasks-${orderKey}`);
+            const toggleIcon = document.getElementById(`toggle-${orderKey}`);
+            
+            if (tasksContainer.classList.contains('expanded')) {
+                tasksContainer.classList.remove('expanded');
+                toggleIcon.classList.remove('expanded');
+                expandedOrders.delete(orderKey);
+            } else {
+                tasksContainer.classList.add('expanded');
+                toggleIcon.classList.add('expanded');
+                expandedOrders.add(orderKey);
+            }
+        }
+
         function updateStats() {
             const total = tasks.length;
-            const completed = tasks.filter(t => t.status === 'completed').length;
-            const inProgress = tasks.filter(t => t.status === 'in-progress').length;
+            const completed = tasks.filter(t => t.status === 'done').length;
+            const inProgress = tasks.filter(t => t.status === 'run' || t.status === 'paused').length;
 
             document.getElementById('total-tasks').textContent = total;
             document.getElementById('completed-tasks').textContent = completed;
             document.getElementById('in-progress-tasks').textContent = inProgress;
+        }
+        
+        function setFilter(filter) {
+            currentFilter = filter;
+            // Usuń aktywną klasę ze wszystkich kart
+            document.querySelectorAll('.stat-card').forEach(card => card.classList.remove('active-filter'));
+            // Dodaj aktywną klasę do wybranej karty
+            if (filter === 'all') document.querySelector('.stat-card:nth-child(1)').classList.add('active-filter');
+            if (filter === 'done') document.querySelector('.stat-card:nth-child(2)').classList.add('active-filter');
+            if (filter === 'run') document.querySelector('.stat-card:nth-child(3)').classList.add('active-filter');
+            renderTasks();
         }
 
         // Udostępnij funkcje globalnie dla onclick
@@ -2430,13 +2704,23 @@
         }
 
         function loadPlannerState() {
-            const possibleKeys = ['door_v5627_state', 'door_planner_state', 'state_backup'];
+            const possibleKeys = ['door_v50_state', 'door_v5627_state', 'door_planner_state', 'state_backup'];
             for (const key of possibleKeys) {
                 try {
                     const raw = localStorage.getItem(key);
                     if (!raw) continue;
                     const parsed = JSON.parse(raw);
                     if (parsed && typeof parsed === 'object' && Array.isArray(parsed.tasks)) {
+                        console.log(`🔍 PlannerState z klucza "${key}":`, {
+                            tasks: parsed.tasks.length,
+                            orders: (parsed.orders || []).length,
+                            employees: (parsed.employees || []).length,
+                            firstOrder: (parsed.orders && parsed.orders[0]) ? {
+                                id: parsed.orders[0].id,
+                                name: parsed.orders[0].name,
+                                allKeys: Object.keys(parsed.orders[0])
+                            } : 'brak'
+                        });
                         return parsed;
                     }
                 } catch (err) {
@@ -2453,16 +2737,43 @@
             const employeesById = new Map((plannerState.employees || []).map(e => [e.id, e]));
             const keepAll = !currentId;
 
+            console.log(`🔍 Filtrowanie zadań dla użytkownika: ${currentId || 'wszyscy'}`);
+            console.log(`📊 Wszystkich zadań w plannerState: ${plannerState.tasks.length}`);
+
             const filtered = plannerState.tasks.filter(task => {
                 if (keepAll) return true;
                 const direct = task.employeeId && task.employeeId === currentId;
                 const assigneeHit = Array.isArray(task.assignees) && task.assignees.includes(currentId);
-                return direct || assigneeHit;
+                const match = direct || assigneeHit;
+                if (match) {
+                    console.log(`✅ Zadanie ${task.id} przypisane do użytkownika`);
+                }
+                return match;
             });
+            
+            console.log(`✅ Po filtrowaniu: ${filtered.length} zadań`);
 
             return filtered.map(task => {
                 const order = ordersById.get(task.orderId) || {};
-                const baseDuration = task.estMin || task.duration || 0;
+                // Debug: sprawdź jakie pola ma order (tylko raz dla pierwszego zadania)
+                if (Object.keys(order).length > 0 && !window._orderDebugDone) {
+                    window._orderDebugDone = true;
+                    console.log('📦 Order - wszystkie pola:', order);
+                    console.log('📦 Order.name:', order.name);
+                    console.log('📦 Order klucze:', Object.keys(order));
+                }
+                const baseDuration = task.estMin || task.duration || task.estimatedTime || 0;
+                if (!window._timeDebugDone && baseDuration === 0) {
+                    window._timeDebugDone = true;
+                    console.log('⚠️ Brak czasu w zadaniu:', {
+                        id: task.id,
+                        name: task.name,
+                        estMin: task.estMin,
+                        duration: task.duration,
+                        estimatedTime: task.estimatedTime,
+                        allKeys: Object.keys(task)
+                    });
+                }
                 const leadEmployeeId = order.leadEmployeeId || '';
                 const lead = leadEmployeeId ? employeesById.get(leadEmployeeId) : null;
                 return {
@@ -2478,6 +2789,7 @@
                     estimatedTime: baseDuration,
                     priority: task.priority || 'normal',
                     orderId: task.orderId || '-',
+                    orderNumber: order.name || '-',
                     startPlanned: task.startPlanned || null,
                     endPlanned: task.endPlanned || null,
                     client: order.client || '',
@@ -2565,117 +2877,6 @@
             
             if (navigator.vibrate) {
                 navigator.vibrate([200, 100, 200]);
-            }
-        }
-
-        function importTasksFromMainApp() {
-            const plannerState = loadPlannerState();
-            if (plannerState) {
-                const importedTasks = mapPlannerTasks(plannerState);
-                if (importedTasks.length) {
-                    mergeIncomingTasks(importedTasks);
-                    saveTasks();
-                    renderTasks();
-                    startRemindersForActiveTasks();
-                    updateLastSync();
-                    if (notificationSettings.task) {
-                        showNotification(`📥 Załadowano ${importedTasks.length} zadań z planera`, 'success');
-                        playNotificationSound('success');
-                    }
-                    if (navigator.vibrate) {
-                        navigator.vibrate([120, 60, 120]);
-                    }
-                    return;
-                } else {
-                    showNotification('ℹ️ Brak dopasowanych zadań w planerze', 'info');
-                    return;
-                }
-            }
-
-            // Utwórz selektor plików JSON do importu z dysku
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            input.onchange = function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        try {
-                            const importData = JSON.parse(event.target.result);
-                            
-                            if (importData.tasks && Array.isArray(importData.tasks)) {
-                                // Importuj nowe zadania
-                                const newTasks = importData.tasks.filter(importedTask => 
-                                    !tasks.some(existingTask => existingTask.id === importedTask.id)
-                                );
-                                
-                                if (newTasks.length > 0) {
-                                    for (let index = 0; index < newTasks.length; index++) {
-                                        tasks.push(newTasks[index]);
-                                    }
-                                    saveTasks();
-                                    renderTasks();
-                                    startRemindersForActiveTasks();
-                                    
-                                    // Powiadomienie o nowych zadaniach
-                                    if (notificationSettings.task) {
-                                        showNotification(`📥 Zaimportowano ${newTasks.length} nowych zadań!`, 'success');
-                                    }
-                                    
-                                    updateLastSync();
-                                    
-                                    if (navigator.vibrate) {
-                                        navigator.vibrate([100, 50, 100, 50, 100]);
-                                    }
-                                } else {
-                                    showNotification('ℹ️ Brak nowych zadań do zaimportowania', 'info');
-                                }
-                            } else {
-                                showNotification('❌ Nieprawidłowy format pliku importu', 'error');
-                            }
-                        } catch (error) {
-                            console.error('Błąd podczas importu:', error);
-                            showNotification('❌ Błąd podczas importu pliku', 'error');
-                        }
-                    };
-                    reader.readAsText(file);
-                }
-            };
-            input.click();
-        }
-
-        function clearWorkerCache() {
-            try {
-                reminderIntervals.forEach(interval => clearInterval(interval));
-                reminderIntervals.clear();
-                
-                // Wyczyść wszystkie dane Worker Panel
-                localStorage.removeItem('worker-tasks');
-                localStorage.removeItem('worker-all-tasks'); // WAŻNE - usuń cache wszystkich zadań
-                localStorage.removeItem('worker-notifications');
-                localStorage.removeItem('worker-current-employee-id');
-                
-                // Wyczyść mapy ochronne
-                recentlyEditedTasks.clear();
-                pendingFirebaseUpdates.clear();
-                taskOperationInProgress.clear();
-                
-                // Nie usuwamy worker-user, żeby zachować profil pracownika
-                tasks = [];
-                currentUser = null;
-                renderTasks();
-                updateStats();
-                updateLoginUI();
-                
-                const lastSync = document.getElementById('last-sync');
-                if (lastSync) {
-                    lastSync.textContent = 'Pamięć lokalna wyczyszczona — zaimportuj zadania ponownie.';
-                }
-                showNotification('🧹 Pamięć lokalna wyczyszczona. Zaimportuj zadania i zaloguj się ponownie.', 'success');
-            } catch (error) {
-                console.error('Błąd czyszczenia pamięci:', error);
-                showNotification('❌ Nie udało się wyczyścić danych lokalnych', 'error');
             }
         }
 

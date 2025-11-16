@@ -46,14 +46,18 @@
    * fallback: bierz wszystkie operationsCatalog które nie mają filtera.
    * Na teraz: jeśli processId wskazuje brak dedykowanej listy, generuj 1 task pseudo-procesu.
    */
-  function generateTasksForOrder(order, state){
+  function generateTasksForOrder(order, state) {
+    console.log('[generateTasksForOrder] ===== FUNKCJA WYWOŁANA =====', order.name);
     if(!order || !order.id) return [];
     const list = [];
     const processId = order.processId || null;
     const operationsCatalog = state.operationsCatalog || [];
 
     // Jeśli nie ma procesu, zwróć pustą listę
-    if (!processId) return [];
+    if (!processId) {
+      console.log('[generateTasksForOrder] Brak processId dla zlecenia', order.name);
+      return [];
+    }
     
     // Znajdź proces
     const process = (state.processes || []).find(p => p.id === processId);
@@ -64,6 +68,7 @@
     process.operations.forEach((op, opIndex) => {
       // Jeśli operacja ma dependsOn - ustaw status blocked, inaczej todo
       const hasDepends = (op.dependsOn !== null && op.dependsOn !== undefined);
+      console.log(`[generateTasksForOrder] Operacja ${opIndex}: ${op.name}, dependsOn=${op.dependsOn}, hasDepends=${hasDepends}`);
       
       const task = {
         id: genId('task'),

@@ -1942,7 +1942,7 @@ Pracownik: MALINA" draggable="true">Szlifowanie (...</div></div></div><div class
 <script src="js/base-utils.js?v=20251005-1400"></script>
 <script src="js/store.js?v=20251005-1400"></script>
 <script src="js/ui.js?v=20251005-1415"></script>
-<script src="js/schedule.js?v=20251005-1500"></script>
+<script src="js/schedule.js?v=20251116-2050"></script>
 <script src="js/app-helpers.js?v=20251005-1400"></script>
 <script src="js/map.js?v=20251019-01"></script>
 <script src="js/auto-save.js?v=20251106-0900"></script>
@@ -3570,8 +3570,8 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           // Załaduj szablon materiałowy
           const templateSel = qs('#proc-template-select');
           if (templateSel) templateSel.value = p.materialTemplateId || '';
-          // preserve assignee when loading for edit
-          state.PROC_TMP = (p.operations || []).map(x => ({name: x.name, time: x.time || 0, assignee: x.assignee || null}));
+          // preserve assignee and dependsOn when loading for edit
+          state.PROC_TMP = (p.operations || []).map(x => ({name: x.name, time: x.time || 0, assignee: x.assignee || null, dependsOn: x.dependsOn}));
           renderProcOps(); window.scrollTo({top: 0, behavior: 'smooth'}); break;
         }
         if(t.dataset.pdel2) {
@@ -4591,7 +4591,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   qs('#proc-form').addEventListener('submit',(ev)=>{
     ev.preventDefault(); const id=qs('#proc-id').value||uid(); const name=(qs('#proc-name').value||'').trim(); if(!name||(state.PROC_TMP||[]).length===0) return;
     const templateId = qs('#proc-template-select')?.value || null;
-    const payload={id,name,operations:(state.PROC_TMP||[]).map(op=>({name:op.name,time:op.time||0, assignee: op.assignee || null})), materialTemplateId: templateId};
+    const payload={id,name,operations:(state.PROC_TMP||[]).map(op=>({name:op.name,time:op.time||0, assignee: op.assignee || null, dependsOn: op.dependsOn})), materialTemplateId: templateId};
     const ex=state.processes.find(x=>x.id===id); if(ex) Object.assign(ex,payload); else state.processes.push(payload);
     state.PROC_TMP=[]; save(); ev.target.reset(); renderProcPage();
   });
@@ -8100,6 +8100,38 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       qs('#set-info').textContent='❌ Błąd zapisu do DB: '+e.message;
     }
   }
+
+  async function purgeFirebaseOrders(options = {}) {
+    const { dryRun = false } = options;
+    if(state.storage.mode !== 'firebase'){
+      console.warn('[purgeFirebaseOrders] Tryb offline - brak połączenia z Firebase');
+      return {deletedOrders:0, deletedTasks:0};
+    }
+    const ok = await ensureFirebase();
+    if(!ok){ return {deletedOrders:0, deletedTasks:0}; }
+    const root = fbRoot();
+    const keepIds = new Set((state.orders || []).map(o => o.id));
+    const remoteOrders = await root.collection('orders').get();
+    let deletedOrders = 0;
+    let deletedTasks = 0;
+
+    for(const doc of remoteOrders.docs){
+      if(keepIds.has(doc.id)) continue;
+      console.warn('[purgeFirebaseOrders] Usuwam zdalne zlecenie spoza lokalnego stanu:', doc.id);
+      if(!dryRun){
+        await root.collection('orders').doc(doc.id).delete();
+        deletedOrders++;
+        const orphanTasks = await root.collection('tasks').where('orderId','==',doc.id).get();
+        for(const taskDoc of orphanTasks.docs){
+          await root.collection('tasks').doc(taskDoc.id).delete();
+          deletedTasks++;
+        }
+      }
+    }
+    console.log(`[purgeFirebaseOrders] Zakończono. Usunięte zlecenia: ${deletedOrders}, zadania: ${deletedTasks}`);
+    return {deletedOrders, deletedTasks};
+  }
+  window.purgeFirebaseOrders = purgeFirebaseOrders;
   try {
     window.saveToDB = saveToDB;
   } catch(assignErr) {
