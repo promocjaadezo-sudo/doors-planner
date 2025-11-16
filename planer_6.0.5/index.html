@@ -757,8 +757,8 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
 </header>
 
 <!-- Banner ostrzegawczy o różnych portach -->
-<div id="port-warning-banner" style="display: block; background: rgb(22, 163, 74); color: white; padding: 12px 20px; text-align: center; font-size: 14px; font-weight: 600; border-bottom: 3px solid rgb(5, 122, 85);">
-  ⚠️ UWAGA: <span id="port-warning-detail">Otwierasz plik lokalny (<strong>brak portu</strong>) — dane mogą się nie synchronizować. <strong>Uruchom plik przez serwer (np. Five Server), aby używać tych samych danych co reszta zespołu.</strong></span>
+<div id="port-warning-banner" style="display: block; background: rgb(220, 38, 38); color: white; padding: 12px 20px; text-align: center; font-size: 14px; font-weight: 600; border-bottom: 3px solid rgb(153, 27, 27);">
+  🔴 WERSJA Z DEPENDENCIES: <span id="port-warning-detail">Otwierasz plik lokalny (<strong>brak portu</strong>) — dane mogą się nie synchronizować. <strong>Uruchom plik przez serwer (np. Five Server), aby używać tych samych danych co reszta zespołu.</strong></span>
   <button onclick="window.showPortInfo()" style="background:white;color:#dc2626;border:none;padding:4px 12px;border-radius:4px;margin-left:12px;cursor:pointer;font-weight:600">📊 Pokaż info</button>
   <button onclick="window.exportDataToFile()" style="background:#10b981;color:white;border:none;padding:4px 12px;border-radius:4px;margin-left:8px;cursor:pointer;font-weight:600">💾 Eksport</button>
   <button onclick="window.importDataFromFile()" style="background:#3b82f6;color:white;border:none;padding:4px 12px;border-radius:4px;margin-left:8px;cursor:pointer;font-weight:600">📁 Import</button>
@@ -3609,7 +3609,10 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         if(t.dataset.taskDone) {
           const id = t.dataset.taskDone; const task = state.tasks.find(x => x.id === id); if (!task) return;
           if (state._timers[id]) { task.elapsedMin = (task.elapsedMin || 0) + (Date.now() - state._timers[id]) / 60000; delete state._timers[id]; }
-          task.status = 'done'; save(); try{ updateOrderProgress(task.orderId); }catch(_){ } renderTasks(); break;
+          task.status = 'done'; 
+          // Odblokuj zadania które czekały na to zadanie
+          unlockDependentTasks(id);
+          save(); try{ updateOrderProgress(task.orderId); }catch(_){ } renderTasks(); break;
         }
         if(t.dataset.taskRepeat) {
           const id = t.dataset.taskRepeat; const task = state.tasks.find(x => x.id === id); if (!task) return;
@@ -4165,6 +4168,41 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     clearBtn.addEventListener('click', ()=> setChecked([]));
   }
 
+  function unlockDependentTasks(completedTaskId) {
+    // Znajdź wszystkie zadania które czekają na ukończone zadanie
+    const dependentTasks = (state.tasks || []).filter(t => 
+      t.status === 'blocked' && 
+      t.dependsOn && 
+      Array.isArray(t.dependsOn) &&
+      t.dependsOn.includes(completedTaskId)
+    );
+    
+    if(dependentTasks.length === 0) return;
+    
+    dependentTasks.forEach(task => {
+      // Sprawdź czy WSZYSTKIE zależności są ukończone
+      const allDone = task.dependsOn.every(depId => {
+        const depTask = state.tasks.find(t => t.id === depId);
+        return depTask && depTask.status === 'done';
+      });
+      
+      if(allDone) {
+        task.status = 'todo';
+        console.log('✅ [unlockDependentTasks] Odblokowano:', task.opName || task.name);
+        
+        // Opcjonalnie: powiadomienie
+        try {
+          if(typeof showToast === 'function') {
+            showToast(`✅ Zadanie odblokowane: ${task.opName || task.name}`, 'success');
+          }
+        } catch(_) {}
+      }
+    });
+    
+    // Zapisz zmiany
+    save();
+  }
+
   function computeOrderProgress(orderId){
     const tasks = (state.tasks||[]).filter(t=>t.orderId === orderId);
     const total = tasks.length;
@@ -4472,12 +4510,19 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         empArr.unshift({id:op.assignee.id, name: op.assignee.name || op.assignee.id});
       }
       const empOptions = empArr.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+      
+      // Zbuduj opcje dla zależności - tylko poprzednie operacje
+      const depOptions = state.PROC_TMP.slice(0, i).map((prevOp, prevIdx) => 
+        `<option value="${prevIdx}">${prevOp.name}</option>`
+      ).join('');
+      
   d.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px">'+
         '<div class="row" style="justify-content:space-between;align-items:center">'+
           '<div>'+op.name+' <span class="muted">(<input type="number" data-time-edit="'+i+'" value="'+(op.time||0)+'" min="0" style="width:60px;padding:4px;border:1px solid #cbd5e1;border-radius:4px;background:#fff;text-align:center;color:#000">m)</span></div>'+
         '</div>'+
         '<div class="row" style="gap:4px;align-items:center">'+
           '<select data-pass style="min-width:180px">'+ '<option value="">— przypisz pracownika —</option>'+ empOptions +'</select>'+
+          (i > 0 ? '<select data-depends="'+i+'" style="min-width:180px"><option value="">⚠️ Wymaga ukończenia...</option>'+ depOptions +'</select>' : '')+
           '<button class="btn small" data-clear-ass="'+i+'">Usuń przypisanie</button>'+
           '<button class="btn" data-pup="'+i+'">↑</button><button class="btn" data-pdown="'+i+'">↓</button><button class="btn red" data-pdel="'+i+'">Usuń</button>'+
         '</div>'+
@@ -4504,6 +4549,19 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         });
         // clear assignment button
         const clr = d.querySelector('[data-clear-ass]'); if(clr){ clr.addEventListener('click', ()=>{ state.PROC_TMP[i].assignee = null; if(sel) sel.value = ''; save(); renderProcOps(); }); }
+      }
+      
+      // Obsługa zależności (dependsOn)
+      const depSel = d.querySelector('select[data-depends]');
+      if(depSel){
+        if(op.dependsOn !== undefined && op.dependsOn !== null) depSel.value = op.dependsOn;
+        depSel.addEventListener('change', ()=>{
+          const val = depSel.value;
+          if(!val) state.PROC_TMP[i].dependsOn = null;
+          else state.PROC_TMP[i].dependsOn = parseInt(val);
+          save();
+          console.log('✅ Zależność ustawiona:', op.name, '→ wymaga', val ? state.PROC_TMP[val].name : 'brak');
+        });
       }
     });
   }
@@ -7420,7 +7478,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       host.appendChild(d);
     });
   }
-  qs('#as-form').addEventListener('submit',(ev)=>{
+  qs('#as-form').addEventListener('submit', async (ev)=>{
     ev.preventDefault(); const id=qs('#as-id').value||uid(); const type=qs('#as-type').value; const order=qs('#as-order').value||''; const status=qs('#as-status').value; const desc=qs('#as-desc').value||''; const install=qs('#as-install').value||''; const depart=qs('#as-go').value||''; const visit=qs('#as-visit').value||'';
     // get selected employees from multi-select
     const empSel = qs('#as-employees');

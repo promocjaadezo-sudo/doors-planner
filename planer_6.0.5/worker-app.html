@@ -2196,6 +2196,9 @@
 
         function renderTasks() {
             const taskList = document.getElementById('task-list');
+            
+            // Przechowaj wszystkie zadania globalnie dla getTaskActions
+            window.allTasks = tasks;
 
             // Filtruj zadania według wybranego filtra
             let filteredTasks = tasks;
@@ -2345,7 +2348,8 @@
                 'paused': 'Wstrzymane',
                 'todo': 'Oczekuje',
                 'run': 'W trakcie',
-                'done': 'Ukończone'
+                'done': 'Ukończone',
+                'blocked': '🔒 Zablokowane'
             };
             return statusMap[status] || status;
         }
@@ -2391,6 +2395,18 @@
             const taskId = String(task.id);
             const safeId = escapeHtml(taskId);
             switch (task.status) {
+                case 'blocked':
+                    // Pokaż informację o zależnościach
+                    let blockedMsg = '🔒 Zablokowane - oczekuje na ukończenie poprzednich zadań';
+                    if(task.dependsOn && task.dependsOn.length > 0) {
+                        const depNames = task.dependsOn.map(depId => {
+                            const depTask = window.allTasks?.find(t => t.id === depId);
+                            return depTask ? (depTask.opName || depTask.name || depId) : depId;
+                        }).join(', ');
+                        blockedMsg = `🔒 Oczekuje na: ${depNames}`;
+                    }
+                    return `<button class="btn btn-secondary" disabled>${blockedMsg}</button>`;
+                    
                 case 'todo':
                 case 'pending':
                     return `<button class="btn btn-primary btn-large" data-action="start" data-task-id="${safeId}">▶️ Rozpocznij zadanie</button>`;

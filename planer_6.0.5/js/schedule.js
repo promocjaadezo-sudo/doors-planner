@@ -61,7 +61,10 @@
     
     // Generuj zadania tylko z operacji w procesie
     let seq = 1;
-    process.operations.forEach(op => {
+    process.operations.forEach((op, opIndex) => {
+      // Jeśli operacja ma dependsOn - ustaw status blocked, inaczej todo
+      const hasDepends = (op.dependsOn !== null && op.dependsOn !== undefined);
+      
       const task = {
         id: genId('task'),
         orderId: order.id,
@@ -71,23 +74,33 @@
         duration: computeDuration(op, order),
         startPlanned: null,
         endPlanned: null,
-        dependsOn: [], // w prostym modelu liniowym wypełnimy później
+        dependsOn: [], // uzupełnimy poniżej na podstawie op.dependsOn
         critical: false,
         seq: seq++,
         qty: order.quantity || 1,
+        opIndex: opIndex, // indeks operacji w procesie (do mapowania zależności)
         // Pola kompatybilności z UI
-        status: 'todo',
+        status: hasDepends ? 'blocked' : 'todo',
         opName: op.name,
         estMin: computeDuration(op, order),
-        assignees: op.assignee ? [op.assignee] : []
+        assignees: op.assignee ? [op.assignee] : [],
+        employeeId: op.assignee ? op.assignee.id : null
       };
       list.push(task);
     });
 
-    // Dodaj zależności liniowe (task i zależy od i-1)
-    for(let i=1; i<list.length; i++) {
-      list[i].dependsOn.push(list[i-1].id);
-    }
+    // Przepisz zależności z operacji procesu
+    process.operations.forEach((op, opIndex) => {
+      const task = list[opIndex];
+      if (op.dependsOn !== null && op.dependsOn !== undefined) {
+        // op.dependsOn to indeks poprzedniej operacji
+        const depIndex = parseInt(op.dependsOn);
+        if (depIndex >= 0 && depIndex < list.length) {
+          task.dependsOn.push(list[depIndex].id);
+          console.log(`[generateTasksForOrder] ${task.name} → zależy od → ${list[depIndex].name}`);
+        }
+      }
+    });
     
     return list;
   }
@@ -299,6 +312,13 @@
       return d.getTime();
     }
 
+    // Utwórz mapę wszystkich zadań dla sprawdzania zależności
+    const allTasksById = {};
+    if(state && Array.isArray(state.tasks)){
+      state.tasks.forEach(t => { allTasksById[t.id] = t; });
+    }
+    tasks.forEach(t => { allTasksById[t.id] = t; });
+    
     // Grupuj zadania po pracownikach
     const byEmployee = {};
     tasks.forEach(t => {
@@ -317,6 +337,21 @@
       let cursor = alignToWorkday(Date.now());
       
       empTasks.forEach(t => {
+        // Sprawdź zależności - poczekaj na zakończenie poprzedników
+        if(t.dependsOn && t.dependsOn.length > 0){
+          let maxDepEnd = 0;
+          t.dependsOn.forEach(depId => {
+            const depTask = allTasksById[depId];
+            if(depTask && depTask.endPlanned){
+              maxDepEnd = Math.max(maxDepEnd, depTask.endPlanned);
+              console.log(`[scheduleByEmployee] ⚠️ ${t.opName || t.name} czeka na ${depTask.opName || depTask.name} (koniec: ${new Date(depTask.endPlanned).toLocaleString('pl-PL')})`);
+            }
+          });
+          if(maxDepEnd > 0){
+            cursor = Math.max(cursor, maxDepEnd);
+          }
+        }
+        
         cursor = alignToWorkday(cursor);
         let remaining = (t.duration || t.estMin || 0) * 60000; // ms
         let start = cursor;
