@@ -757,8 +757,8 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
 </header>
 
 <!-- Banner ostrzegawczy o różnych portach -->
-<div id="port-warning-banner" style="display: block; background: rgb(37, 99, 235); color: white; padding: 12px 20px; text-align: center; font-size: 14px; font-weight: 600; border-bottom: 3px solid rgb(29, 78, 216);">
-  🔵 WERSJA 6.0.6 - REGENERACJA ZADAŃ: <span id="port-warning-detail">Edycja zlecenia automatycznie regeneruje zadania z aktualnego procesu.</span>
+<div id="port-warning-banner" style="display: block; background: rgb(220, 38, 38); color: white; padding: 12px 20px; text-align: center; font-size: 14px; font-weight: 600; border-bottom: 3px solid rgb(153, 27, 27);">
+  🔴 WERSJA Z DEPENDENCIES: <span id="port-warning-detail">Otwierasz plik lokalny (<strong>brak portu</strong>) — dane mogą się nie synchronizować. <strong>Uruchom plik przez serwer (np. Five Server), aby używać tych samych danych co reszta zespołu.</strong></span>
   <button onclick="window.showPortInfo()" style="background:white;color:#dc2626;border:none;padding:4px 12px;border-radius:4px;margin-left:12px;cursor:pointer;font-weight:600">📊 Pokaż info</button>
   <button onclick="window.exportDataToFile()" style="background:#10b981;color:white;border:none;padding:4px 12px;border-radius:4px;margin-left:8px;cursor:pointer;font-weight:600">💾 Eksport</button>
   <button onclick="window.importDataFromFile()" style="background:#3b82f6;color:white;border:none;padding:4px 12px;border-radius:4px;margin-left:8px;cursor:pointer;font-weight:600">📁 Import</button>
@@ -1119,53 +1119,27 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
 
   <div class="card hidden" id="p-proc">
     <div class="row" style="justify-content:space-between"><h3>Procesy</h3><span class="pill" id="proc-count">0</span></div>
-    
-    <form id="proc-form" class="card">
+    <form class="grid3" id="proc-form">
       <input type="hidden" id="proc-id">
-      
-      <div style="margin-bottom:16px">
-        <label>📝 Nazwa procesu *</label>
-        <input id="proc-name" required="" spellcheck="true" lang="pl" placeholder="np. SZABLON 1">
+      <div><label>Nazwa procesu</label><input id="proc-name" required="" spellcheck="true" lang="pl"></div>
+      <div><label>Dodaj z katalogu</label><select id="proc-op-select"></select></div>
+      <div><label>📑 Szablon materiałowy (opcjonalne)</label><select id="proc-template-select"><option value="">Brak</option></select></div>
+      <div style="grid-column:1/-1" class="row">
+        <button class="btn" id="proc-add-op" type="button">➕ Dodaj operację</button>
+        <button class="btn primary" type="submit">Zapisz proces</button>
       </div>
-      
-      <div style="display:grid;grid-template-columns:2fr auto;gap:12px;margin-bottom:16px">
-        <div>
-          <label>➕ Dodaj operację z katalogu</label>
-          <select id="proc-op-select"></select>
-        </div>
-        <div style="display:flex;align-items:end">
-          <button class="btn primary" id="proc-add-op" type="button">Dodaj</button>
-        </div>
-      </div>
-      
-      <div style="margin-bottom:16px">
-        <label>📑 Szablon materiałowy (opcjonalne)</label>
-        <select id="proc-template-select">
-          <option value="">Brak</option>
-        </select>
-      </div>
-      
-      <button class="btn primary" type="submit">💾 Zapisz proces</button>
     </form>
-    
-    <div class="card">
-      <b>📋 Operacje w procesie</b>
-      <div class="list" id="proc-ops"></div>
-    </div>
-    
-    <div>
-      <b>📚 Zapisane procesy</b>
-      <div class="list" id="proc-list"></div>
-    </div>
+    <div><b>Operacje w procesie</b></div>
+    <div class="list" id="proc-ops"></div>
+    <div class="list" id="proc-list"></div>
   </div>
 
   <div class="card hidden" id="p-emp">
     <div class="row" style="justify-content:space-between"><h3>Pracownicy</h3><button class="btn" id="emp-add">Dodaj</button></div>
     
-    <!-- Formularz dodawania/edycji pracownika -->
+    <!-- Formularz dodawania pracownika -->
     <div id="emp-form-container" class="hidden" style="margin:16px 0;padding:16px;background:#f0f9ff;border:2px solid #3b82f6;border-radius:8px">
       <div style="font-weight:600;font-size:16px;color:#1e40af;margin-bottom:12px">➕ Nowy pracownik</div>
-      <input type="hidden" id="emp-form-id">
       <div style="display:grid;grid-template-columns:1fr 1fr 100px 100px 1fr;gap:12px;align-items:end">
         <div>
           <label for="emp-form-name" style="display:block;font-size:13px;color:#475569;margin-bottom:4px">Imię i nazwisko *</label>
@@ -1208,114 +1182,25 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
   <div class="card hidden" id="p-as">
     <div class="row" style="justify-content:space-between">
       <h3>Montaż / Reklamacje</h3>
-      <div class="row" style="gap:8px">
-        <button class="btn green" id="as-add-task">➕ Nowe zadanie montażowe</button>
-        <button class="btn" data-refresh-as="">Odśwież z bazy</button>
-      </div>
+      <button class="btn" data-refresh-as="">Odśwież z bazy</button>
     </div>
     <form class="grid3" id="as-form">
       <input type="hidden" id="as-id">
-      
-      <!-- Podstawowe informacje -->
-      <div><label>Typ</label><select id="as-type"><option>montaż</option><option>reklamacja</option><option>pomiar</option><option>inne</option></select></div>
-      <div><label>Status</label><select id="as-status"><option>nowe</option><option>w toku</option><option>zamknięte</option></select></div>
+      <div><label>Typ</label><select id="as-type"><option>montaż</option><option>reklamacja</option></select></div>
       <div><label>Zlecenie</label><select id="as-order"></select></div>
-      
-      <!-- Klient i Pracownik prowadzący -->
-      <div>
-        <label style="color:#64748b;font-size:12px;font-weight:600">KLIENT</label>
-        <input id="as-client" readonly="" placeholder="Automatycznie z zlecenia" spellcheck="true" lang="pl" style="background:#1e293b;color:#fff;border:2px solid #334155;font-weight:600;font-size:14px;padding:10px">
-      </div>
-      <div>
-        <label style="color:#64748b;font-size:12px;font-weight:600">PRACOWNIK PROWADZĄCY</label>
-        <input id="as-lead" readonly="" spellcheck="true" lang="pl" style="background:#1e293b;color:#fff;border:2px solid #334155;font-weight:600;font-size:14px;padding:10px">
-      </div>
-      <div style="grid-column:3/4"></div>
-      <div style="grid-column:1/-1"><label>Pracownicy montażowi (Ctrl+klik = wiele)</label><select id="as-employees" multiple="" size="6" style="width:100%;"></select></div>
-      
-      <!-- Dane kontaktowe i lokalizacja -->
-      <div style="grid-column:1/-1"><label>Adres montażu</label><input id="as-address" placeholder="ulica nr, miejscowość" spellcheck="true" lang="pl"></div>
-      <div><label>Kod pocztowy</label><input id="as-placecode" placeholder="00-000" spellcheck="true" lang="pl"></div>
-      <div><label>Telefon</label><input id="as-phone" placeholder="+48 123 456 789" spellcheck="true" lang="pl"></div>
-      
-      <!-- Terminy i czas -->
+      <div><label>Pracownik prowadzący</label><input id="as-lead" readonly="" spellcheck="true" lang="pl"></div>
+      <div><label>Pracownicy montażowi (Ctrl+klik = wiele)</label><select id="as-employees" multiple="" size="6" style="width:100%;"></select></div>
+      <div><label>Adres montażu</label><input id="as-address" placeholder="ulica nr, miejscowość" spellcheck="true" lang="pl"></div>
+      <div><label>Kod montażu</label><input id="as-placecode" placeholder="kod pocztowy" spellcheck="true" lang="pl"></div>
+      <div><label>Telefon</label><input id="as-phone" placeholder="telefon kontaktowy" spellcheck="true" lang="pl"></div>
+      <div><label>Status</label><select id="as-status"><option>nowe</option><option>w toku</option><option>zamknięte</option></select></div>
       <div><label>Termin montażu</label><input id="as-install" type="date" spellcheck="true" lang="pl"></div>
       <div><label>Godzina wyjazdu</label><input id="as-go" type="time" spellcheck="true" lang="pl"></div>
-      <div><label>Godzina wizyty</label><input id="as-visit" type="time" spellcheck="true" lang="pl"></div>
+      <div><label>Godzina wizyty<input id="as-visit" type="time" spellcheck="true" lang="pl"></label></div>
       <div><label>Liczba godzin montażu</label><input id="as-hours" type="number" step="0.5" min="0" placeholder="np. 2.5" spellcheck="true" lang="pl"></div>
-      <div style="grid-column:2/4"></div>
-      
-      <!-- Notatki -->
-      <div style="grid-column:1/-1"><label>Opis / Notatki</label><textarea id="as-desc" rows="3" spellcheck="true" lang="pl" placeholder="Dodatkowe informacje o montażu..."></textarea></div>
+      <div style="grid-column:1/-1"><label>Opis</label><textarea id="as-desc" rows="2" spellcheck="true" lang="pl"></textarea></div>
       <div style="grid-column:1/-1;text-align:right"><button class="btn primary" type="submit">Zapisz</button></div>
     </form>
-    
-    <!-- Formularz dodatkowego zadania montażowego -->
-    <div id="as-task-form-container" class="hidden card" style="margin:24px 0;background:#1e293b;border:2px solid #334155;box-shadow:0 4px 6px rgba(0,0,0,0.3)">
-      <div style="background:#0f172a;padding:16px;border-bottom:2px solid #475569;margin:-1px -1px 20px -1px">
-        <h4 style="margin:0;color:#fff;font-size:18px">👤 KLIENT</h4>
-      </div>
-      
-      <form class="grid3" style="padding:0 16px 16px 16px">
-        <!-- Podstawowe informacje -->
-        <div><label>Numer zadania (auto)</label>
-          <input id="as-task-number" disabled style="background:#e2e8f0;cursor:not-allowed" placeholder="Generowany automatycznie">
-        </div>
-        <div><label>Typ zadania</label>
-          <select id="as-task-type">
-            <option value="pomiar">📏 Pomiar</option>
-            <option value="montaż">🔧 Montaż</option>
-            <option value="naprawa">🔨 Naprawa</option>
-            <option value="regulacja">⚙️ Regulacja</option>
-            <option value="dostawa">🚚 Dostawa</option>
-            <option value="inne">📋 Inne</option>
-          </select>
-        </div>
-        <div><label>Nazwa zadania</label><input id="as-task-name" placeholder="np. Pomiar okna kuchnia" spellcheck="true" lang="pl"></div>
-        
-        <div style="grid-column:1/-1"><label>Zlecenie (opcjonalne)</label><select id="as-task-order"><option value="">— Brak powiązania —</option></select></div>
-        
-        <!-- Klient (pole do ręcznego wpisania) -->
-        <div style="grid-column:1/3">
-          <label style="color:#e2e8f0;font-size:12px;font-weight:600">KLIENT *</label>
-          <input id="as-task-client" placeholder="Wpisz nazwisko klienta" spellcheck="true" lang="pl" style="background:#fff;color:#1e293b;border:2px solid #cbd5e1;font-weight:600;font-size:14px;padding:10px;width:100%">
-        </div>
-        <div style="grid-column:3/4"></div>
-        
-        <!-- Pracownicy -->
-        <div style="grid-column:1/-1"><label>Przypisz pracowników (Ctrl+klik = wiele)</label>
-          <select id="as-task-employees" multiple="" size="5" style="width:100%;"></select>
-        </div>
-        
-        <!-- Dane kontaktowe i lokalizacja -->
-        <div style="grid-column:1/-1"><label>Adres</label><input id="as-task-address" placeholder="ulica nr, miejscowość" spellcheck="true" lang="pl"></div>
-        <div><label>Kod pocztowy</label><input id="as-task-postal" placeholder="00-000" spellcheck="true" lang="pl"></div>
-        <div><label>Telefon</label><input id="as-task-phone" placeholder="+48 123 456 789" spellcheck="true" lang="pl"></div>
-        
-        <!-- Terminy i czas -->
-        <div><label>Data realizacji</label><input id="as-task-date" type="date" spellcheck="true" lang="pl"></div>
-        <div><label>Godzina wyjazdu</label><input id="as-task-depart" type="time" spellcheck="true" lang="pl"></div>
-        <div><label>Godzina wizyty</label><input id="as-task-visit" type="time" spellcheck="true" lang="pl"></div>
-        <div><label>Szacowany czas (godz.)</label><input id="as-task-hours" type="number" step="0.5" min="0.5" value="2" placeholder="np. 2.5" spellcheck="true" lang="pl"></div>
-        <div><label>Priorytet</label>
-          <select id="as-task-priority">
-            <option value="normal">Normalny</option>
-            <option value="high">Wysoki</option>
-            <option value="urgent">Pilny</option>
-          </select>
-        </div>
-        <div style="grid-column:3/4"></div>
-        
-        <!-- Opis -->
-        <div style="grid-column:1/-1"><label>Opis / Notatki</label><textarea id="as-task-notes" rows="3" placeholder="Dodatkowe informacje o zadaniu..." spellcheck="true" lang="pl"></textarea></div>
-        
-        <div style="grid-column:1/-1;text-align:right;margin-top:12px">
-          <button class="btn green" id="as-task-save" type="button">✓ Zapisz</button>
-          <button class="btn" id="as-task-cancel" type="button" style="margin-left:8px">✕ Anuluj</button>
-        </div>
-      </form>
-    </div>
-    
     <div class="list" id="as-list"></div>
   </div>
 
@@ -3686,7 +3571,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           const templateSel = qs('#proc-template-select');
           if (templateSel) templateSel.value = p.materialTemplateId || '';
           // preserve assignee and dependsOn when loading for edit
-          state.PROC_TMP = (p.operations || []).map(x => ({id: x.id || uid('op'), name: x.name, time: x.time || 0, assignee: x.assignee || null, dependsOn: x.dependsOn}));
+          state.PROC_TMP = (p.operations || []).map(x => ({name: x.name, time: x.time || 0, assignee: x.assignee || null, dependsOn: x.dependsOn}));
           renderProcOps(); window.scrollTo({top: 0, behavior: 'smooth'}); break;
         }
         if(t.dataset.pdel2) {
@@ -3767,19 +3652,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         if(t.dataset.empDel) { state.employees = state.employees.filter(x => x.id !== t.dataset.empDel); save(); renderEmployees(); break; }
         if(t.dataset.empEd) {
           const e = state.employees.find(x => x.id === t.dataset.empEd); if (!e) return;
-          // Wypełnij formularz edycji
-          const formContainer = qs('#emp-form-container');
-          const formTitle = formContainer?.querySelector('[style*="font-weight:600"]');
-          if(formTitle) formTitle.textContent = '✏️ Edycja pracownika';
-          qs('#emp-form-id').value = e.id;
-          qs('#emp-form-name').value = e.name || '';
-          qs('#emp-form-role').value = e.role || '';
-          qs('#emp-form-cap').value = e.cap || 100;
-          qs('#emp-form-hours').value = e.hoursPerDay || 8;
-          qs('#emp-form-phone').value = e.phone || '';
-          if(formContainer) formContainer.classList.remove('hidden');
-          qs('#emp-form-name')?.focus();
-          break;
+          const n = prompt('Nowe imię', e.name) || e.name; e.name = n; save(); renderEmployees(); break;
         }
         if(t.dataset.assign) {
           // Assign task to employee with conflict detection
@@ -3865,79 +3738,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           break;
         }
         if(t.dataset.asDel) { state.after = state.after.filter(x => x.id !== t.dataset.asDel); save(); renderASPage(); break; }
-        if(t.dataset.asTaskDel) { 
-          const taskId = t.dataset.asTaskDel;
-          if(confirm('Czy na pewno usunąć to zadanie montażowe?')){
-            state.tasks = state.tasks.filter(x => x.id !== taskId); 
-            save(); 
-            renderASPage();
-            if(typeof renderTasks === 'function') renderTasks();
-          }
-          break; 
-        }
-        if(t.dataset.asTaskEd) {
-          const taskId = t.dataset.asTaskEd;
-          const task = state.tasks.find(x => x.id === taskId);
-          if(!task) return;
-          
-          // Otwórz formularz i wypełnij danymi
-          const formContainer = qs('#as-task-form-container');
-          if(!formContainer) return;
-          
-          // Wypełnij listę zleceń
-          const orderSelect = qs('#as-task-order');
-          if(orderSelect){
-            orderSelect.innerHTML = '<option value="">— Brak powiązania —</option>';
-            (state.orders||[]).forEach(o=>{
-              const opt = document.createElement('option');
-              opt.value = o.id;
-              opt.textContent = o.name;
-              if(o.id === task.orderId) opt.selected = true;
-              orderSelect.appendChild(opt);
-            });
-          }
-          
-          // Wypełnij listę pracowników
-          const empSelect = qs('#as-task-employees');
-          if(empSelect){
-            empSelect.innerHTML = '';
-            const taskEmpIds = task.assignees || (task.employeeId ? [task.employeeId] : []);
-            (state.employees||[]).forEach(e=>{
-              const opt = document.createElement('option');
-              opt.value = e.id;
-              opt.textContent = e.name;
-              if(taskEmpIds.includes(e.id)) opt.selected = true;
-              empSelect.appendChild(opt);
-            });
-          }
-          
-          // Wypełnij formularz
-          qs('#as-task-form-container').dataset.editId = task.id;
-          qs('#as-task-number').value = task.taskNumber || '';
-          qs('#as-task-type').value = task.type || 'montaż';
-          qs('#as-task-name').value = task.opName || task.name.replace(/^[📏🔧🔨🚚📋]\s*/, '');
-          qs('#as-task-date').value = task.installDate || '';
-          qs('#as-task-depart').value = task.departTime || '';
-          qs('#as-task-visit').value = task.visitTime || '';
-          qs('#as-task-client').value = task.client || '';
-          qs('#as-task-address').value = task.address || '';
-          qs('#as-task-postal').value = task.postalCode || '';
-          qs('#as-task-phone').value = task.phone || '';
-          qs('#as-task-hours').value = task.estMin ? (task.estMin/60) : 2;
-          qs('#as-task-priority').value = task.priority || 'normal';
-          qs('#as-task-notes').value = task.notes || '';
-          
-          // Zmień tytuł na nazwę klienta lub domyślny tekst
-          const formTitle = formContainer.querySelector('h4');
-          if(formTitle) {
-            const clientDisplay = task.client && task.client !== '-' ? task.client : 'Brak klienta';
-            formTitle.textContent = `✏️ ${clientDisplay}`;
-          }
-          
-          formContainer.classList.remove('hidden');
-          qs('#as-task-name')?.focus();
-          break;
-        }
         if(t.dataset.asEd) {
           const a = state.after.find(x => x.id === t.dataset.asEd); if (!a) return; qs('#as-id').value = a.id;
           qs('#as-type').value = a.type; qs('#as-order').value = a.order || ''; qs('#as-status').value = a.status;
@@ -3948,18 +3748,12 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           qs('#as-placecode').value = a.postalCode || a.placeCode || '';
           qs('#as-address').value = a.address || '';
           qs('#as-hours').value = a.hours || '';
-          // populate lead employee and client from related order
+          // populate lead employee from related order
           const relatedOrder = (state.orders||[]).find(o => o.id === a.order);
-          if(relatedOrder) {
-            qs('#as-client').value = relatedOrder.client || '';
-            if(relatedOrder.leadEmployeeId) {
-              const leadEmp = (state.employees||[]).find(e => e.id === relatedOrder.leadEmployeeId);
-              qs('#as-lead').value = leadEmp ? leadEmp.name : '';
-            } else {
-              qs('#as-lead').value = '';
-            }
+          if(relatedOrder && relatedOrder.leadEmployeeId) {
+            const leadEmp = (state.employees||[]).find(e => e.id === relatedOrder.leadEmployeeId);
+            qs('#as-lead').value = leadEmp ? leadEmp.name : '';
           } else {
-            qs('#as-client').value = '';
             qs('#as-lead').value = '';
           }
           // Select appropriate employees in multi-select (support both old and new format)
@@ -4448,39 +4242,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           Object.assign(existing, orderObj); 
           (window.logDev||console.log)('[order-form] updated', id, 'processChanged=', processChanged);
           
-          // Zaktualizuj lub utwórz wpis montażu
-          try{
-            let afterEntry = (state.after||[]).find(a => a.order === id);
-            if(!afterEntry){
-              // Utwórz nowy wpis montażu jeśli nie istnieje
-              afterEntry = { 
-                id: uid(), 
-                type:'montaż', 
-                order: id, 
-                status:'nowe', 
-                desc: orderObj.notes || '', 
-                installDate: orderObj.installDate || '', 
-                departTime:'', 
-                visitTime:'',
-                phone: orderObj.phone || '',
-                postalCode: orderObj.postalCode || '',
-                address: orderObj.address || '',
-                employeeIds: [],
-                hours: 0
-              };
-              state.after.push(afterEntry);
-              (window.logDev||console.log)('[order-form] created after entry for existing order', id);
-            } else {
-              // Zaktualizuj istniejący wpis
-              afterEntry.desc = orderObj.notes || '';
-              afterEntry.installDate = orderObj.installDate || '';
-              afterEntry.phone = orderObj.phone || '';
-              afterEntry.postalCode = orderObj.postalCode || '';
-              afterEntry.address = orderObj.address || '';
-              (window.logDev||console.log)('[order-form] updated after entry', id);
-            }
-          }catch(e){ console.warn('[order-form] after update error', e.message); }
-          
           // Automatyczne pytanie o regenerację zadań
           if(processChanged || confirm('Zlecenie zaktualizowane.\n\nCzy przeliczyć zadania ponownie (uwzględni zmiany w procesie)?')){
             try{
@@ -4490,7 +4251,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
               (window.logDev||console.log)('[order-form] removed', oldTasks.length, 'old tasks');
               
               // Wygeneruj nowe zadania
-              if(window.scheduleCore && orderObj.processId){
+              if(window.scheduleCore){
                 const gen = window.scheduleCore.generateTasksForOrder(orderObj, state);
                 if(gen && gen.length){
                   state.tasks = (state.tasks||[]).concat(gen);
@@ -4498,14 +4259,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
                   window.scheduleCore.generateSchedule(state);
                   orderObj.tasksGenerated = true;
                   (window.logDev||console.log)('[order-form] regenerated', gen.length, 'tasks');
-                } else {
-                  orderObj.tasksGenerated = false;
-                  (window.logDev||console.log)('[order-form] no tasks generated (empty process?)');
                 }
-              } else {
-                // Brak procesu - ustaw flagę na false
-                orderObj.tasksGenerated = false;
-                (window.logDev||console.log)('[order-form] no process selected, tasks cleared');
               }
             }catch(e){ console.warn('[order-form] regenerate tasks error', e.message); }
           }
@@ -4776,13 +4530,8 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
 
   function renderProcOps(){
     const box=qs('#proc-ops'); box.innerHTML='';
-    if(!state.PROC_TMP || state.PROC_TMP.length === 0){
-      box.innerHTML = '<div class="muted" style="padding:12px;text-align:center">Brak operacji - dodaj pierwszą operację z katalogu</div>';
-      return;
-    }
     (state.PROC_TMP||[]).forEach((op,i)=>{
-      const d=document.createElement('div'); 
-      d.className='card';
+      const d=document.createElement('div'); d.className='card';
       const empArr = (state.employees||[]).slice();
       if(op.assignee && op.assignee.id && !empArr.some(e=>e.id===op.assignee.id)){
         empArr.unshift({id:op.assignee.id, name: op.assignee.name || op.assignee.id});
@@ -4794,35 +4543,15 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         `<option value="${prevIdx}">${prevOp.name}</option>`
       ).join('');
       
-  d.innerHTML = '<div style="display:flex;flex-direction:column;gap:12px">'+
-        '<div class="row" style="justify-content:space-between">'+
-          '<div><b>'+(i+1)+'. '+op.name+'</b></div>'+
-          '<div class="row" style="gap:8px">'+
-            '<span class="muted">Czas:</span>'+
-            '<input type="number" data-time-edit="'+i+'" value="'+(op.time||0)+'" min="0" style="width:70px;text-align:center">'+
-            '<span class="muted">min</span>'+
-          '</div>'+
+  d.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px">'+
+        '<div class="row" style="justify-content:space-between;align-items:center">'+
+          '<div>'+op.name+' <span class="muted">(<input type="number" data-time-edit="'+i+'" value="'+(op.time||0)+'" min="0" style="width:60px;padding:4px;border:1px solid #cbd5e1;border-radius:4px;background:#fff;text-align:center;color:#000">m)</span></div>'+
         '</div>'+
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+
-          '<div>'+
-            '<label>👤 Pracownik</label>'+
-            '<select data-pass>'+ 
-              '<option value="">— Nieprzypisane —</option>'+ empOptions +
-            '</select>'+
-          '</div>'+
-          (i > 0 ? 
-            '<div>'+
-              '<label>🔗 Zależy od operacji</label>'+
-              '<select data-depends="'+i+'">'+
-                '<option value="">Brak zależności</option>'+ depOptions +
-              '</select>'+
-            '</div>' 
-          : '')+
-        '</div>'+
-        '<div class="row" style="justify-content:flex-end;gap:4px">'+
-          '<button class="btn" data-pup="'+i+'">↑</button>'+
-          '<button class="btn" data-pdown="'+i+'">↓</button>'+
-          '<button class="btn red" data-pdel="'+i+'">Usuń</button>'+
+        '<div class="row" style="gap:4px;align-items:center">'+
+          '<select data-pass style="min-width:180px">'+ '<option value="">— przypisz pracownika —</option>'+ empOptions +'</select>'+
+          (i > 0 ? '<select data-depends="'+i+'" style="min-width:180px"><option value="">⚠️ Wymaga ukończenia...</option>'+ depOptions +'</select>' : '')+
+          '<button class="btn small" data-clear-ass="'+i+'">Usuń przypisanie</button>'+
+          '<button class="btn" data-pup="'+i+'">↑</button><button class="btn" data-pdown="'+i+'">↓</button><button class="btn red" data-pdel="'+i+'">Usuń</button>'+
         '</div>'+
       '</div>';
       box.appendChild(d);
@@ -4884,12 +4613,12 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   qs('#proc-add-op').addEventListener('click',()=>{ const id=qs('#proc-op-select').value; const o=state.operationsCatalog.find(x=>x.id===id); if(o){
     let initialAssignee = null;
     if(Array.isArray(o.defaultAssignees) && o.defaultAssignees.length){ const da = o.defaultAssignees[0]; if(da && (da.id || da.name)){ const emp = (state.employees||[]).find(e=>e.id===da.id); if(emp) initialAssignee = { id: emp.id, name: emp.name }; else if(da.id) initialAssignee = { id: da.id, name: da.name || da.id }; else if(da.name) initialAssignee = { id: uid(), name: da.name }; } }
-    state.PROC_TMP.push({id:uid('op'),name:o.name,time:o.time||0, assignee: initialAssignee}); renderProcOps(); save(); } });
+    state.PROC_TMP.push({name:o.name,time:o.time||0, assignee: initialAssignee}); renderProcOps(); save(); } });
   
   qs('#proc-form').addEventListener('submit',(ev)=>{
     ev.preventDefault(); const id=qs('#proc-id').value||uid(); const name=(qs('#proc-name').value||'').trim(); if(!name||(state.PROC_TMP||[]).length===0) return;
     const templateId = qs('#proc-template-select')?.value || null;
-    const payload={id,name,operations:(state.PROC_TMP||[]).map(op=>({id:op.id||uid('op'),name:op.name,time:op.time||0, assignee: op.assignee || null, dependsOn: op.dependsOn})), materialTemplateId: templateId};
+    const payload={id,name,operations:(state.PROC_TMP||[]).map(op=>({name:op.name,time:op.time||0, assignee: op.assignee || null, dependsOn: op.dependsOn})), materialTemplateId: templateId};
     const ex=state.processes.find(x=>x.id===id); if(ex) Object.assign(ex,payload); else state.processes.push(payload);
     state.PROC_TMP=[]; save(); ev.target.reset(); renderProcPage();
   });
@@ -5062,11 +4791,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
             ${t.processName ? ` • Proces: ${t.processName} (${t.opIndex + 1}/${(state.processes.find(p=>p.id===t.processId)?.operations||[]).length})` : ''}
           </span>
           <div>${formatTaskAssignmentInfo(t)}</div>
-          ${t.isAssemblyTask ? `
-            <div class="muted">🔢 Numer zadania: ${t.taskNumber || '-'}</div>
-            <div class="muted">📅 Data: ${t.installDate || '-'} • 🚗 Wyjazd: ${t.departTime || '-'} • 🏠 Wizyta: ${t.visitTime || '-'}</div>
-            <div class="muted">📍 ${t.address || 'Brak adresu'} • ${t.postalCode ? t.postalCode + ' • ' : ''} 📞 ${t.phone || '-'}</div>
-          ` : ''}
           <div class="muted">Status: <span style="${t.status==='paused'?'color:#f97316;font-weight:bold':''}">${t.status||'todo'}</span> • Plan: ${plannedDur} • Real: ${Math.round(t.elapsedMin||0)}m ${typeof t.slackMs==='number'?('• Slack: '+Math.round(t.slackMs/60000)+'m'):''} ${t.critical?'• CRITICAL':''}</div>
         <div class="muted">StartP: ${startP} • EndP: ${endP}</div>
         <div class="muted">${t.startedBy?('Rozpoczął: '+t.startedBy):''} ${t.closedBy?('Zamknął: '+t.closedBy):''} ${t.startedAt?(' • start: '+(new Date(t.startedAt)).toLocaleTimeString()):''}</div></div>
@@ -7228,7 +6952,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     const empFormSave = qs('#emp-form-save');
     if (empFormSave) {
       empFormSave.addEventListener('click', () => {
-        const id = qs('#emp-form-id').value.trim();
         const name = qs('#emp-form-name').value.trim();
         const role = qs('#emp-form-role').value;
         const cap = parseInt(qs('#emp-form-cap').value) || 100;
@@ -7240,40 +6963,19 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           return;
         }
 
-        if(id){
-          // Edycja istniejącego pracownika
-          const existing = state.employees.find(e => e.id === id);
-          if(existing){
-            existing.name = name;
-            existing.role = role || 'Inne';
-            existing.phone = phone;
-            existing.cap = cap;
-            existing.hoursPerDay = hours;
-          }
-        } else {
-          // Dodanie nowego pracownika
-          state.employees.push({
-            id: uid(),
-            name: name,
-            role: role || 'Inne',
-            phone: phone,
-            cap: cap,
-            hoursPerDay: hours
-          });
-        }
+        state.employees.push({
+          id: uid(),
+          name: name,
+          role: role || 'Inne',
+          phone: phone,
+          cap: cap,
+          hoursPerDay: hours
+        });
         
         save();
         renderEmployees();
         
-        // Wyczyść i ukryj formularz
-        qs('#emp-form-id').value = '';
-        qs('#emp-form-name').value = '';
-        qs('#emp-form-role').value = '';
-        qs('#emp-form-cap').value = 100;
-        qs('#emp-form-hours').value = 8;
-        qs('#emp-form-phone').value = '';
-        const formTitle = qs('#emp-form-container [style*="font-weight:600"]');
-        if(formTitle) formTitle.textContent = '➕ Nowy pracownik';
+        // Ukryj formularz
         qs('#emp-form-container').classList.add('hidden');
       });
     }
@@ -7282,270 +6984,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     const empFormCancel = qs('#emp-form-cancel');
     if (empFormCancel) {
       empFormCancel.addEventListener('click', () => {
-        // Wyczyść formularz
-        qs('#emp-form-id').value = '';
-        qs('#emp-form-name').value = '';
-        qs('#emp-form-role').value = '';
-        qs('#emp-form-cap').value = 100;
-        qs('#emp-form-hours').value = 8;
-        qs('#emp-form-phone').value = '';
-        const formTitle = qs('#emp-form-container [style*="font-weight:600"]');
-        if(formTitle) formTitle.textContent = '➕ Nowy pracownik';
         qs('#emp-form-container').classList.add('hidden');
-      });
-    }
-    
-    // === OBSŁUGA ZADAŃ MONTAŻOWYCH ===
-    
-    // Pokazanie formularza nowego zadania montażowego
-    const asAddTaskBtn = qs('#as-add-task');
-    if(asAddTaskBtn){
-      asAddTaskBtn.addEventListener('click', ()=>{
-        const formContainer = qs('#as-task-form-container');
-        if(!formContainer) return;
-        
-        // Wyczyść ID edycji
-        delete formContainer.dataset.editId;
-        
-        // Wygeneruj automatyczny numer zadania
-        const assemblyTasks = (state.tasks||[]).filter(t => t.isAssemblyTask);
-        const nextNumber = assemblyTasks.length + 1;
-        const taskNumber = 'ZM-' + String(nextNumber).padStart(4, '0');
-        qs('#as-task-number').value = taskNumber;
-        
-        // Pobierz dane z głównego formularza montażu
-        const mainOrderId = qs('#as-order')?.value || '';
-        const orderObj = mainOrderId ? (state.orders||[]).find(o=>o.id===mainOrderId) : null;
-        const mainClient = orderObj?.client || '';
-        const mainAddress = qs('#as-address')?.value || '';
-        const mainPostal = qs('#as-placecode')?.value || '';
-        const mainPhone = qs('#as-phone')?.value || '';
-        const mainDate = qs('#as-install')?.value || '';
-        const mainDepart = qs('#as-go')?.value || '';
-        const mainVisit = qs('#as-visit')?.value || '';
-        const mainHours = qs('#as-hours')?.value || '2';
-        const mainDesc = qs('#as-desc')?.value || '';
-        const mainEmployees = Array.from(qs('#as-employees')?.selectedOptions || []).map(opt => opt.value);
-        
-        // Wypełnij listę zleceń
-        const orderSelect = qs('#as-task-order');
-        if(orderSelect){
-          orderSelect.innerHTML = '<option value="">— Brak powiązania —</option>';
-          (state.orders||[]).forEach(o=>{
-            const opt = document.createElement('option');
-            opt.value = o.id;
-            opt.textContent = o.name;
-            orderSelect.appendChild(opt);
-          });
-          // Zawsze ustaw na "Brak powiązania" jako domyślne
-          orderSelect.value = '';
-        }
-        
-        // Wypełnij listę pracowników
-        const empSelect = qs('#as-task-employees');
-        if(empSelect){
-          empSelect.innerHTML = '';
-          (state.employees||[]).forEach(e=>{
-            const opt = document.createElement('option');
-            opt.value = e.id;
-            opt.textContent = e.name;
-            empSelect.appendChild(opt);
-          });
-          // Ustaw pracowników z głównego formularza
-          mainEmployees.forEach(empId => {
-            const option = empSelect.querySelector(`option[value="${empId}"]`);
-            if(option) option.selected = true;
-          });
-        }
-        
-        // Przepisz dane z głównego formularza
-        qs('#as-task-name').value = '';
-        qs('#as-task-client').value = mainClient;
-        qs('#as-task-address').value = mainAddress;
-        qs('#as-task-postal').value = mainPostal;
-        qs('#as-task-phone').value = mainPhone;
-        qs('#as-task-notes').value = mainDesc;
-        qs('#as-task-hours').value = mainHours || 2;
-        qs('#as-task-priority').value = 'normal';
-        qs('#as-task-depart').value = mainDepart;
-        qs('#as-task-visit').value = mainVisit;
-        
-        // Ustaw datę z głównego formularza lub dziś
-        const dateInput = qs('#as-task-date');
-        dateInput.value = mainDate || new Date().toISOString().split('T')[0];
-        
-        // Zmień tytuł
-        const formTitle = formContainer.querySelector('[style*="font-weight:600"]');
-        if(formTitle) formTitle.textContent = '👤 KLIENT';
-        
-        formContainer.classList.remove('hidden');
-        qs('#as-task-name')?.focus();
-      });
-    }
-    
-    // Zapisanie zadania montażowego
-    const asTaskSaveBtn = qs('#as-task-save');
-    if(asTaskSaveBtn){
-      asTaskSaveBtn.addEventListener('click', ()=>{
-        const formContainer = qs('#as-task-form-container');
-        const editId = formContainer?.dataset.editId;
-        
-        const type = qs('#as-task-type').value;
-        const name = qs('#as-task-name').value.trim();
-        const orderId = qs('#as-task-order').value;
-        const date = qs('#as-task-date').value;
-        const departTime = qs('#as-task-depart').value;
-        const visitTime = qs('#as-task-visit').value;
-        const clientName = qs('#as-task-client').value.trim();
-        const address = qs('#as-task-address').value.trim();
-        const postal = qs('#as-task-postal').value.trim();
-        const phone = qs('#as-task-phone').value.trim();
-        const hours = parseFloat(qs('#as-task-hours').value) || 2;
-        const priority = qs('#as-task-priority').value;
-        const notes = qs('#as-task-notes').value.trim();
-        
-        // Pobierz wybranych pracowników
-        const empSelect = qs('#as-task-employees');
-        const selectedEmps = Array.from(empSelect.selectedOptions).map(opt => opt.value);
-        const orderObj = orderId ? (state.orders||[]).find(o=>o.id===orderId) : null;
-        let startPlanned = null;
-        let endPlanned = null;
-        if(date){
-          const startDate = new Date(date);
-          if(departTime){
-            const [h, m] = departTime.split(':').map(Number);
-            if(!isNaN(h)) startDate.setHours(h, !isNaN(m)?m:0, 0, 0); else startDate.setHours(8,0,0,0);
-          }else{
-            startDate.setHours(8,0,0,0);
-          }
-          startPlanned = startDate.getTime();
-          endPlanned = startPlanned + (hours * 60 * 60 * 1000);
-        }
-        
-        if(!date){
-          alert('Wypełnij wymagane pole: Data realizacji');
-          return;
-        }
-        
-        const taskNumber = qs('#as-task-number').value || '';
-        
-        if(editId){
-          // Edycja istniejącego zadania
-          const task = state.tasks.find(t => t.id === editId);
-          if(task){
-            const icon = type === 'pomiar' ? '📏' : type === 'montaż' ? '🔧' : type === 'naprawa' ? '🔨' : type === 'regulacja' ? '⚙️' : type === 'dostawa' ? '🚚' : '📋';
-            const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
-            task.name = name ? `${icon} ${typeLabel} - ${name}` : `${icon} ${typeLabel}`;
-            task.opName = name;
-            task.type = type;
-            task.orderId = orderId || null;
-            task.assignees = selectedEmps;
-            task.employeeId = selectedEmps[0] || null;
-            task.estMin = hours * 60;
-            task.priority = priority;
-            task.installDate = date;
-            task.departTime = departTime;
-            task.visitTime = visitTime;
-            task.address = address;
-            task.postalCode = postal;
-            task.phone = phone;
-            task.notes = notes;
-            task.startPlanned = startPlanned;
-            task.endPlanned = endPlanned;
-            task.operationId = task.operationId || 'montaż-block';
-            task.orderNumber = orderObj?.name || orderId || 'Montaż';
-            task.model = orderObj?.model || '-';
-            task.client = clientName || orderObj?.client || '-';
-            task.deadline = orderObj?.deadline || date;
-            task.assemblyType = type;
-            task.assemblyStatus = task.status || 'todo';
-            task.assemblyDesc = notes;
-            task.hours = hours;
-            task.employeeIds = selectedEmps;
-            task.assemblyId = task.assemblyId || task.id;
-            // Numer pozostaje bez zmian przy edycji
-          }
-          delete formContainer.dataset.editId;
-        } else {
-          // Utwórz nowe zadanie
-          const icon = type === 'pomiar' ? '📏' : type === 'montaż' ? '🔧' : type === 'naprawa' ? '🔨' : type === 'regulacja' ? '⚙️' : type === 'dostawa' ? '🚚' : '📋';
-          const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
-          const task = {
-            id: uid('task'),
-            taskNumber: taskNumber,
-            name: name ? `${icon} ${typeLabel} - ${name}` : `${icon} ${typeLabel}`,
-            opName: name,
-            type: type,
-            orderId: orderId || null,
-            status: 'todo',
-            assignees: selectedEmps,
-            employeeId: selectedEmps[0] || null,
-            estMin: hours * 60,
-            elapsedMin: 0,
-            priority: priority,
-            installDate: date,
-            departTime: departTime,
-            visitTime: visitTime,
-            client: clientName || orderObj?.client || '-',
-            address: address,
-            postalCode: postal,
-            phone: phone,
-            notes: notes,
-            startPlanned: startPlanned,
-            endPlanned: endPlanned,
-            isAssemblyTask: true,
-            createdAt: Date.now(),
-            operationId: 'montaż-block',
-            orderNumber: orderObj?.name || orderId || 'Montaż',
-            model: orderObj?.model || '-',
-            deadline: orderObj?.deadline || date,
-            assemblyType: type,
-            assemblyStatus: 'todo',
-            assemblyDesc: notes,
-            hours: hours,
-            employeeIds: selectedEmps,
-            assemblyId: null
-          };
-          task.assemblyId = task.id;
-          state.tasks = state.tasks || [];
-          state.tasks.push(task);
-        }
-        
-        save();
-        
-        // Przepisz klienta z nowego zadania do głównego formularza montażu
-        if(clientName) {
-          qs('#as-client').value = clientName;
-        }
-        
-        // Ukryj formularz i wyczyść
-        formContainer.classList.add('hidden');
-        qs('#as-task-name').value = '';
-        qs('#as-task-client').value = '';
-        qs('#as-task-address').value = '';
-        qs('#as-task-postal').value = '';
-        qs('#as-task-phone').value = '';
-        qs('#as-task-notes').value = '';
-        
-        // Odśwież widoki
-        renderASPage();
-        if(typeof renderTasks === 'function') renderTasks();
-        if(typeof renderGantt === 'function') renderGantt();
-      });
-    }
-    
-    // Anulowanie formularza zadania montażowego
-    const asTaskCancelBtn = qs('#as-task-cancel');
-    if(asTaskCancelBtn){
-      asTaskCancelBtn.addEventListener('click', ()=>{
-        qs('#as-task-form-container').classList.add('hidden');
-        // Wyczyść formularz
-        qs('#as-task-name').value = '';
-        qs('#as-task-client').value = '';
-        qs('#as-task-address').value = '';
-        qs('#as-task-postal').value = '';
-        qs('#as-task-phone').value = '';
-        qs('#as-task-notes').value = '';
       });
     }
   }
@@ -8033,7 +7472,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         const oid = sel.value; const ord = (state.orders||[]).find(x=>x.id===oid) || {};
         if(ord){
           // automatycznie wypełnij dane montażu z zlecenia
-          qs('#as-client').value = ord.client || '';
           qs('#as-placecode').value = ord.postalCode || ord.post || '';
           qs('#as-phone').value = ord.phone || ord.orderPhone || '';
           qs('#as-address').value = ord.address || '';
@@ -8047,126 +7485,25 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       });
     }
     const host=qs('#as-list'); if(!host) return; host.innerHTML='';
-    
-    // Renderuj wpisy montażu i zadania montażowe razem
-    const allItems = [];
-    
-    // Dodaj wpisy z state.after
-    (state.after||[]).forEach(a=>{
+    (state.after||[]).slice().reverse().forEach(a=>{
+      const d=document.createElement('div'); d.className='card';
       const orderObj = (state.orders||[]).find(o=>o.id===a.order) || {};
       const placeCode = a.postalCode || orderObj.postalCode || orderObj.placeCode || orderObj.placecode || '';
       const phoneNumber = a.phone || orderObj.phone || '';
       const address = a.address || orderObj.address || '';
-      const clientName = a.client || orderObj.client || '';
+      // Support both old (employeeId) and new (employeeIds array) format
       const empIds = a.employeeIds || (a.employeeId ? [a.employeeId] : []);
       const empNames = empIds.length > 0 
         ? empIds.map(eid => (state.employees||[]).find(e=>e.id===eid)?.name || eid).join(', ')
-        : 'Nieprzypisane';
+        : '-';
       const hoursText = a.hours ? `${a.hours}h` : '-';
-      
-      allItems.push({
-        date: a.installDate || '',
-        type: 'after',
-        data: a,
-        render: ()=>{
-          const d=document.createElement('div'); 
-          d.className='card';
-          const typeIcon = a.type === 'montaż' ? '🔧' : a.type === 'reklamacja' ? '⚠️' : a.type === 'pomiar' ? '📏' : '📋';
-          const statusBadge = a.status === 'nowe' ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;background:#94a3b8;color:white">NOWE</span>' :
-                              a.status === 'w toku' ? '<span style="padding:2px 8px;border-radius:4px;font-size:11px;background:#f97316;color:white">W TOKU</span>' :
-                              '<span style="padding:2px 8px;border-radius:4px;font-size:11px;background:#22c55e;color:white">ZAMKNIĘTE</span>';
-          
-          d.innerHTML=`<div class="row" style="justify-content:space-between">
-            <div style="flex:1">
-              <div class="row" style="gap:8px;align-items:center;margin-bottom:4px">
-                <b style="font-size:15px">${typeIcon} ${a.type.toUpperCase()}</b>
-                ${statusBadge}
-                ${orderObj.name ? '<span class="muted">• '+orderObj.name+'</span>' : ''}
-              </div>
-              ${clientName ? '<div style="font-weight:600;color:#fff;background:#1e293b;padding:4px 8px;border-radius:4px;display:inline-block;margin-bottom:4px">👤 Klient: '+clientName+'</div>' : ''}
-              <div class="muted">📅 Montaż: ${a.installDate||'-'} • 🚗 Wyjazd: ${a.departTime||'-'} • 🏠 Wizyta: ${a.visitTime||'-'} • ⏱️ Czas: ${hoursText}</div>
-              <div class="muted">📍 ${address || 'Brak adresu'} • ${placeCode ? placeCode+' •' : ''} 📞 ${phoneNumber || '-'}</div>
-              <div class="muted">👷 ${empNames}</div>
-              ${a.desc ? '<div class="muted" style="margin-top:4px">💬 '+a.desc+'</div>' : ''}
-            </div>
-            <div class="row" style="gap:4px">
-              <button class="btn" data-as-ed="${a.id}">Edytuj</button>
-              <button class="btn red" data-as-del="${a.id}">Usuń</button>
-            </div>
-          </div>`;
-          return d;
-        }
-      });
+      d.innerHTML=`<div class="row" style="justify-content:space-between"><div><b>${a.type}</b> • ${a.status} • ${orderObj.name||a.order||''}
+      <div class="muted">Montaż: ${a.installDate||'-'} • wyjazd: ${a.departTime||'-'} • wizyta: ${a.visitTime||'-'} • czas: ${hoursText}</div>
+      <div class="muted">Adres: ${address || '-'} • Kod: ${placeCode || '-'} • Tel: ${phoneNumber || '-'}</div>
+      <div class="muted">Pracownicy: ${empNames}</div>
+      <div class="muted">${a.desc||''}</div></div><div><button class="btn" data-as-ed="${a.id}">Edytuj</button> <button class="btn red" data-as-del="${a.id}">Usuń</button></div></div>`;
+      host.appendChild(d);
     });
-    
-    // Dodaj zadania montażowe z state.tasks
-    const assemblyTasks = (state.tasks||[]).filter(t => t.isAssemblyTask);
-    assemblyTasks.forEach(task=>{
-      const orderObj = task.orderId ? ((state.orders||[]).find(o=>o.id===task.orderId) || {}) : {};
-      const orderName = orderObj.name || (task.orderId ? 'Zlecenie #' + task.orderId.slice(0,8) : '');
-      const clientName = (task.client && task.client !== '-') ? task.client : (orderObj.client || '');
-      const empIds = task.assignees || (task.employeeId ? [task.employeeId] : []);
-      const empNames = empIds.length > 0 
-        ? empIds.map(eid => (state.employees||[]).find(e=>e.id===eid)?.name || eid).join(', ')
-        : 'Nieprzypisane';
-      
-      allItems.push({
-        date: task.installDate || '',
-        type: 'task',
-        data: task,
-        render: ()=>{
-          const d=document.createElement('div'); 
-          d.className='card';
-          
-          const statusColors = {
-            'todo': 'background:#94a3b8;color:white',
-            'run': 'background:#f97316;color:white',
-            'paused': 'background:#eab308;color:white',
-            'done': 'background:#22c55e;color:white',
-            'blocked': 'background:#ef4444;color:white'
-          };
-          const statusStyle = statusColors[task.status] || statusColors['todo'];
-          const statusText = task.status === 'todo' ? 'NOWE' : task.status === 'run' ? 'W TOKU' : task.status === 'done' ? 'ZAMKNIĘTE' : task.status.toUpperCase();
-          const priorityBadge = task.priority === 'urgent' ? '🔴 PILNE' : task.priority === 'high' ? '🟡 Wysoki' : '';
-          const taskNumberDisplay = task.taskNumber ? `[${task.taskNumber}] ` : '';
-          
-          d.innerHTML=`<div class="row" style="justify-content:space-between">
-            <div style="flex:1">
-              <div class="row" style="gap:8px;align-items:center;margin-bottom:4px">
-                <b style="font-size:15px">${taskNumberDisplay}${task.name}</b>
-                <span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;${statusStyle}">${statusText}</span>
-                ${priorityBadge ? '<span style="font-size:12px">'+priorityBadge+'</span>' : ''}
-                ${clientName && clientName !== '-' ? '<span style="font-weight:600;color:#fff;background:#1e293b;padding:4px 8px;border-radius:4px">👤 Klient: '+clientName+'</span>' : ''}
-                ${orderName ? '<span class="muted">• '+orderName+'</span>' : ''}
-              </div>
-              <div class="muted">📅 Data: ${task.installDate||'-'} • 🚗 Wyjazd: ${task.departTime||'-'} • 🏠 Wizyta: ${task.visitTime||'-'} • ⏱️ Czas: ${(task.estMin/60).toFixed(1)}h</div>
-              <div class="muted">📍 ${task.address||'Brak adresu'} • ${task.postalCode ? task.postalCode+' •' : ''} 📞 ${task.phone||'-'}</div>
-              <div class="muted">👷 ${empNames}</div>
-              ${task.notes ? '<div class="muted" style="margin-top:4px">💬 '+task.notes+'</div>' : ''}
-            </div>
-            <div class="row" style="gap:4px">
-              <button class="btn" data-as-task-ed="${task.id}">Edytuj</button>
-              <button class="btn red" data-as-task-del="${task.id}">Usuń</button>
-            </div>
-          </div>`;
-          return d;
-        }
-      });
-    });
-    
-    // Sortuj po dacie (najnowsze na górze)
-    allItems.sort((a, b) => {
-      const dateA = a.date ? new Date(a.date).getTime() : 0;
-      const dateB = b.date ? new Date(b.date).getTime() : 0;
-      return dateB - dateA;
-    });
-    
-    // Renderuj wszystkie wpisy
-    if(allItems.length === 0){
-      host.innerHTML = '<div class="muted" style="padding:20px;text-align:center">Brak wpisów montażowych</div>';
-    } else {
-      allItems.forEach(item => host.appendChild(item.render()));
-    }
   }
   qs('#as-form').addEventListener('submit', async (ev)=>{
     ev.preventDefault(); const id=qs('#as-id').value||uid(); const type=qs('#as-type').value; const order=qs('#as-order').value||''; const status=qs('#as-status').value; const desc=qs('#as-desc').value||''; const install=qs('#as-install').value||''; const depart=qs('#as-go').value||''; const visit=qs('#as-visit').value||'';
@@ -8177,11 +7514,10 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     const asPhone = qs('#as-phone').value || '';
     const asPlace = qs('#as-placecode').value || '';
     const asAddress = qs('#as-address').value || '';
-    const asClient = qs('#as-client').value || '';
     const asHours = parseFloat(qs('#as-hours').value) || 0;
     const orderObj = (state.orders||[]).find(o=>o.id===order);
     const ex=state.after.find(x=>x.id===id); 
-    const payload={id,type,order,status,desc,installDate:install,departTime:depart,visitTime:visit,phone:asPhone,postalCode:asPlace,address:asAddress,client:asClient,employeeIds:selectedEmployees,hours:asHours};
+    const payload={id,type,order,status,desc,installDate:install,departTime:depart,visitTime:visit,phone:asPhone,postalCode:asPlace,address:asAddress,employeeIds:selectedEmployees,hours:asHours};
     if(ex) Object.assign(ex,payload); else state.after.push(payload);
     // optional immediate save after AS save
     maybeAutoSave('as-save');

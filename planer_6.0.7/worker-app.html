@@ -7,7 +7,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Worker App v6.0.6 - Lista Zadań</title>
+    <title>Worker App v6.0.7 - Lista Zadań</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -780,7 +780,7 @@
     </div>
 
     <div class="header">
-    <h1>📋 Lista Zadań <span class="version-badge">v6.0.6</span></h1>
+    <h1>📋 Lista Zadań <span class="version-badge">v6.0.7</span></h1>
         <div class="date" id="current-date"></div>
         <div class="worker-access">
             <div id="login-card" class="login-card">
@@ -2134,9 +2134,9 @@
 
             // Ustawienie nazwy użytkownika w tytule (tylko jeśli currentUser istnieje)
             if (currentUser && currentUser.name) {
-                document.title = `Worker App v6.0.6 - ${currentUser.name}`;
+                document.title = `Worker App v6.0.7 - ${currentUser.name}`;
             } else {
-                document.title = 'Worker App v6.0.6';
+                document.title = 'Worker App v6.0.7';
             }
             
             // Uruchomienie przypomnień dla aktywnych zadań
@@ -2563,7 +2563,7 @@
             task.status = 'run';
             task.startTime = Date.now();
             task.startedAt = new Date().toISOString();
-            task.startedBy = currentUser ? currentUser.name : 'Worker App v6.0.6';
+            task.startedBy = currentUser ? currentUser.name : 'Worker App v6.0.7';
             
             // Oznacz jako ostatnio edytowane - ignoruj zmiany z Firebase przez 5 sekund
             recentlyEditedTasks.set(task.id, Date.now());
@@ -2604,7 +2604,7 @@
             console.log('📊 Status po:', task.status);
             task.endTime = Date.now();
             task.closedAt = new Date().toISOString();
-            task.closedBy = currentUser ? currentUser.name : 'Worker App v6.0.6';
+            task.closedBy = currentUser ? currentUser.name : 'Worker App v6.0.7';
             
             // Oznacz jako ostatnio edytowane
             recentlyEditedTasks.set(task.id, Date.now());
