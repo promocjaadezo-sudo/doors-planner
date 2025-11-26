@@ -1,0 +1,166 @@
+{
+  "timestamp": "2025-11-02T14:56:24.553Z",
+  "summary": {
+    "total": 31,
+    "passed": 31,
+    "failed": 0,
+    "successRate": 100
+  },
+  "tests": [
+    {
+      "name": "powinien utworzyć instancję singletona",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "powinien mieć poprawną strukturę stanu początkowego",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "powinien mieć ustawioną stałą MAX_HISTORIA_SIZE",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "powinien dodać wiadomość do historii",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "powinien zwrócić obiekt z dodanej wiadomości",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "powinien dodać wiele wiadomości po kolei",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "powinien dodać timestamp do wiadomości",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "timestamp powinien być w formacie ISO 8601",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "timestamp powinien być aktualny (w ciągu 5 sekund)",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "kolejne timestampy powinny rosnąć monotonnie",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "powinien zachować historię poniżej limitu",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "powinien ograniczyć historię do MAX_HISTORIA_SIZE przy przekroczeniu",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "powinien zachować najnowsze wpisy po przekroczeniu limitu",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "powinien zwrócić kopię stanu, nie referencję",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "modyfikacja zwróconego stanu nie powinna wpłynąć na oryginalny",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "modyfikacja tablicy historiaCzatu na kopii nie powinna wpłynąć na oryginał",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "powinien zaimportować poprawny JSON",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "powinien odrzucić JSON gdzie historiaCzatu nie jest tablicą",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "powinien odrzucić JSON gdzie statusAI nie jest stringiem",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "powinien odrzucić JSON gdzie statusAI ma nieprawidłową wartość",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "powinien odrzucić nieprawidłowy JSON (syntax error)",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "powinien zaakceptować starą strukturę (stringi w historii)",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "powinien ustawić status error przy nieudanym imporcie",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "powinien zapisać komunikat błędu w ostatniBlad",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "ustawStatus powinien zapisać błąd",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "powinien wyczyścić błąd przy udanym imporcie",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "ustawSesje powinien ustawić ID sesji",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "ustawStatus powinien zmienić status AI",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "resetujStan powinien zresetować wszystkie pola",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "exportujDoJSON powinien zwrócić string JSON",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "name": "eksportowany JSON powinien być poprawnie parsowany",
+      "status": "PASS",
+      "error": null
+    }
+  ]
+}
