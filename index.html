@@ -5,8 +5,8 @@
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="last-modified" content="2025-11-16">
-<title>Planner Produkcji Drzwi — v6.0.8 (2025-11-19)</title>
+<meta name="last-modified" content="2025-11-27">
+<title>Planner Produkcji Drzwi — v6.1.1 (2025-11-27)</title>
 <style>
 :root{--bg:#0f172a;--panel:#1f2937;--muted:#94a3b8;--b:#374151;--acc:#2563eb;--ok:#16a34a;--warn:#d97706;--err:#dc2626;--text:#ffffff;--text-secondary:#ffffff}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:#ffffff;line-height:1.5}
@@ -757,8 +757,8 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
 </header>
 
 <!-- Banner ostrzegawczy o różnych portach -->
-<div id="port-warning-banner" style="display: block; background: rgb(37, 99, 235); color: white; padding: 12px 20px; text-align: center; font-size: 14px; font-weight: 600; border-bottom: 3px solid rgb(29, 78, 216);">
-  🔵 WERSJA 6.0.8 - ZARZĄDZANIE PIN + CZYSZCZENIE ZADAŃ: <span id="port-warning-detail">Dodano modal zarządzania PIN pracowników i automatyczne czyszczenie pustych zadań magazynowych.</span>
+<div id="port-warning-banner" style="display: block; background: rgb(22, 163, 74); color: white; padding: 12px 20px; text-align: center; font-size: 14px; font-weight: 600; border-bottom: 3px solid rgb(21, 128, 61);">
+  🟢 WERSJA 6.0.9 - NAPRAWIONE SZABLONY + USUWANIE OPERACJI: <span id="port-warning-detail">Dodano pełną obsługę szablonów i naprawiono usuwanie operacji z Firebase.</span>
   <button onclick="window.showPortInfo()" style="background:white;color:#dc2626;border:none;padding:4px 12px;border-radius:4px;margin-left:12px;cursor:pointer;font-weight:600">📊 Pokaż info</button>
   <button onclick="window.exportDataToFile()" style="background:#10b981;color:white;border:none;padding:4px 12px;border-radius:4px;margin-left:8px;cursor:pointer;font-weight:600">💾 Eksport</button>
   <button onclick="window.importDataFromFile()" style="background:#3b82f6;color:white;border:none;padding:4px 12px;border-radius:4px;margin-left:8px;cursor:pointer;font-weight:600">📁 Import</button>
@@ -766,7 +766,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
 </div>
 
 <div class="wrap">
-  <div class="row" style="justify-content:space-between"><h1>Planner Produkcji Drzwi — v6.0.8</h1></div>
+  <div class="row" style="justify-content:space-between"><h1>Planner Produkcji Drzwi — v6.1.1</h1></div>
 
   <div class="card hidden" id="p-dash">
     <h3>Panel</h3>
@@ -1102,6 +1102,41 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
       <div style="grid-column:1/-1"><label>Domyślni pracownicy (multi)</label>
         <select id="op-emp" multiple="" size="5" style="height:140px"></select>
       </div>
+      <div class="card" id="op-checklist-card" style="grid-column:1/-1;margin-top:12px">
+        <div class="row" style="justify-content:space-between;align-items:flex-end;gap:12px">
+          <div>
+            <label style="display:block;margin-bottom:4px">Checklisty operacji</label>
+            <div class="muted" style="font-size:12px">Dodaj punkty listy kontrolnej, które będą kopiowane do procesów i zadań</div>
+          </div>
+          <div id="op-checklist-summary" class="muted" style="font-size:12px">0 punktów</div>
+        </div>
+        <div class="row" style="gap:8px;margin:12px 0;flex-wrap:wrap">
+          <input id="op-checklist-new-label" placeholder="Treść punktu" style="flex:2;min-width:200px">
+          <select id="op-checklist-new-type" style="flex:1;min-width:140px">
+            <option value="checkbox">☑️ Pole wyboru</option>
+            <option value="confirm">✓ Potwierdzenie</option>
+            <option value="text">📝 Tekst</option>
+            <option value="number">🔢 Liczba</option>
+            <option value="photo">📷 Zdjęcie</option>
+            <option value="measure">📏 Pomiary</option>
+          </select>
+          <label class="muted" style="font-size:12px"><input type="checkbox" id="op-checklist-new-required"> Wymagane</label>
+          <label class="muted" style="font-size:12px"><input type="checkbox" id="op-checklist-new-default"> Domyślnie ✔️</label>
+          <input id="op-checklist-new-hint" placeholder="Podpowiedź / instrukcja" style="flex:2;min-width:200px">
+          <div style="flex:2;min-width:250px;display:flex;gap:4px;">
+            <input id="op-checklist-new-image" placeholder="🖼️ URL zdjęcia / schematu (opcjonalnie)" style="flex:1;">
+            <input type="file" id="op-checklist-image-file" accept="image/*" style="display:none" onchange="handleChecklistImageUpload(this)">
+            <button class="btn" type="button" onclick="document.getElementById('op-checklist-image-file').click()" title="Prześlij zdjęcie z komputera">📤 Upload</button>
+          </div>
+          <button class="btn" type="button" id="op-checklist-add-btn">➕ Dodaj punkt</button>
+        </div>
+        <div id="op-checklist-items" class="list" style="gap:8px"></div>
+        <div class="row" style="gap:16px;margin-top:12px;flex-wrap:wrap">
+          <label><input type="checkbox" id="op-checklist-required"> Lista wymagana przed zamknięciem</label>
+          <label><input type="checkbox" id="op-checklist-propagate" checked> Automatycznie dodawaj do zadań</label>
+          <label><input type="checkbox" id="op-checklist-allow-add" checked> Pracownik może dopisywać punkty</label>
+        </div>
+      </div>
       <div style="grid-column:1/-1;text-align:right">
         <button class="btn primary" type="submit">Dodaj / Zapisz</button>
       </div>
@@ -1120,33 +1155,43 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
   <div class="card hidden" id="p-proc">
     <div class="row" style="justify-content:space-between"><h3>Procesy</h3><span class="pill" id="proc-count">0</span></div>
     
-    <form id="proc-form" class="card">
-      <input type="hidden" id="proc-id">
-      
-      <div style="margin-bottom:16px">
-        <label>📝 Nazwa procesu *</label>
-        <input id="proc-name" required="" spellcheck="true" lang="pl" placeholder="np. SZABLON 1">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;cursor:pointer" onclick="toggleProcForm()">
+        <h4 style="margin:0">➕ Dodaj nowy proces</h4>
+        <span id="proc-form-toggle" style="font-size:20px">▼</span>
       </div>
       
-      <div style="display:grid;grid-template-columns:2fr auto;gap:12px;margin-bottom:16px">
-        <div>
-          <label>➕ Dodaj operację z katalogu</label>
-          <select id="proc-op-select"></select>
+      <form id="proc-form" class="hidden" style="margin-top:16px">
+        <input type="hidden" id="proc-id">
+        
+        <div style="margin-bottom:16px">
+          <label>📝 Nazwa procesu *</label>
+          <input id="proc-name" required="" spellcheck="true" lang="pl" placeholder="np. SZABLON 1">
         </div>
-        <div style="display:flex;align-items:end">
-          <button class="btn primary" id="proc-add-op" type="button">Dodaj</button>
+        
+        <div style="display:grid;grid-template-columns:2fr auto;gap:12px;margin-bottom:16px">
+          <div>
+            <label>➕ Dodaj operację z katalogu</label>
+            <select id="proc-op-select"></select>
+          </div>
+          <div style="display:flex;align-items:end">
+            <button class="btn primary" id="proc-add-op" type="button">Dodaj</button>
+          </div>
         </div>
-      </div>
-      
-      <div style="margin-bottom:16px">
-        <label>📑 Szablon materiałowy (opcjonalne)</label>
-        <select id="proc-template-select">
-          <option value="">Brak</option>
-        </select>
-      </div>
-      
-      <button class="btn primary" type="submit">💾 Zapisz proces</button>
-    </form>
+        
+        <div style="margin-bottom:16px">
+          <label>📑 Szablon materiałowy (opcjonalne)</label>
+          <select id="proc-template-select">
+            <option value="">Brak</option>
+          </select>
+        </div>
+        
+        <div class="row" style="gap:8px">
+          <button class="btn primary" type="submit">💾 Zapisz proces</button>
+          <button class="btn" type="button" onclick="cancelProcForm()">✕ Anuluj</button>
+        </div>
+      </form>
+    </div>
     
     <div class="card">
       <b>📋 Operacje w procesie</b>
@@ -2002,7 +2047,7 @@ Pracownik: MALINA" draggable="true">Szlifowanie (...</div></div></div><div class
     
     <div class="grid3">
       <div><label>Tryb</label><select id="set-mode"><option value="local">localStorage</option><option value="firebase" selected="">Firebase</option></select></div>
-	<div><label>Początek dnia (h)</label><input id="sched-start" type="number" min="0" max="23" value="8" spellcheck="true" lang="pl"></div>
+	<div><label>Początek dnia (h)</label><input id="sched-start" type="number" min="0" max="23" value="7" spellcheck="true" lang="pl"></div>
 	<div><label>Długość dnia (h)</label><input id="sched-len" type="number" min="1" max="16" value="8" spellcheck="true" lang="pl"></div>
       <div><label>App ID</label><input id="set-appid" value="doors-demo" spellcheck="true" lang="pl"></div>
       <div><label>User ID</label><input id="set-userid" value="hala-1" spellcheck="true" lang="pl"></div>
@@ -2537,6 +2582,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   }
 
   const storeKey='door_v50_state';
+  let hasLocalStateData = false;
   const DEFAULT_FIREBASE_CONFIG = {
     "apiKey": "AIzaSyD93UqqsHWoAUBV7g8OVKAnajIfGDX_ZdY",
     "authDomain": "doors-planner.firebaseapp.com",
@@ -2552,6 +2598,80 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   
   // Natychmiast przypisz state do window
   window.state = state;
+
+  const CHECKLIST_ITEM_ALLOWED_TYPES = ['checkbox','confirm','text','number','photo','measure'];
+  const CHECKLIST_ITEM_DEFAULT_TYPE = 'checkbox';
+
+  function normalizeChecklistItem(raw){
+    if(typeof raw === 'string'){
+      raw = { label: raw };
+    }
+    const base = raw && typeof raw === 'object' ? raw : {};
+    const typeCandidate = typeof base.type === 'string' ? base.type.trim().toLowerCase() : '';
+    const finalType = CHECKLIST_ITEM_ALLOWED_TYPES.includes(typeCandidate) ? typeCandidate : CHECKLIST_ITEM_DEFAULT_TYPE;
+    const metadata = (base.metadata && typeof base.metadata === 'object') ? {...base.metadata} : {};
+    return {
+      id: base.id || uid('chk'),
+      label: typeof base.label === 'string' ? base.label.trim() : '',
+      required: !!base.required,
+      type: finalType,
+      defaultDone: base.defaultDone === true,
+      notes: typeof base.notes === 'string' ? base.notes.trim() : '',
+      hint: typeof base.hint === 'string' ? base.hint.trim() : '',
+      metadata
+    };
+  }
+
+  function normalizeChecklistItems(collection){
+    if(!Array.isArray(collection)) return [];
+    return collection.map(item => normalizeChecklistItem(item));
+  }
+
+  function createChecklistTemplate(rawTemplate, opContext){
+    const base = rawTemplate && typeof rawTemplate === 'object' ? rawTemplate : {};
+    const template = {
+      id: base.id || uid('chk_tpl'),
+      version: Number.isFinite(base.version) ? base.version : parseInt(base.version, 10) || 1,
+      label: typeof base.label === 'string' ? base.label : (opContext && opContext.name) || '',
+      source: base.source || 'operation',
+      sourceOperationId: base.sourceOperationId || (opContext && opContext.id) || null,
+      updatedAt: base.updatedAt || Date.now(),
+      updatedBy: base.updatedBy || null,
+      items: normalizeChecklistItems(base.items),
+      metadata: (base.metadata && typeof base.metadata === 'object') ? {...base.metadata} : {}
+    };
+    return template;
+  }
+
+  function ensureOperationChecklist(op){
+    if(!op || typeof op !== 'object') return op;
+    op.checklistTemplate = createChecklistTemplate(op.checklistTemplate, op);
+    const currentSettings = op.checklistSettings && typeof op.checklistSettings === 'object' ? op.checklistSettings : {};
+    op.checklistSettings = {
+      required: currentSettings.required === true,
+      propagateToTasks: currentSettings.propagateToTasks === undefined ? true : !!currentSettings.propagateToTasks,
+      allowWorkerAdditions: currentSettings.allowWorkerAdditions === undefined ? true : !!currentSettings.allowWorkerAdditions
+    };
+    return op;
+  }
+
+  function ensureOperationsCatalogChecklists(list){
+    if(!Array.isArray(list)) return [];
+    for(let i=0;i<list.length;i++){
+      ensureOperationChecklist(list[i]);
+    }
+    return list;
+  }
+
+  try{
+    window.normalizeChecklistItem = normalizeChecklistItem;
+    window.normalizeChecklistItems = normalizeChecklistItems;
+    window.createChecklistTemplate = createChecklistTemplate;
+    window.ensureOperationChecklist = ensureOperationChecklist;
+    window.ensureOperationsCatalogChecklists = ensureOperationsCatalogChecklists;
+  }catch(_){ }
+
+  ensureOperationsCatalogChecklists(state.operationsCatalog);
   
   // 🔒 FLAGA SYNCHRONIZACJI - Blokuje loadFromDB() podczas usuwania danych
   window._isSyncingDelete = false;
@@ -2666,8 +2786,22 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   // ensure all requested operations exist (no duplicates by lowercased name)
   const ensureOp = (name, time=10, skills=[])=>{
     if(!name) return;
-    const exists = (state.operationsCatalog||[]).some(o=> (o.name||'').toLowerCase() === name.toLowerCase());
-    if(!exists){ state.operationsCatalog.push({id:uid(), no:(state.operationsCatalog||[]).length+1, name, time, workers:1, skills, defaultAssignees:[]}); }
+    const normalizedName = name.trim();
+    const catalog = state.operationsCatalog || (state.operationsCatalog = []);
+    const exists = catalog.some(o=> (o.name||'').toLowerCase() === normalizedName.toLowerCase());
+    if(exists) return;
+    const newId = uid();
+    const op = {
+      id: newId,
+      no: catalog.length + 1,
+      name: normalizedName,
+      time,
+      workers: 1,
+      skills,
+      defaultAssignees: []
+    };
+    ensureOperationChecklist(op);
+    catalog.push(op);
   };
 
   function normalizeOperationKey(name){
@@ -2692,7 +2826,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       }
       seen.add(key);
     }
-    list.forEach((op, idx)=>{ if(op && typeof op === 'object'){ op.no = idx + 1; } });
+    list.forEach((op, idx)=>{ if(op && typeof op === 'object'){ op.no = idx + 1; ensureOperationChecklist(op); } });
     if(removed && (window.logDev || Math.random() < 0.2)){
       console.log(`[operationsCatalog][dedupe] Usunięto ${removed} duplikatów${contextLabel ? ' (' + contextLabel + ')' : ''}. Pozostało ${list.length}.`);
     }
@@ -2937,6 +3071,8 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         state.employees = (state.employees || []).filter(e => !/^emp\d+$/.test(e.id) && !(e.id && e.id.startsWith('emp_test_')));
       }
 
+      ensureOperationsCatalogChecklists(state.operationsCatalog);
+
       if(Array.isArray(state.operationsCatalog) && state.operationsCatalog.length > 1){
         const beforeOps = state.operationsCatalog.length;
         dedupeOperationsCatalog(state.operationsCatalog, 'save()');
@@ -3133,6 +3269,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           // Zapisz dane
           localStorage.setItem(storeKey, JSON.stringify(importedData));
           Object.assign(state, importedData);
+          ensureOperationsCatalogChecklists(state.operationsCatalog);
           if(Array.isArray(state.operationsCatalog) && state.operationsCatalog.length > 1){
             dedupeOperationsCatalog(state.operationsCatalog, 'import-apply');
           }
@@ -3182,9 +3319,11 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     const raw=localStorage.getItem(storeKey); 
     console.log('🔍 LOAD: Sprawdzam localStorage (klucz: ' + storeKey + ')...');
     if(raw) {
+      hasLocalStateData = true;
       const loadedData = JSON.parse(raw);
       console.log('📦 LOAD: Dane z localStorage (długość):', raw.length, 'znaków');
       Object.assign(state, loadedData);
+      ensureOperationsCatalogChecklists(state.operationsCatalog);
       if(Array.isArray(state.operationsCatalog) && state.operationsCatalog.length > 1){
         const beforeOps = state.operationsCatalog.length;
         dedupeOperationsCatalog(state.operationsCatalog, 'localStorage-load');
@@ -3197,8 +3336,29 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         operations: state.operationsCatalog?.length || 0,
         processes: state.processes?.length || 0,
         orders: state.orders?.length || 0,
-        tasks: state.tasks?.length || 0
+        tasks: state.tasks?.length || 0,
+        deletedOperations: state.deletedOperations?.length || 0,
+        deletedProcesses: state.deletedProcesses?.length || 0
       });
+      // 🔧 DIAGNOSTYKA: Pokaż usunięte operacje z localStorage
+      if(Array.isArray(state.deletedOperations) && state.deletedOperations.length > 0){
+        console.log('🗑️ [localStorage] Wczytano deletedOperations:', state.deletedOperations);
+      }
+      // 🔁 Jeśli brak deletedOperations w głównym stanie, spróbuj z kopii awaryjnej
+      if((!Array.isArray(state.deletedOperations) || state.deletedOperations.length === 0)){
+        try {
+          const backup = localStorage.getItem('deletedOperations_backup');
+          if(backup){
+            const parsed = JSON.parse(backup);
+            if(Array.isArray(parsed) && parsed.length){
+              state.deletedOperations = parsed.slice();
+              console.log('🗂️ [localStorage] Przywrócono deletedOperations z kopii awaryjnej:', state.deletedOperations);
+            }
+          }
+        } catch(e) {
+          console.warn('⚠️ [localStorage] Nie udało się odczytać kopii deletedOperations:', e && e.message);
+        }
+      }
     } else {
       console.log('⚠️ LOAD: Brak danych w localStorage (klucz: ' + storeKey + '), używam domyślne');
     }
@@ -3210,11 +3370,15 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   // Jeśli po wczytaniu localStorage nadal brak procesów/operacji, generuj domyślne dane
   
   // Seed operationsCatalog if empty
-  if(!(state.operationsCatalog && state.operationsCatalog.length)){
+  if(!hasLocalStateData && !(state.operationsCatalog && state.operationsCatalog.length)){
     console.log('🌱 SEED: Tworzę domyślne operacje...');
     state.operationsCatalog = [];
     let i = 1;
-    const addOp = (name, time=10, skills=[])=>{ state.operationsCatalog.push({id: uid(), no: i++, name, time, workers:1, skills, defaultAssignees:[]}); };
+    const addOp = (name, time=10, skills=[])=>{
+      const op = {id: uid(), no: i++, name, time, workers:1, skills, defaultAssignees:[]};
+      ensureOperationChecklist(op);
+      state.operationsCatalog.push(op);
+    };
     // FUTRYNA
     addOp('Frezowanie na CNC (belki futryny)', 40, ['CNC','belki']);
     addOp('Sklejanie belek (futryna)', 20, ['sklejanie','belki']);
@@ -3252,13 +3416,14 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     addOp('Polerowanie zamków i wypalenie logo', 12, ['zamki','polerowanie']);
     addOp('Wymiary szyby (szer, H)', 4, ['szyby','wymiary']);
     console.log('✅ SEED: Utworzono', state.operationsCatalog.length, 'operacji');
+    ensureOperationsCatalogChecklists(state.operationsCatalog);
   }
   
   // Seed processes if empty (MUSI BYĆ PO operationsCatalog!)
-  if(!(state.processes && state.processes.length)){
+  if(!hasLocalStateData && !(state.processes && state.processes.length)){
     console.log('🌱 SEED: Tworzę domyślne procesy...');
     const procAdd = (name, opNames)=>{
-      const ops = (opNames||[]).map(n=>{ const o = state.operationsCatalog.find(x=>x.name===n); return o?{name:o.name,time:o.time||0}:{name:n,time:0}; });
+      const ops = (opNames||[]).map(n=>{ const o = state.operationsCatalog.find(x=>x.name===n); return o?{id:o.id,name:o.name,time:o.time||0}:{name:n,time:0}; });
       state.processes.push({id:uid(), name, operations: ops});
     };
     procAdd('Proces: Futryna', ['Frezowanie na CNC (belki futryny)','Sklejanie belek (futryna)','Kontrola wymiarów (futryna)','Szlifowanie (futryna)','Szczotkowanie (futryna)','Malowanie (futryna)','Okuwanie (futryna)']);
@@ -3779,12 +3944,47 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           qs('#op-time').value = o.time || 10; qs('#op-workers').value = o.workers || 1;
           qs('#op-skills').value = (o.skills || []).join(';'); populateOpEmployees();
           const sel = qs('#op-emp'); const set = new Set((o.defaultAssignees || []).map(a => a.id));
-          Array.from(sel.options || []).forEach(opt => opt.selected = set.has(opt.value)); qs('#op-msg').textContent = ''; break;
+          Array.from(sel.options || []).forEach(opt => opt.selected = set.has(opt.value));
+          loadOpChecklistDraftFromOperation(o);
+          qs('#op-msg').textContent = ''; break;
         }
         if(t.dataset.opDel) {
           const id = t.dataset.opDel; if (!confirm('Usunąć operację?')) return;
-          state.operationsCatalog = (state.operationsCatalog || []).filter(x => x.id !== id); save(); renderOps();
-          try { if (state.storage.mode === 'firebase' && await ensureFirebase()) { await fbRoot().collection('operationsCatalog').doc(id).delete(); } } catch (e) { console.warn('Błąd usuwania operacji:', e.message); } break;
+          console.log('🗑️ [DELETE] Usuwam operację:', id);
+          state.operationsCatalog = (state.operationsCatalog || []).filter(x => x.id !== id);
+          ensureOperationsCatalogChecklists(state.operationsCatalog);
+          // Dodaj do listy usuniętych operacji (podobnie jak deletedProcesses)
+          state.deletedOperations = Array.isArray(state.deletedOperations) ? state.deletedOperations : [];
+          if (!state.deletedOperations.includes(id)) {
+            state.deletedOperations.push(id);
+            if (state.deletedOperations.length > 200) {
+              state.deletedOperations = state.deletedOperations.slice(-200);
+            }
+          }
+          console.log('🗑️ [DELETE] Lista usuniętych operacji:', state.deletedOperations);
+          // 🔧 OSOBNY ZAPIS do localStorage - zabezpieczenie przed utratą
+          try {
+            localStorage.setItem('deletedOperations_backup', JSON.stringify(state.deletedOperations));
+            console.log('💾 [DELETE] Zapisano deletedOperations do backup:', state.deletedOperations);
+          } catch(e) { console.warn('Nie udało się zapisać deletedOperations backup:', e); }
+          
+          save(); renderOps();
+          // Usuń z Firebase
+          if(state.storage && state.storage.mode === 'firebase'){
+            (async () => {
+              try {
+                if (await ensureFirebase()) {
+                  console.log('🔥 [DELETE] Usuwam z Firebase:', id);
+                  await fbRoot().collection('operationsCatalog').doc(id).delete();
+                  console.log('✅ [DELETE] Usunięto z Firebase:', id);
+                  console.log(`✅ Operacja '${id}' usunięta z Firebase`);
+                }
+              } catch (e) {
+                console.warn('Błąd usuwania operacji z Firebase:', e.message);
+              }
+            })();
+          }
+          break;
         }
         if(t.dataset.opUp) { moveOp(t.dataset.opUp, 'up'); break; }
         if(t.dataset.opDown) { moveOp(t.dataset.opDown, 'down'); break; }
@@ -3799,10 +3999,14 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           if (templateSel) templateSel.value = p.materialTemplateId || '';
           // preserve assignee and dependsOn when loading for edit
           state.PROC_TMP = (p.operations || []).map(x => ({id: x.id || uid('op'), name: x.name, time: x.time || 0, assignee: x.assignee || null, dependsOn: x.dependsOn}));
+          // Rozwiń formularz przy edycji
+          qs('#proc-form').classList.remove('hidden');
+          qs('#proc-form-toggle').textContent = '▲';
           renderProcOps(); window.scrollTo({top: 0, behavior: 'smooth'}); break;
         }
         if(t.dataset.pdel2) {
           const id = t.dataset.pdel2;
+          console.log('🗑️ [DELETE PROCESS] Usuwam proces:', id);
           state.processes = state.processes.filter(x => x.id !== id);
           state.deletedProcesses = Array.isArray(state.deletedProcesses) ? state.deletedProcesses : [];
           if (!state.deletedProcesses.includes(id)) {
@@ -3811,13 +4015,22 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
               state.deletedProcesses = state.deletedProcesses.slice(-200);
             }
           }
+          console.log('🗑️ [DELETE PROCESS] Lista usuniętych procesów:', state.deletedProcesses);
           save();
           renderProcList();
           if(state.storage && state.storage.mode === 'firebase'){
+            (async () => {
+              try {
+                if (await ensureFirebase()) {
+                  console.log('🔥 [DELETE PROCESS] Usuwam z Firebase:', id);
+                  await fbRoot().collection('processes').doc(id).delete();
+                  console.log('✅ [DELETE PROCESS] Usunięto z Firebase:', id);
+                }
+              } catch(err) {
+                console.error('❌ [DELETE PROCESS] Błąd usuwania z Firebase:', err);
+              }
+            })();
             enqueueFirebaseDelete('processes', id, 30);
-            if(!(window.FirebaseSyncQueue && typeof window.FirebaseSyncQueue.enqueue === 'function')){
-              try{ await saveToDB(); }catch(syncErr){ console.warn('process-delete sync error', syncErr && syncErr.message); }
-            }
           }
           break; }
         if(t.dataset.taskStart) {
@@ -3843,7 +4056,30 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         }
         if(t.dataset.taskRepeat) {
           const id = t.dataset.taskRepeat; const task = state.tasks.find(x => x.id === id); if (!task) return;
-          if (state._timers[id]) delete state._timers[id]; task.status = 'todo'; task.elapsedMin = 0; save(); try{ updateOrderProgress(task.orderId); }catch(_){ } renderTasks(); break;
+          if (state._timers[id]) delete state._timers[id];
+          task.status = 'todo';
+          task.elapsedMin = 0;
+          task.startTime = null;
+          task.endTime = null;
+          task.startedAt = null;
+          task.closedAt = null;
+          task.startedBy = null;
+          task.closedBy = null;
+          task._resetAt = Date.now(); // Znacznik resetu dla worker-app
+          // Resetuj checklistę
+          if (Array.isArray(task.checklist)) {
+            task.checklist = task.checklist.map(item => ({...item, done: false}));
+          }
+          save();
+          try{ updateOrderProgress(task.orderId); }catch(_){ }
+          renderTasks();
+          // KLUCZOWE: Zapisz reset do Firebase żeby worker-app go otrzymał
+          if(state.storage && state.storage.mode === 'firebase'){
+            (async () => {
+              try{ await saveTaskToDB(id); console.log('✅ [Powtórz] Zapisano reset zadania do Firebase:', id); }catch(e){ console.warn('taskRepeat saveToDB error', e && e.message); }
+            })();
+          }
+          break;
         }
         if(t.dataset.taskRetry) {
           const id = t.dataset.taskRetry; const task = state.tasks.find(x => x.id === id); if (!task) return;
@@ -3876,7 +4112,14 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
             }
           }
           break; }
-        if(t.dataset.empDel) { state.employees = state.employees.filter(x => x.id !== t.dataset.empDel); save(); renderEmployees(); break; }
+        if(t.dataset.empDel) { 
+          const empId = t.dataset.empDel;
+          state.employees = state.employees.filter(x => x.id !== empId); 
+          save(); 
+          renderEmployees(); 
+          maybeAutoSave('employee-delete');
+          break; 
+        }
         if(t.dataset.empEd) {
           const e = state.employees.find(x => x.id === t.dataset.empEd); if (!e) return;
           // Wypełnij formularz edycji
@@ -3976,7 +4219,32 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           maybeAutoSave('task-done');
           break;
         }
-        if(t.dataset.asDel) { state.after = state.after.filter(x => x.id !== t.dataset.asDel); save(); renderASPage(); break; }
+        if(t.dataset.asDel) { 
+          const asId = t.dataset.asDel;
+          // Remove from state.after
+          state.after = state.after.filter(x => x.id !== asId);
+          
+          // Remove associated tasks from state.tasks
+          const tasksToRemove = (state.tasks || []).filter(x => x.assemblyId === asId);
+          if(tasksToRemove.length > 0) {
+             console.log('🗑️ Usuwam powiązane zadania montażowe:', tasksToRemove.length);
+             state.tasks = state.tasks.filter(x => x.assemblyId !== asId);
+             
+             // Remove from Firebase if needed
+             if(state.storage && state.storage.mode === 'firebase' && typeof ensureFirebase === 'function' && typeof fbRoot === 'function') {
+                ensureFirebase().then(async () => {
+                   for(const task of tasksToRemove) {
+                      try { await fbRoot().collection('tasks').doc(task.id).delete(); } catch(e) { console.warn(e); }
+                   }
+                });
+             }
+          }
+          
+          save(); 
+          renderASPage(); 
+          if(typeof renderTasks === 'function') renderTasks();
+          break; 
+        }
         if(t.dataset.asTaskDel) { 
           const taskId = t.dataset.asTaskDel;
           if(confirm('Czy na pewno usunąć to zadanie montażowe?')){
@@ -4737,9 +5005,437 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     (state.employees||[]).forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=e.name||e.id;sel.appendChild(o);});
     if(current) sel.value = current;
   }
+
+  let opChecklistDraft = [];
+  let opChecklistDraftTouched = false;
+  let opChecklistMeta = { version: 1, sourceOperationId: null, label: '' };
+  let opChecklistSettingsDraft = { required: false, propagateToTasks: true, allowWorkerAdditions: true };
+
+  function resetOpChecklistEditor(){
+    opChecklistDraft = [];
+    opChecklistDraftTouched = false;
+    opChecklistMeta = { version: 1, sourceOperationId: null, label: '' };
+    opChecklistSettingsDraft = { required: false, propagateToTasks: true, allowWorkerAdditions: true };
+    const labelInput = qs('#op-checklist-new-label'); if(labelInput) labelInput.value = '';
+    const hintInput = qs('#op-checklist-new-hint'); if(hintInput) hintInput.value = '';
+    const requiredInput = qs('#op-checklist-new-required'); if(requiredInput) requiredInput.checked = false;
+    const defaultInput = qs('#op-checklist-new-default'); if(defaultInput) defaultInput.checked = false;
+    const typeSelect = qs('#op-checklist-new-type'); if(typeSelect) typeSelect.value = CHECKLIST_ITEM_DEFAULT_TYPE;
+    renderOpChecklistItems();
+    syncOpChecklistSettingsInputs();
+  }
+
+  function bindOpChecklistSettingsInputs(){
+    const requiredInput = qs('#op-checklist-required');
+    if(requiredInput && !requiredInput._bound){
+      requiredInput._bound = true;
+      requiredInput.addEventListener('change', ()=>{
+        opChecklistSettingsDraft.required = !!requiredInput.checked;
+        opChecklistDraftTouched = true;
+      });
+    }
+    const propagateInput = qs('#op-checklist-propagate');
+    if(propagateInput && !propagateInput._bound){
+      propagateInput._bound = true;
+      propagateInput.addEventListener('change', ()=>{
+        opChecklistSettingsDraft.propagateToTasks = !!propagateInput.checked;
+        opChecklistDraftTouched = true;
+      });
+    }
+    const allowInput = qs('#op-checklist-allow-add');
+    if(allowInput && !allowInput._bound){
+      allowInput._bound = true;
+      allowInput.addEventListener('change', ()=>{
+        opChecklistSettingsDraft.allowWorkerAdditions = !!allowInput.checked;
+        opChecklistDraftTouched = true;
+      });
+    }
+  }
+
+  function syncOpChecklistSettingsInputs(){
+    const requiredInput = qs('#op-checklist-required'); if(requiredInput) requiredInput.checked = !!opChecklistSettingsDraft.required;
+    const propagateInput = qs('#op-checklist-propagate'); if(propagateInput) propagateInput.checked = !!opChecklistSettingsDraft.propagateToTasks;
+    const allowInput = qs('#op-checklist-allow-add'); if(allowInput) allowInput.checked = !!opChecklistSettingsDraft.allowWorkerAdditions;
+  }
+
+  function opChecklistCountLabel(cnt){
+    if(cnt === 1) return 'punkt';
+    if(cnt >= 2 && cnt <= 4) return 'punkty';
+    return 'punktów';
+  }
+
+  function updateOpChecklistSummary(){
+    const summary = qs('#op-checklist-summary');
+    if(!summary) return;
+    const count = Array.isArray(opChecklistDraft) ? opChecklistDraft.length : 0;
+    if(count === 0){
+      summary.textContent = '0 punktów';
+      summary.classList.remove('warn');
+      return;
+    }
+    summary.textContent = `${count} ${opChecklistCountLabel(count)}`;
+    summary.classList.toggle('warn', count >= 40);
+  }
+
+  let renderOpChecklistItemsTimer = null;
+  function renderOpChecklistItems(immediate){
+    if(!immediate && renderOpChecklistItemsTimer) return;
+    if(!immediate){
+      renderOpChecklistItemsTimer = setTimeout(()=>{
+        renderOpChecklistItemsTimer = null;
+        renderOpChecklistItemsNow();
+      }, 100);
+    } else {
+      if(renderOpChecklistItemsTimer){
+        clearTimeout(renderOpChecklistItemsTimer);
+        renderOpChecklistItemsTimer = null;
+      }
+      renderOpChecklistItemsNow();
+    }
+  }
+
+  function renderOpChecklistItemsNow(){
+    const box = qs('#op-checklist-items');
+    if(!box) return;
+    
+    // Zachowaj aktywny element i pozycję scrolla
+    const activeElement = document.activeElement;
+    const focusedIdx = activeElement && activeElement.dataset ? Object.values(activeElement.dataset)[0] : null;
+    const focusedKey = activeElement && activeElement.dataset ? Object.keys(activeElement.dataset)[0] : null;
+    const scrollTop = box.scrollTop;
+    const parentScroll = box.parentElement ? box.parentElement.scrollTop : 0;
+    
+    const items = Array.isArray(opChecklistDraft) ? opChecklistDraft : [];
+    if(!items.length){
+      box.innerHTML = '<div class="muted" style="padding:8px">Brak punktów checklisty – dodaj pierwszy powyżej.</div>';
+      updateOpChecklistSummary();
+      return;
+    }
+    box.innerHTML = items.map((item, idx)=>{
+      const optionHtml = CHECKLIST_ITEM_ALLOWED_TYPES.map(t=>`<option value="${t}" ${t === (item.type || CHECKLIST_ITEM_DEFAULT_TYPE) ? 'selected' : ''}>${t.charAt(0).toUpperCase()+t.slice(1)}</option>`).join('');
+      const label = escapeHtml(item.label || '');
+      const hint = escapeHtml(item.hint || '');
+      const imageUrl = item.metadata && item.metadata.imageUrl ? escapeHtml(item.metadata.imageUrl) : '';
+      return `<div class="card" data-ck-row="${idx}" style="padding:8px">
+        <div class="row" style="gap:8px;flex-wrap:wrap">
+          <div style="flex:1;min-width:200px">
+            <label class="muted" style="font-size:11px">Treść</label>
+            <input type="text" data-ck-label="${idx}" value="${label}" placeholder="Opis punktu">
+          </div>
+          <div>
+            <label class="muted" style="font-size:11px">Typ</label>
+            <select data-ck-type="${idx}">${optionHtml}</select>
+          </div>
+          <div class="col" style="min-width:140px">
+            <label style="font-size:12px"><input type="checkbox" data-ck-required="${idx}" ${item.required?'checked':''}> Wymagane</label>
+            <label style="font-size:12px"><input type="checkbox" data-ck-default="${idx}" ${item.defaultDone?'checked':''}> Domyślnie ✔️</label>
+          </div>
+          <div class="col" style="min-width:160px">
+            <button class="btn" type="button" data-ck-up="${idx}" ${idx===0?'disabled':''}>↑</button>
+            <button class="btn" type="button" data-ck-down="${idx}" ${idx===items.length-1?'disabled':''}>↓</button>
+            <button class="btn red" type="button" data-ck-remove="${idx}">Usuń</button>
+          </div>
+        </div>
+        <div style="margin-top:6px">
+          <label class="muted" style="font-size:11px">Podpowiedź</label>
+          <input type="text" data-ck-hint="${idx}" value="${hint}" placeholder="np. wpisz wymiary w mm">
+        </div>
+        <div style="margin-top:6px">
+          <label class="muted" style="font-size:11px">🖼️ URL zdjęcia / schematu (opcjonalnie)</label>
+          <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
+            ${imageUrl ? `<img src="${imageUrl}" style="max-width:60px;max-height:60px;border:1px solid #ddd;border-radius:4px;cursor:pointer;" onclick="window.open(this.src,'_blank')" title="Kliknij aby powiększyć">` : ''}
+            <input type="text" data-ck-image="${idx}" value="${imageUrl && !imageUrl.startsWith('data:image') ? imageUrl : ''}" placeholder="https://... lub kliknij 📤" style="flex:1;min-width:150px;${imageUrl && imageUrl.startsWith('data:image') ? 'display:none;' : ''}">
+            <input type="file" id="ck-file-${idx}" accept="image/*" style="display:none" onchange="handleChecklistEditImageUpload(this, ${idx})">
+            <button class="btn small" type="button" onclick="document.getElementById('ck-file-${idx}').click()" title="Prześlij zdjęcie z komputera">📤</button>
+            ${imageUrl ? `<button class="btn small red" type="button" onclick="handleChecklistRemoveImage(${idx})" title="Usuń zdjęcie">🗑️</button>` : ''}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    updateOpChecklistSummary();
+    
+    // Przywróć focus i scroll position
+    if(focusedIdx !== null && focusedKey){
+      setTimeout(()=>{
+        const targetElement = box.querySelector(`[data-${focusedKey}="${focusedIdx}"]`);
+        if(targetElement && typeof targetElement.focus === 'function'){
+          targetElement.focus();
+          // Przywróć pozycję kursora dla pól tekstowych
+          if(targetElement.tagName === 'INPUT' && activeElement && activeElement.selectionStart !== undefined){
+            const pos = activeElement.selectionStart;
+            targetElement.setSelectionRange(pos, pos);
+          }
+        }
+        box.scrollTop = scrollTop;
+        if(box.parentElement) box.parentElement.scrollTop = parentScroll;
+      }, 0);
+    }
+  }
+
+  function handleOpChecklistFieldChange(ev){
+    const target = ev.target;
+    if(!target || !target.dataset) return;
+    const entries = Object.entries(target.dataset);
+    if(!entries.length) return;
+    const [key, idxStr] = entries[0];
+    if(typeof idxStr === 'undefined') return;
+    const idx = parseInt(idxStr, 10);
+    if(Number.isNaN(idx) || !opChecklistDraft[idx]) return;
+    const item = opChecklistDraft[idx];
+    switch(key){
+      case 'ckLabel': item.label = target.value || ''; break;
+      case 'ckHint': item.hint = target.value || ''; break;
+      case 'ckType': item.type = target.value || CHECKLIST_ITEM_DEFAULT_TYPE; break;
+      case 'ckRequired': item.required = !!target.checked; break;
+      case 'ckDefault': item.defaultDone = !!target.checked; break;
+      case 'ckImage': 
+        if(!item.metadata) item.metadata = {};
+        item.metadata.imageUrl = (target.value || '').trim();
+        break;
+      default: return;
+    }
+    opChecklistDraftTouched = true;
+  }
+
+  function swapOpChecklistItems(i, j){
+    if(i<0 || j<0 || i>=opChecklistDraft.length || j>=opChecklistDraft.length) return;
+    const temp = opChecklistDraft[i];
+    opChecklistDraft[i] = opChecklistDraft[j];
+    opChecklistDraft[j] = temp;
+    opChecklistDraftTouched = true;
+    renderOpChecklistItems(true);
+  }
+
+  function handleOpChecklistRowClick(ev){
+    const target = ev.target;
+    if(!target || !target.dataset) return;
+    if(target.dataset.ckRemove){
+      const idx = parseInt(target.dataset.ckRemove,10);
+      if(!Number.isNaN(idx)){
+        opChecklistDraft.splice(idx,1);
+        opChecklistDraftTouched = true;
+        renderOpChecklistItems();
+      }
+      return;
+    }
+    if(target.dataset.ckUp){
+      const idx = parseInt(target.dataset.ckUp,10);
+      swapOpChecklistItems(idx, idx-1);
+      return;
+    }
+    if(target.dataset.ckDown){
+      const idx = parseInt(target.dataset.ckDown,10);
+      swapOpChecklistItems(idx, idx+1);
+      return;
+    }
+  }
+
+  function handleChecklistImageUpload(input){
+    if(!input || !input.files || !input.files[0]) return;
+    const file = input.files[0];
+    if(!file.type.startsWith('image/')){
+      alert('Proszę wybrać plik obrazu (jpg, png, gif, itp.)');
+      return;
+    }
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if(file.size > maxSize){
+      alert('Zdjęcie jest za duże! Maksymalnie 2MB.\nRozmiar wybranego pliku: ' + (file.size / 1024 / 1024).toFixed(2) + 'MB');
+      return;
+    }
+    const imageInput = qs('#op-checklist-new-image');
+    if(!imageInput) return;
+    imageInput.value = '⏳ Przetwarzanie zdjęcia...';
+    imageInput.disabled = true;
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const base64 = e.target.result;
+      if(imageInput){
+        imageInput.value = base64;
+        imageInput.disabled = false;
+        imageInput.style.color = '#10b981';
+        setTimeout(()=>{ if(imageInput) imageInput.style.color = ''; }, 2000);
+      }
+      input.value = '';
+      alert('✅ Zdjęcie załadowane! Kliknij "➕ Dodaj punkt" aby zapisać.');
+    };
+    reader.onerror = function(){
+      alert('❌ Błąd podczas wczytywania zdjęcia.');
+      if(imageInput){
+        imageInput.value = '';
+        imageInput.disabled = false;
+      }
+      input.value = '';
+    };
+    reader.readAsDataURL(file);
+  }
+  window.handleChecklistImageUpload = handleChecklistImageUpload;
+
+  function handleChecklistEditImageUpload(input, idx){
+    console.log('handleChecklistEditImageUpload wywołane:', idx, input);
+    if(!input || !input.files || !input.files[0]){
+      console.log('Brak pliku');
+      return;
+    }
+    const file = input.files[0];
+    console.log('Wybrany plik:', file.name, file.size, file.type);
+    if(!file.type.startsWith('image/')){
+      alert('Proszę wybrać plik obrazu (jpg, png, gif, itp.)');
+      return;
+    }
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if(file.size > maxSize){
+      alert('Zdjęcie jest za duże! Maksymalnie 2MB.\nRozmiar: ' + (file.size / 1024 / 1024).toFixed(2) + 'MB');
+      return;
+    }
+    const imageInput = document.querySelector(`input[data-ck-image="${idx}"]`);
+    if(!imageInput){
+      console.error('Nie znaleziono pola input dla idx:', idx);
+      alert('❌ Błąd: nie znaleziono pola URL');
+      return;
+    }
+    const originalValue = imageInput.value;
+    imageInput.value = '⏳ Przetwarzanie...';
+    imageInput.disabled = true;
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const base64 = e.target.result;
+      if(opChecklistDraft[idx]){
+        if(!opChecklistDraft[idx].metadata) opChecklistDraft[idx].metadata = {};
+        opChecklistDraft[idx].metadata.imageUrl = base64;
+        opChecklistDraftTouched = true;
+        renderOpChecklistItems(true);
+      }
+      input.value = '';
+    };
+    reader.onerror = function(){
+      alert('❌ Błąd podczas wczytywania zdjęcia.');
+      if(imageInput){
+        imageInput.value = originalValue;
+        imageInput.disabled = false;
+      }
+      input.value = '';
+    };
+    reader.readAsDataURL(file);
+  }
+  window.handleChecklistEditImageUpload = handleChecklistEditImageUpload;
+
+  function handleChecklistRemoveImage(idx){
+    if(!opChecklistDraft[idx]) return;
+    if(!confirm('Usunąć zdjęcie z tego punktu?')) return;
+    if(opChecklistDraft[idx].metadata){
+      delete opChecklistDraft[idx].metadata.imageUrl;
+    }
+    opChecklistDraftTouched = true;
+    renderOpChecklistItems(true);
+  }
+  window.handleChecklistRemoveImage = handleChecklistRemoveImage;
+
+  function addOpChecklistItemFromInputs(){
+    const labelInput = qs('#op-checklist-new-label');
+    const typeSelect = qs('#op-checklist-new-type');
+    const requiredInput = qs('#op-checklist-new-required');
+    const defaultInput = qs('#op-checklist-new-default');
+    const hintInput = qs('#op-checklist-new-hint');
+    const imageInput = qs('#op-checklist-new-image');
+    if(!labelInput || !typeSelect) return;
+    const label = (labelInput.value || '').trim();
+    if(!label){
+      labelInput.focus();
+      return;
+    }
+    if(opChecklistDraft.length >= 50){
+      alert('Limit checklisty to 50 punktów na operację.');
+      return;
+    }
+    const imageUrl = imageInput ? (imageInput.value || '').trim() : '';
+    const newItem = normalizeChecklistItem({
+      label,
+      type: typeSelect.value || CHECKLIST_ITEM_DEFAULT_TYPE,
+      required: !!(requiredInput && requiredInput.checked),
+      defaultDone: !!(defaultInput && defaultInput.checked),
+      hint: hintInput ? hintInput.value : '',
+      metadata: imageUrl ? { imageUrl } : {}
+    });
+    opChecklistDraft.push(newItem);
+    opChecklistDraftTouched = true;
+    labelInput.value = '';
+    if(hintInput) hintInput.value = '';
+    if(imageInput) imageInput.value = '';
+    if(requiredInput) requiredInput.checked = false;
+    if(defaultInput) defaultInput.checked = false;
+    renderOpChecklistItems(true);
+    labelInput.focus();
+  }
+
+  function bindOpChecklistControls(){
+    const addBtn = qs('#op-checklist-add-btn');
+    if(addBtn && !addBtn._bound){
+      addBtn._bound = true;
+      addBtn.addEventListener('click', addOpChecklistItemFromInputs);
+    }
+    const labelInput = qs('#op-checklist-new-label');
+    if(labelInput && !labelInput._bound){
+      labelInput._bound = true;
+      labelInput.addEventListener('keydown', (ev)=>{ if(ev.key === 'Enter'){ ev.preventDefault(); addOpChecklistItemFromInputs(); } });
+    }
+    const itemsBox = qs('#op-checklist-items');
+    if(itemsBox && !itemsBox._bound){
+      itemsBox._bound = true;
+      itemsBox.addEventListener('input', handleOpChecklistFieldChange, true);
+      itemsBox.addEventListener('change', handleOpChecklistFieldChange, true);
+      itemsBox.addEventListener('click', handleOpChecklistRowClick, true);
+    }
+  }
+
+  function loadOpChecklistDraftFromOperation(op){
+    opChecklistDraft = [];
+    opChecklistDraftTouched = false;
+    const template = op && op.checklistTemplate ? createChecklistTemplate(op.checklistTemplate, op) : createChecklistTemplate({ sourceOperationId: op ? op.id : null, label: op ? op.name : '' }, op || {});
+    opChecklistMeta = {
+      version: Number.isFinite(template.version) ? template.version : parseInt(template.version, 10) || 1,
+      sourceOperationId: template.sourceOperationId || (op ? op.id : null),
+      label: template.label || (op ? op.name : '')
+    };
+    opChecklistSettingsDraft = Object.assign({ required: false, propagateToTasks: true, allowWorkerAdditions: true }, op && op.checklistSettings ? op.checklistSettings : {});
+    opChecklistDraft = (template.items || []).map(item => normalizeChecklistItem(item));
+    const labelInput = qs('#op-checklist-new-label'); if(labelInput) labelInput.value = '';
+    const hintInput = qs('#op-checklist-new-hint'); if(hintInput) hintInput.value = '';
+    const imageInput = qs('#op-checklist-new-image'); if(imageInput) imageInput.value = '';
+    const requiredInput = qs('#op-checklist-new-required'); if(requiredInput) requiredInput.checked = false;
+    const defaultInput = qs('#op-checklist-new-default'); if(defaultInput) defaultInput.checked = false;
+    const typeSelect = qs('#op-checklist-new-type'); if(typeSelect) typeSelect.value = CHECKLIST_ITEM_DEFAULT_TYPE;
+    renderOpChecklistItems();
+    syncOpChecklistSettingsInputs();
+  }
+
+  function buildOperationChecklistTemplatePayload(opId, opName, existingTemplate){
+    const base = existingTemplate ? createChecklistTemplate(existingTemplate, { id: opId, name: opName }) : createChecklistTemplate({ sourceOperationId: opId, label: opName }, { id: opId, name: opName });
+    const prevVersion = Number.isFinite(base.version) ? base.version : parseInt(base.version,10) || 1;
+    base.items = (opChecklistDraft || []).map(item => normalizeChecklistItem(item));
+    base.version = opChecklistDraftTouched && prevVersion ? prevVersion + 1 : prevVersion || 1;
+    base.updatedAt = Date.now();
+    base.updatedBy = (state && state.storage && state.storage.userId) || 'planner';
+    return base;
+  }
+
+  function collectOperationChecklistSettings(){
+    return {
+      required: !!opChecklistSettingsDraft.required,
+      propagateToTasks: opChecklistSettingsDraft.propagateToTasks !== false,
+      allowWorkerAdditions: opChecklistSettingsDraft.allowWorkerAdditions !== false
+    };
+  }
+
+  function ensureOpChecklistEditorReady(){
+    bindOpChecklistControls();
+    bindOpChecklistSettingsInputs();
+    renderOpChecklistItems();
+    syncOpChecklistSettingsInputs();
+  }
   // Normalize operation numbers (ensure sequential no = 1..N sorted by no)
   function normalizeOpNumbers() {
     state.operationsCatalog = (state.operationsCatalog || []).slice().sort((a,b)=>(a.no||0)-(b.no||0)).map((o,i)=>{ o.no = i+1; return o; });
+    ensureOperationsCatalogChecklists(state.operationsCatalog);
   }
 
   // Move operation by id up/down in the ordered list
@@ -4753,6 +5449,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     arr.splice(newIdx,0,item);
     arr.forEach((o,i)=>o.no = i+1);
     state.operationsCatalog = arr;
+    ensureOperationsCatalogChecklists(state.operationsCatalog);
     save(); renderOps();
   }
   function renderOps(){
@@ -4793,14 +5490,14 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     ops.forEach(o=>{ if((o.skills||[]).map(s=>s.toLowerCase()).indexOf(component.toLowerCase())!==-1) match.push(o); else rest.push(o); });
     const res = match.concat(rest);
     res.forEach((o,i)=>o.no = i+1);
-    state.operationsCatalog = res; save(); renderOps();
+    state.operationsCatalog = res; ensureOperationsCatalogChecklists(state.operationsCatalog); save(); renderOps();
   }
   // normalize numbers to 1..N (already provided as normalizeOpNumbers)
   // sort operations alphabetically by name
   function sortOpsAZ(){
     const ops = (state.operationsCatalog||[]).slice().sort((a,b)=>{ const A=(a.name||'').toLowerCase(); const B=(b.name||'').toLowerCase(); return A.localeCompare(B); });
     ops.forEach((o,i)=>o.no = i+1);
-    state.operationsCatalog = ops; save(); renderOps();
+    state.operationsCatalog = ops; ensureOperationsCatalogChecklists(state.operationsCatalog); save(); renderOps();
   }
 
   // wire buttons
@@ -4845,12 +5542,15 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       const isUpdate = existingIdx >= 0;
       console.log('[op-form] isUpdate?', isUpdate, 'existingIdx', existingIdx);
       const id = isUpdate ? rawOpId : uid();
+      const existingOp = isUpdate ? ops[existingIdx] : null;
       const payload = { id, no, name, time, workers, skills, defaultAssignees: ass };
+      payload.checklistTemplate = buildOperationChecklistTemplatePayload(id, name, existingOp && existingOp.checklistTemplate);
+      payload.checklistSettings = collectOperationChecklistSettings();
 
       if(isUpdate){
         // update only the specific operation by id (preserve other fields)
-        const existingOp = ops[existingIdx] || {};
-        const merged = Object.assign({}, existingOp, payload);
+        const existingSafe = ops[existingIdx] || {};
+        const merged = Object.assign({}, existingSafe, payload);
         ops.splice(existingIdx, 1, merged);
         msg('Zaktualizowano operację.', true);
       } else {
@@ -4867,6 +5567,8 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         state.operationsCatalog = ops;
       }catch(_){ ops.forEach((o,i)=>o.no=i+1); state.operationsCatalog = ops; }
 
+      ensureOperationsCatalogChecklists(state.operationsCatalog);
+
       try{ localStorage.setItem(storeKey, JSON.stringify(state)); }catch(_){ }
       save(); renderOps();
       // DEVLOG: snapshot after submit — last 3 operations and total length
@@ -4881,10 +5583,14 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   try{ ev.target.reset(); }catch(_){ }
   if(qs('#op-id')) qs('#op-id').value = '';
   populateOpEmployees && populateOpEmployees();
+  resetOpChecklistEditor();
   state._inOpEdit = false;
     }catch(e){ console.log('[op-form] submit error', e && e.message); if(qs('#op-msg')) qs('#op-msg').textContent='Błąd zapisu'; state._inOpEdit = false; }
     if(submitBtn) submitBtn.disabled = false;
   });
+
+  ensureOpChecklistEditorReady();
+  loadOpChecklistDraftFromOperation(null);
 
   function renderProcOps(){
     const box=qs('#proc-ops'); box.innerHTML='';
@@ -4996,15 +5702,47 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   qs('#proc-add-op').addEventListener('click',()=>{ const id=qs('#proc-op-select').value; const o=state.operationsCatalog.find(x=>x.id===id); if(o){
     let initialAssignee = null;
     if(Array.isArray(o.defaultAssignees) && o.defaultAssignees.length){ const da = o.defaultAssignees[0]; if(da && (da.id || da.name)){ const emp = (state.employees||[]).find(e=>e.id===da.id); if(emp) initialAssignee = { id: emp.id, name: emp.name }; else if(da.id) initialAssignee = { id: da.id, name: da.name || da.id }; else if(da.name) initialAssignee = { id: uid(), name: da.name }; } }
-    state.PROC_TMP.push({id:uid('op'),name:o.name,time:o.time||0, assignee: initialAssignee}); renderProcOps(); save(); } });
+    state.PROC_TMP.push({id:o.id,name:o.name,time:o.time||0, assignee: initialAssignee}); renderProcOps(); save(); } });
   
   qs('#proc-form').addEventListener('submit',(ev)=>{
     ev.preventDefault(); const id=qs('#proc-id').value||uid(); const name=(qs('#proc-name').value||'').trim(); if(!name||(state.PROC_TMP||[]).length===0) return;
     const templateId = qs('#proc-template-select')?.value || null;
     const payload={id,name,operations:(state.PROC_TMP||[]).map(op=>({id:op.id||uid('op'),name:op.name,time:op.time||0, assignee: op.assignee || null, dependsOn: op.dependsOn})), materialTemplateId: templateId};
     const ex=state.processes.find(x=>x.id===id); if(ex) Object.assign(ex,payload); else state.processes.push(payload);
-    state.PROC_TMP=[]; save(); ev.target.reset(); renderProcPage();
+    state.PROC_TMP=[]; save(); ev.target.reset(); 
+    // Zwiń formularz po zapisie
+    qs('#proc-form').classList.add('hidden');
+    qs('#proc-form-toggle').textContent = '▼';
+    renderProcPage();
   });
+
+  // Funkcja zwijania/rozwijania formularza procesu
+  function toggleProcForm() {
+    const form = qs('#proc-form');
+    const toggle = qs('#proc-form-toggle');
+    if (form.classList.contains('hidden')) {
+      form.classList.remove('hidden');
+      toggle.textContent = '▲';
+    } else {
+      form.classList.add('hidden');
+      toggle.textContent = '▼';
+    }
+  }
+
+  // Funkcja anulowania formularza procesu
+  function cancelProcForm() {
+    const form = qs('#proc-form');
+    form.reset();
+    qs('#proc-id').value = '';
+    state.PROC_TMP = [];
+    form.classList.add('hidden');
+    qs('#proc-form-toggle').textContent = '▼';
+    renderProcPage();
+  }
+
+  // Eksport funkcji do window
+  window.toggleProcForm = toggleProcForm;
+  window.cancelProcForm = cancelProcForm;
 
   function updateTaskFilters(){
     const selOrd=qs('#tasks-filter-order'); 
@@ -5263,6 +6001,11 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       // Generate new tasks from process operations
       let tasksCreated = 0;
       (process.operations||[]).forEach((op, idx) => {
+        // Find operation in catalog to get checklist
+        console.log('[generateTasks] 🔍 Przetwarzam operację:', op.name, 'ID:', op.id);
+        const catalogOp = (state.operationsCatalog||[]).find(catOp => catOp.id === op.id);
+        console.log('[generateTasks] 📋 Znaleziono w katalogu:', catalogOp ? catalogOp.name : 'NIE');
+        
         const taskId = uid();
         const task = {
           id: taskId,
@@ -5276,6 +6019,32 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           assignees: [], // Will be assigned later
           createdAt: new Date().toISOString()
         };
+        console.log('[generateTasks] 📝 Utworzone zadanie - opId:', task.opId, 'opName:', task.opName);
+        
+        // Copy checklist from operation if propagateToTasks is enabled
+        if(catalogOp && catalogOp.checklistTemplate && catalogOp.checklistSettings && catalogOp.checklistSettings.propagateToTasks){
+          const template = catalogOp.checklistTemplate;
+          console.log('[generateTasks] ✅ Warunki spełnione - kopiuję checklistę. Items:', template.items?.length);
+          if(Array.isArray(template.items) && template.items.length > 0){
+            task.checklist = template.items.map(item => ({
+              id: item.id || uid('chk_'),
+              label: item.label || '',
+              done: false,
+              required: item.required || false,
+              metadata: item.metadata || {}
+            }));
+            console.log('[generateTasks] ✅ Skopiowano', task.checklist.length, 'punktów checklisty z operacji', op.name, 'do zadania', taskId);
+          } else {
+            console.warn('[generateTasks] ⚠️ template.items puste lub nie jest tablicą');
+          }
+        } else {
+          console.warn('[generateTasks] ❌ Warunki NIE spełnione:', {
+            catalogOp: !!catalogOp,
+            checklistTemplate: !!catalogOp?.checklistTemplate,
+            checklistSettings: !!catalogOp?.checklistSettings,
+            propagateToTasks: catalogOp?.checklistSettings?.propagateToTasks
+          });
+        }
         
         state.tasks = state.tasks || [];
         state.tasks.push(task);
@@ -7478,6 +8247,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         
         save();
         renderEmployees();
+        maybeAutoSave('employee-save');
         
         // Wyczyść i ukryj formularz
         qs('#emp-form-id').value = '';
@@ -8431,122 +9201,135 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     const ex=state.after.find(x=>x.id===id); 
     const payload={id,type,order,status,desc,installDate:install,departTime:depart,visitTime:visit,phone:asPhone,postalCode:asPlace,address:asAddress,client:asClient,employeeIds:selectedEmployees,hours:asHours};
     if(ex) Object.assign(ex,payload); else state.after.push(payload);
+    
+    console.log('📋 Zapisuję montaż:', {id, type, order, install, asHours, selectedEmployees});
+    
     // optional immediate save after AS save
     maybeAutoSave('as-save');
     save(); ev.target.reset(); renderASPage();
     
-    // Block time for all selected employees during assembly
-    if(selectedEmployees.length > 0 && install && asHours > 0){
-      console.log('🔧 Tworzenie montażu dla pracowników:', selectedEmployees, 'Godziny:', asHours);
+    // Block time for all selected employees during assembly (or create unassigned task)
+    if(install && asHours > 0){
+      console.log('🔧 Tworzenie zadania montażowego, pracownicy:', selectedEmployees.length > 0 ? selectedEmployees : 'BRAK (zadanie nieprzypisane)', 'Godziny:', asHours);
       
       // Remove old blocking tasks for this assembly from state
       const oldTasks = (state.tasks||[]).filter(t => t.assemblyId === id);
       state.tasks = (state.tasks||[]).filter(t => t.assemblyId !== id);
       
       // Remove old tasks from Firebase
-      if(oldTasks.length > 0 && state.storage.mode==='firebase' && await ensureFirebase()){
-        console.log('🗑️ Usuwam stare zadania montażowe z Firebase:', oldTasks.length);
-        for(const oldTask of oldTasks){
-          try{
-            await fbRoot().collection('tasks').doc(oldTask.id).delete();
-          }catch(e){ console.warn('Błąd usuwania zadania:', e && e.message); }
-        }
+      if(oldTasks.length > 0 && state.storage.mode==='firebase' && typeof ensureFirebase === 'function'){
+        try {
+          if(await ensureFirebase()){
+            console.log('🗑️ Usuwam stare zadania montażowe z Firebase:', oldTasks.length);
+            for(const oldTask of oldTasks){
+              try{
+                await fbRoot().collection('tasks').doc(oldTask.id).delete();
+              }catch(e){ console.warn('Błąd usuwania zadania:', e && e.message); }
+            }
+          }
+        } catch(e) { console.warn('Firebase error:', e); }
       }
       
-      selectedEmployees.forEach(employeeId => {
-        const emp = (state.employees||[]).find(e=>e.id===employeeId);
-        console.log('👷 Pracownik:', employeeId, emp ? emp.name : 'nie znaleziono');
-        if(emp){
-          // Calculate start and end time based on install date and hours
-          const installDate = new Date(install);
-          // If departure time exists, use it, otherwise default to 8:00
-          let startHour = 8, startMin = 0;
-          if(depart){
-            const [h, m] = depart.split(':').map(Number);
-            startHour = h; startMin = m;
-          }
-          installDate.setHours(startHour, startMin, 0, 0);
-          const startTime = installDate.getTime();
-          const endTime = startTime + (asHours * 60 * 60 * 1000); // Convert hours to milliseconds
-          
-          // Create blocking task with full assembly info
-          const blockTask = { 
-            id: uid(), 
-            operationId: 'montaż-block', 
-            opName: `Montaż: ${orderObj?.name || order}`,
-            name: `Montaż: ${orderObj?.name || order}`,
-            title: `Montaż: ${orderObj?.name || order}`,
-            employeeId, 
-            startPlanned: startTime, 
-            endPlanned: endTime, 
-            status: 'todo',
-            orderId: order,
-            orderNumber: orderObj?.name || order || 'Montaż 100',
-            model: orderObj?.model || '-',
-            client: orderObj?.client || '-',
-            deadline: orderObj?.deadline || install,
-            assemblyId: id,
-            hours: asHours,
-            estMin: Math.round(asHours * 60),
-            estimatedTime: Math.round(asHours * 60),
-            quantity: 1,
-            unit: 'szt',
-            // Dodatkowe informacje z formularza montażu
-            assemblyType: type,
-            assemblyStatus: status,
-            assemblyDesc: desc,
-            installDate: install,
-            departTime: depart,
-            visitTime: visit,
-            phone: asPhone,
-            postalCode: asPlace,
-            address: asAddress,
-            employeeIds: selectedEmployees
-          };
-          console.log('✅ Dodano zadanie montażu:', blockTask.opName, 'dla', emp.name);
-          state.tasks.push(blockTask);
-        }
-      });
-      console.log('📊 Wszystkie zadania montażowe:', state.tasks.filter(t => t.operationId === 'montaż-block').length);
+      const targetEmployees = selectedEmployees.length > 0 ? selectedEmployees : [null];
       
-      // Przesuń zadania produkcyjne pracowników montażowych
-      selectedEmployees.forEach(employeeId => {
-        console.log('🔄 Przesuwam zadania dla pracownika:', employeeId);
+      targetEmployees.forEach(employeeId => {
+        const emp = employeeId ? (state.employees||[]).find(e=>e.id===employeeId) : null;
+        if(employeeId && !emp) console.warn('Nie znaleziono pracownika:', employeeId);
+        
+        // Calculate start and end time based on install date and hours
         const installDate = new Date(install);
-        let startHour = 8, startMin = 0;
+        // If departure time exists, use it, otherwise default to 7:00
+        let startHour = 7, startMin = 0;
         if(depart){
           const [h, m] = depart.split(':').map(Number);
           startHour = h; startMin = m;
         }
         installDate.setHours(startHour, startMin, 0, 0);
-        const assemblyStart = installDate.getTime();
-        const assemblyEnd = assemblyStart + (asHours * 60 * 60 * 1000);
+        const startTime = installDate.getTime();
+        const endTime = startTime + (asHours * 60 * 60 * 1000); // Convert hours to milliseconds
         
-        // Znajdź zadania produkcyjne tego pracownika które kolidują z montażem
-        const employeeTasks = state.tasks.filter(t => 
-          t.employeeId === employeeId && 
-          t.operationId !== 'montaż-block' &&
-          t.status !== 'done' &&
-          t.startPlanned && t.endPlanned
-        );
-        
-        employeeTasks.forEach(task => {
-          const taskStart = task.startPlanned;
-          const taskEnd = task.endPlanned;
-          const taskDuration = taskEnd - taskStart;
-          
-          // Sprawdź czy zadanie koliduje z montażem
-          const hasCollision = (taskStart < assemblyEnd && taskEnd > assemblyStart);
-          
-          if(hasCollision){
-            console.log('⚠️ Kolizja zadania:', task.opName || task.name, 'z montażem');
-            // Przesuń zadanie po montażu
-            task.startPlanned = assemblyEnd;
-            task.endPlanned = assemblyEnd + taskDuration;
-            console.log('✅ Przesunięto zadanie na:', new Date(task.startPlanned).toLocaleString('pl-PL'));
-          }
-        });
+        // Create blocking task with full assembly info
+        const blockTask = { 
+          id: uid(), 
+          operationId: 'montaż-block', 
+          opName: `Montaż: ${orderObj?.name || order}`,
+          name: `Montaż: ${orderObj?.name || order}`,
+          title: `Montaż: ${orderObj?.name || order}`,
+          employeeId: employeeId || null, 
+          assignees: employeeId ? [employeeId] : [],
+          startPlanned: startTime, 
+          endPlanned: endTime, 
+          status: 'todo',
+          orderId: order,
+          orderNumber: orderObj?.name || order || 'Montaż 100',
+          model: orderObj?.model || '-',
+          client: orderObj?.client || '-',
+          deadline: orderObj?.deadline || install,
+          assemblyId: id,
+          hours: asHours,
+          estMin: Math.round(asHours * 60),
+          estimatedTime: Math.round(asHours * 60),
+          quantity: 1,
+          unit: 'szt',
+          // Dodatkowe informacje z formularza montażu
+          assemblyType: type,
+          assemblyStatus: status,
+          assemblyDesc: desc,
+          installDate: install,
+          departTime: depart,
+          visitTime: visit,
+          address: asAddress,
+          postalCode: asPlace,
+          phone: asPhone,
+          isAssemblyTask: true // Mark as assembly task explicitly
+        };
+        state.tasks.push(blockTask);
+        console.log('✅ Utworzono zadanie montażowe:', blockTask.name, 'dla pracownika:', employeeId || 'NIEPRZYPISANY');
       });
+
+      console.log('📊 Wszystkie zadania montażowe:', state.tasks.filter(t => t.operationId === 'montaż-block').length);
+      console.log('📊 Wszystkie zadania (state.tasks):', state.tasks.length);
+      
+      // Przesuń zadania produkcyjne pracowników montażowych
+      if(selectedEmployees.length > 0) {
+        selectedEmployees.forEach(employeeId => {
+          console.log('🔄 Przesuwam zadania dla pracownika:', employeeId);
+          const installDate = new Date(install);
+          let startHour = 7, startMin = 0;
+          if(depart){
+            const [h, m] = depart.split(':').map(Number);
+            startHour = h; startMin = m;
+          }
+          installDate.setHours(startHour, startMin, 0, 0);
+          const assemblyStart = installDate.getTime();
+          const assemblyEnd = assemblyStart + (asHours * 60 * 60 * 1000);
+          
+          // Znajdź zadania produkcyjne tego pracownika które kolidują z montażem
+          const employeeTasks = state.tasks.filter(t => 
+            t.employeeId === employeeId && 
+            t.operationId !== 'montaż-block' &&
+            t.status !== 'done' &&
+            t.startPlanned && t.endPlanned
+          );
+          
+          employeeTasks.forEach(task => {
+            const taskStart = task.startPlanned;
+            const taskEnd = task.endPlanned;
+            const taskDuration = taskEnd - taskStart;
+            
+            // Sprawdź czy zadanie koliduje z montażem
+            const hasCollision = (taskStart < assemblyEnd && taskEnd > assemblyStart);
+            
+            if(hasCollision){
+              console.log('⚠️ Kolizja zadania:', task.opName || task.name, 'z montażem');
+              // Przesuń zadanie po montażu
+              task.startPlanned = assemblyEnd;
+              task.endPlanned = assemblyEnd + taskDuration;
+              console.log('✅ Przesunięto zadanie na:', new Date(task.startPlanned).toLocaleString('pl-PL'));
+            }
+          });
+        });
+      }
       
       save();
       renderTasks();
@@ -8563,11 +9346,13 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     const shortages = [];
     
     // Pobierz obliczenia obciążeń (ta sama logika co w zakładce Obciążenia)
-    const obligations = calculateWarehouseObligations();
+    const obligationsList = calculateWarehouseObligations();
+    // Konwertuj listę na Mapę dla szybkiego dostępu po ID
+    const obligationsMap = new Map(obligationsList.map(o => [o.itemId, o]));
     
     // Dla każdej pozycji magazynowej sprawdź czy jest niedobór
     warehouseItems.forEach(item => {
-      const obligation = obligations.get(item.id);
+      const obligation = obligationsMap.get(item.id);
       if (!obligation) return;
       
       const available = obligation.available || 0;
@@ -9865,10 +10650,30 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
     }
     
     // Dodaj do magazynu
+    const newMaterialsCreated = [];
     receivedItems.forEach(item => {
       const warehouseItem = (window.warehouseItems || []).find(wi => wi.id === item.itemId);
       if (warehouseItem) {
+        // Materiał istnieje - zwiększ ilość
         warehouseItem.quantity = (warehouseItem.quantity || 0) + item.quantity;
+        warehouseItem.lastUpdated = new Date().toISOString();
+      } else {
+        // Materiał nie istnieje - utwórz nowy
+        const newItem = {
+          id: item.itemId,
+          name: item.itemName,
+          quantity: item.quantity,
+          unit: item.unit,
+          category: 'Surowce',
+          minQuantity: 0,
+          location: 'Magazyn główny',
+          createdAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString(),
+          notes: `Utworzono automatycznie przy odbiorze zamówienia ${order.number}`
+        };
+        window.warehouseItems.push(newItem);
+        newMaterialsCreated.push(item.itemName);
+        console.log(`✅ Utworzono nowy materiał w magazynie: ${item.itemName}`);
       }
     });
     
@@ -9896,7 +10701,13 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
     
     closeModal();
     renderPurchaseOrders();
-    showWarehouseToast(`✅ Odebrano dostawę - dodano ${receivedItems.length} pozycji do magazynu`, 'success');
+    
+    // Komunikat o sukcesie
+    let message = `✅ Odebrano dostawę - zaktualizowano ${receivedItems.length} pozycji w magazynie`;
+    if (newMaterialsCreated.length > 0) {
+      message += `\n\n🆕 Utworzono nowe materiały:\n• ${newMaterialsCreated.join('\n• ')}`;
+    }
+    showWarehouseToast(message, 'success');
   }
   
   // ========== DOSTAWCY ==========
@@ -10657,6 +11468,7 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
 
     const targetState = customState || state;
     try {
+      ensureOperationsCatalogChecklists(targetState.operationsCatalog);
       if(Array.isArray(targetState.operationsCatalog) && targetState.operationsCatalog.length > 1){
         dedupeOperationsCatalog(targetState.operationsCatalog, 'saveToDB()');
       }
@@ -10665,6 +11477,7 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
       const tasksWritten = [];
       const tasksDeleted = [];
       const deletedProcessIdsRemoved = [];
+      const deletedOperationIdsRemoved = [];
       const r=fbRoot();
 
       const collections = [
@@ -10691,6 +11504,10 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
           : (col.items && typeof col.items === 'object')
             ? Object.values(col.items)
             : [];
+
+        if(col.name === 'operationsCatalog'){
+          ensureOperationsCatalogChecklists(localItems);
+        }
 
         const remoteDocMap = col.name === 'tasks' ? new Map() : null;
         if(remoteDocMap){
@@ -10742,23 +11559,19 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
         const toDelete = [];
         remoteDocs.forEach(doc => {
           if(!localIds.has(doc.id)){
-            // 🔒 OCHRONA: Nie usuwaj danych rzeczywistych - usuwaj TYLKO testowe dane
-            // dla kolekcji: employees, operationsCatalog, processes
-            if(col.name === 'employees'){
-              const isTestEmployee = /^emp\d+$/.test(doc.id) || (doc.id && doc.id.startsWith('emp_test_'));
-              if(!isTestEmployee){
-                console.warn(`⚠️ [saveToDB] NIE USUWAM pracownika '${doc.id}' - to dane rzeczywiste! Dodaję do lokalnych.`);
-                // Nie usuwamy rzeczywistych pracowników - przywracamy je lokalnie
+            // 🔒 OCHRONA dla kolekcji: operationsCatalog, processes (nie dla employees!)
+            // Pracownicy są teraz synchronizowani normalnie - usuwanie działa poprawnie
+            if(col.name === 'operationsCatalog'){
+              const isTestOp = /^op_test_/.test(doc.id);
+              const deletedOperationsSet = new Set(Array.isArray(state.deletedOperations) ? state.deletedOperations : []);
+              const isMarkedForDelete = deletedOperationsSet.has(doc.id);
+              if(!isTestOp && !isMarkedForDelete){
+                console.warn(`⚠️ [saveToDB] NIE USUWAM operacji '${doc.id}' - to dane rzeczywiste (nie oznaczone do usunięcia)`);
                 localIds.add(doc.id);
                 return;
               }
-            }
-            if(col.name === 'operationsCatalog'){
-              const isTestOp = /^op_test_/.test(doc.id);
-              if(!isTestOp){
-                console.warn(`⚠️ [saveToDB] NIE USUWAM operacji '${doc.id}' - to dane rzeczywiste!`);
-                localIds.add(doc.id);
-                return;
+              if(isMarkedForDelete){
+                console.log(`🗑️ [saveToDB] Usuwam operację '${doc.id}' - oznaczona do usunięcia`);
               }
             }
             if(col.name === 'processes'){
@@ -10778,6 +11591,9 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
             }
             if(col.name === 'processes'){
               deletedProcessIdsRemoved.push(doc.id);
+            }
+            if(col.name === 'operationsCatalog'){
+              deletedOperationIdsRemoved.push(doc.id);
             }
           }
         });
@@ -10837,6 +11653,21 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
           }
 
           const payload = JSON.parse(JSON.stringify(record));
+          
+          // 🔍 DIAGNOSTYKA CHECKLIST - zawsze loguj dla tasks
+          if (col.name === 'tasks') {
+            console.log(`📋 [saveToDB] Zapisuję zadanie:`, {
+              taskId: item.id,
+              opName: record.opName,
+              hasChecklist: !!record.checklist,
+              checklistType: typeof record.checklist,
+              checklistLength: record.checklist?.length,
+              checklistValue: record.checklist,
+              payloadHasChecklist: !!payload.checklist,
+              payloadChecklistLength: payload.checklist?.length
+            });
+          }
+          
           batch.set(r.collection(col.name).doc(item.id), payload, {merge:true});
           if (col.name === 'tasks') {
             tasksWritten.push({id: item.id, status: payload.status});
@@ -10903,6 +11734,25 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
           targetState.deletedProcesses = targetState.deletedProcesses.filter(id => !processedProcesses.has(id));
         }
       }
+      // Wyczyść deletedOperations po usunięciu z Firebase
+      if(deletedOperationIdsRemoved.length){
+        const processedOperations = new Set(deletedOperationIdsRemoved);
+        if(Array.isArray(state.deletedOperations)){
+          state.deletedOperations = state.deletedOperations.filter(id => !processedOperations.has(id));
+        }
+        if(targetState !== state && Array.isArray(targetState.deletedOperations)){
+          targetState.deletedOperations = targetState.deletedOperations.filter(id => !processedOperations.has(id));
+        }
+        // 🔧 Zaktualizuj backup localStorage
+        try {
+          if(state.deletedOperations && state.deletedOperations.length > 0){
+            localStorage.setItem('deletedOperations_backup', JSON.stringify(state.deletedOperations));
+          } else {
+            localStorage.removeItem('deletedOperations_backup');
+          }
+        } catch(e) { console.warn('Nie udało się zaktualizować deletedOperations backup:', e); }
+        console.log(`🗑️ Usunięto ${deletedOperationIdsRemoved.length} operacji z Firebase:`, deletedOperationIdsRemoved);
+      }
       if(typeof window !== 'undefined' && Array.isArray(window._pendingLegacyWarehouseCleanup)){
         window._pendingLegacyWarehouseCleanup = [];
       }
@@ -10954,12 +11804,14 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
   window.purgeFirebaseOrders = purgeFirebaseOrders;
   try {
     window.saveToDB = saveToDB;
+    window.handleSaveToDB = saveToDB; // Alias dla store.js
   } catch(assignErr) {
     console.warn('Nie udało się zarejestrować saveToDB w globalnym oknie:', assignErr && assignErr.message);
   }
   
   // Export saveToDB globally for use in other functions
   window.saveToDB = saveToDB;
+  window.handleSaveToDB = saveToDB; // Zapewnia kompatybilność z store.js
 
   async function purgeOrderFromFirebase(orderId){
     if(!orderId) return;
@@ -11105,10 +11957,117 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
   }
 
   (async function autoSubscribeIfNeeded(){ try{ if(state.storage && state.storage.mode==='firebase' && state.storage.autoLoadFromDB){ await subscribeToTaskUpdates(); } }catch(e){ console.warn('autoSubscribeIfNeeded err', e && e.message); } })();
+  
+  // 🔄 NASŁUCHIWACZ na zmiany z Worker App (cross-tab sync via localStorage)
+  (function setupWorkerAppSync() {
+    // Nasłuchuj na zmiany storage z innych kart (worker-app)
+    window.addEventListener('storage', function(event) {
+      // Interesuje nas tylko klucz plannerState (door_v50_state)
+      if (event.key !== storeKey && event.key !== 'door_v50_state') return;
+      if (!event.newValue) return;
+      
+      console.log('📥 [Worker Sync] Wykryto zmianę w localStorage z innej karty');
+      
+      try {
+        const incomingState = JSON.parse(event.newValue);
+        if (!incomingState || !Array.isArray(incomingState.tasks)) {
+          console.warn('📥 [Worker Sync] Dane nie zawierają poprawnej listy tasks');
+          return;
+        }
+        
+        // Merge przychodzących zadań z lokalnymi
+        const incomingTasks = incomingState.tasks || [];
+        let changed = false;
+        
+        incomingTasks.forEach(incomingTask => {
+          if (!incomingTask || !incomingTask.id) return;
+          
+          const idx = (state.tasks || []).findIndex(t => t.id === incomingTask.id);
+          if (idx >= 0) {
+            const localTask = state.tasks[idx];
+            
+            // Sprawdź czy status się zmienił - priorytet: done > run > paused > todo
+            const statusPriority = { 'done': 4, 'run': 3, 'paused': 2, 'todo': 1 };
+            const localPriority = statusPriority[localTask.status] || 1;
+            const incomingPriority = statusPriority[incomingTask.status] || 1;
+            
+            // Aktualizuj jeśli przychodzący status jest wyższy lub taki sam
+            // (worker ukończył zadanie)
+            if (incomingPriority >= localPriority) {
+              const prevStatus = localTask.status;
+              state.tasks[idx] = Object.assign({}, localTask, {
+                status: incomingTask.status,
+                startTime: incomingTask.startTime || localTask.startTime,
+                endTime: incomingTask.endTime || localTask.endTime,
+                actualTime: incomingTask.actualTime || localTask.actualTime,
+                checklist: incomingTask.checklist || localTask.checklist
+              });
+              
+              if (prevStatus !== incomingTask.status) {
+                console.log(`📥 [Worker Sync] Zadanie ${incomingTask.id}: ${prevStatus} → ${incomingTask.status}`);
+                changed = true;
+              }
+            }
+          }
+        });
+        
+        if (changed) {
+          console.log('📥 [Worker Sync] Zapisuję zmiany i odświeżam widok');
+          save();
+          try { renderTasks(); renderMonitor && renderMonitor(); } catch(_) {}
+        }
+      } catch(err) {
+        console.warn('📥 [Worker Sync] Błąd parsowania danych:', err);
+      }
+    });
+    
+    // Nasłuchuj na CustomEvent plannerStateChanged (ta sama karta)
+    window.addEventListener('plannerStateChanged', function(event) {
+      console.log('📥 [Worker Sync] Otrzymano plannerStateChanged event');
+      const detail = event.detail;
+      if (!detail || !detail.taskId) return;
+      
+      const idx = (state.tasks || []).findIndex(t => t.id === detail.taskId);
+      if (idx >= 0 && detail.status) {
+        const prevStatus = state.tasks[idx].status;
+        state.tasks[idx].status = detail.status;
+        if (detail.startTime) state.tasks[idx].startTime = detail.startTime;
+        if (detail.endTime) state.tasks[idx].endTime = detail.endTime;
+        
+        console.log(`📥 [Worker Sync] CustomEvent - zadanie ${detail.taskId}: ${prevStatus} → ${detail.status}`);
+        save();
+        try { renderTasks(); renderMonitor && renderMonitor(); } catch(_) {}
+      }
+    });
+    
+    console.log('🔗 [Worker Sync] Skonfigurowano nasłuchiwacze na zmiany z worker-app');
+  })();
+
   async function loadFromDB(opts){
     const options = opts || {};
     const forceLoad = options.forceLoad || false;
     const reason = options.reason || 'manual';
+    
+    // 🔧 ZACHOWAJ LISTY USUNIĘTYCH ELEMENTÓW - nie nadpisuj ich danymi z Firebase!
+    // Najpierw spróbuj wczytać z backup localStorage (osobny klucz)
+    let backupDeletedOperations = [];
+    try {
+      const backup = localStorage.getItem('deletedOperations_backup');
+      if(backup) {
+        backupDeletedOperations = JSON.parse(backup);
+        console.log('📦 [loadFromDB] Wczytano deletedOperations z backup:', backupDeletedOperations);
+      }
+    } catch(e) { console.warn('Nie udało się wczytać deletedOperations backup:', e); }
+    
+    const preservedDeletedOperations = backupDeletedOperations.length > 0 
+      ? backupDeletedOperations 
+      : (Array.isArray(state.deletedOperations) ? state.deletedOperations.slice() : []);
+    const preservedDeletedProcesses = Array.isArray(state.deletedProcesses) ? state.deletedProcesses.slice() : [];
+    const preservedDeletedOrders = Array.isArray(state.deletedOrders) ? state.deletedOrders.slice() : [];
+    
+    if(preservedDeletedOperations.length > 0){
+      console.log('🔒 [loadFromDB] Zachowuję deletedOperations przed wczytaniem z Firebase:', preservedDeletedOperations);
+    }
     
     // 🔒 BLOKADA PODCZAS USUWANIA - Nie wczytuj starych danych gdy usuwamy (TYLKO dla orders/tasks)
     if (window._isSyncingDelete && !options.allowDuringDelete) {
@@ -11210,8 +12169,14 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
       }
 
       const remoteCollections = { employees, operationsCatalog, processes, orders, tasks, after, warehouseItems, materialTemplates, warehouseTasks };
-      const deletedOrdersSet = new Set(Array.isArray(state.deletedOrders) ? state.deletedOrders : []);
-      const deletedProcessesSet = new Set(Array.isArray(state.deletedProcesses) ? state.deletedProcesses : []);
+      const deletedOrdersSet = new Set(preservedDeletedOrders.length > 0 ? preservedDeletedOrders : (Array.isArray(state.deletedOrders) ? state.deletedOrders : []));
+      const deletedProcessesSet = new Set(preservedDeletedProcesses.length > 0 ? preservedDeletedProcesses : (Array.isArray(state.deletedProcesses) ? state.deletedProcesses : []));
+      const deletedOperationsSet = new Set(preservedDeletedOperations.length > 0 ? preservedDeletedOperations : (Array.isArray(state.deletedOperations) ? state.deletedOperations : []));
+      
+      // DIAGNOSTYKA - pokaż ile operacji jest oznaczonych do usunięcia
+      if(deletedOperationsSet.size > 0){
+        console.log(`🗑️ [loadFromDB] Mam ${deletedOperationsSet.size} operacji oznaczonych do usunięcia:`, Array.from(deletedOperationsSet));
+      }
 
       const remoteCountTotal = Object.values(remoteCollections)
         .reduce((sum, collection)=> sum + (Array.isArray(collection) ? collection.length : (collection && typeof collection === 'object' ? Object.keys(collection).length : 0)), 0);
@@ -11309,6 +12274,19 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
             console.log(`  🧹 [loadFromDB] Pomijam ${removedLen} zdalnych procesów oznaczonych do usunięcia lokalnie`);
           }
         }
+
+        // 🔧 FILTROWANIE USUNIĘTYCH OPERACJI
+        if(key === 'operationsCatalog' && Array.isArray(dataToLoad)){
+          console.log(`🔍 [loadFromDB] operationsCatalog: ${dataToLoad.length} operacji, deletedOperationsSet.size=${deletedOperationsSet.size}`);
+          if(deletedOperationsSet.size > 0){
+            const beforeLen = dataToLoad.length;
+            dataToLoad = dataToLoad.filter(op => !deletedOperationsSet.has(op.id));
+            const removedLen = beforeLen - dataToLoad.length;
+            if(removedLen>0){
+              console.log(`  🧹 [loadFromDB] Pomijam ${removedLen} zdalnych operacji oznaczonych do usunięcia lokalnie`);
+            }
+          }
+        }
         
         if(key === 'employees' && Array.isArray(dataToLoad)){
           dataToLoad = dataToLoad.filter(e => {
@@ -11364,6 +12342,7 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
           if(dataToLoad.length !== beforeOps){
             console.warn(`  ⚠️ [loadFromDB] Operacje zredukowane z ${beforeOps} do ${dataToLoad.length}`);
           }
+          ensureOperationsCatalogChecklists(dataToLoad);
         }
         
         // Specjalna obsługa dla warehouseItems - przypisz do window.warehouseItems
@@ -11391,6 +12370,9 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
           console.log(`✅ [loadFromDB] Zadania magazynowe zsynchronizowane (${dataToLoad.length} zadań)`);
         }
         
+        if(key === 'operationsCatalog'){
+          ensureOperationsCatalogChecklists(dataToLoad);
+        }
         state[key] = dataToLoad;
         updated.push(key);
       });
@@ -11405,6 +12387,18 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
       state.lastModified = remoteTimestamp;
   state.storage.lastRemoteSync = remoteTimestamp;
       console.log('✅ Wczytano z Firebase - zaktualizowano lokalny timestamp:', new Date(remoteTimestamp).toLocaleString('pl-PL'));
+      
+      // 🔧 PRZYWRÓĆ LISTY USUNIĘTYCH ELEMENTÓW - muszą przetrwać synchronizację!
+      if(preservedDeletedOperations.length > 0){
+        state.deletedOperations = preservedDeletedOperations;
+        console.log('🔒 [loadFromDB] Przywrócono deletedOperations po sync:', state.deletedOperations);
+      }
+      if(preservedDeletedProcesses.length > 0){
+        state.deletedProcesses = preservedDeletedProcesses;
+      }
+      if(preservedDeletedOrders.length > 0){
+        state.deletedOrders = preservedDeletedOrders;
+      }
       
       // KRYTYCZNE: Synchronizuj window.state z lokalną zmienną state
       window.state = state;
@@ -16532,7 +17526,10 @@ function calculateWarehouseObligations() {
   
   // Pobierz aktualne stany magazynowe
   (window.warehouseItems || []).forEach(item => {
-    obligations[item.name] = {
+    // Używamy ID jako klucza dla jednoznaczności
+    const key = item.id || item.name;
+    obligations[key] = {
+      itemId: item.id, // Dodajemy ID do obiektu
       name: item.name,
       unit: item.unit,
       currentStock: item.quantity || 0,
@@ -16554,14 +17551,27 @@ function calculateWarehouseObligations() {
   
   activeOrders.forEach(order => {
     (order.materialChecklist || []).forEach(item => {
-      // Pomijaj materiały, które nie istnieją w magazynie
-      if (!obligations[item.itemName]) {
-        return;
+      // Próbujemy znaleźć po ID, potem po nazwie (fallback)
+      let obligation = null;
+      
+      if (item.itemId && obligations[item.itemId]) {
+        obligation = obligations[item.itemId];
+      } else if (item.itemName) {
+        // Fallback: szukamy po nazwie w warehouseItems, aby znaleźć ID
+        const whItem = (window.warehouseItems || []).find(w => w.name === item.itemName);
+        if (whItem && obligations[whItem.id]) {
+          obligation = obligations[whItem.id];
+        } else if (obligations[item.itemName]) {
+           // Ostatnia deska ratunku: bezpośrednie dopasowanie nazwy (dla starych danych)
+           obligation = obligations[item.itemName];
+        }
       }
       
-      obligations[item.itemName].reserved += item.quantity;
-      obligations[item.itemName].available -= item.quantity;
-      obligations[item.itemName].orders.push({
+      if (!obligation) return;
+      
+      obligation.reserved += item.quantity;
+      obligation.available -= item.quantity;
+      obligation.orders.push({
         orderId: order.id,
         orderName: order.name,
         quantity: item.quantity,

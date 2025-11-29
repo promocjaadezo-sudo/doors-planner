@@ -7,17 +7,33 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Worker App v6.0.4 - Lista Zadań (z wylogowaniem)</title>
+    <title>Worker App v6.1.2 - Lista Zadań</title>
+    
+    <!-- 🔒 BLOKADA AUTOMATYCZNEGO PRZYWRACANIA SCROLLA -->
+    <script>
+        // Wyłącz automatyczne przywracanie pozycji scrolla przez przeglądarkę
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+        // Natychmiast zresetuj scroll na górę
+        window.scrollTo(0, 0);
+    </script>
     <style>
         :root {
             --bg: #0f172a;
-            --panel: #1f2937;
-            --accent: #2563eb;
-            --success: #16a34a;
-            --warning: #d97706;
-            --error: #dc2626;
-            --text: #e5e7eb;
-            --muted: #94a3b8;
+            --panel: #1e293b;
+            --panel-light: #334155;
+            --accent: #3b82f6;
+            --accent-light: #60a5fa;
+            --gold: #fbbf24;
+            --gold-light: #fde047;
+            --success: #10b981;
+            --success-light: #34d399;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --text: #f1f5f9;
+            --text-muted: #cbd5e1;
+            --border: rgba(148, 163, 184, 0.2);
         }
 
         * {
@@ -177,6 +193,15 @@
             color: var(--muted);
         }
 
+        #reload-firebase-tasks {
+            margin-top: 12px;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+        }
+
         .task-placeholder {
             text-align: center;
             padding: 40px;
@@ -202,6 +227,18 @@
             border-radius: 8px;
             text-align: center;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .stat-card.active-filter {
+            border: 2px solid var(--accent);
+            background: linear-gradient(145deg, var(--panel), rgba(255, 215, 0, 0.1));
         }
 
         .stat-number {
@@ -222,42 +259,312 @@
             gap: 12px;
         }
 
-        .task-card {
+        .order-group {
             background: var(--panel);
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+        }
+
+        .order-header {
+            padding: 18px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, rgba(251,191,36,0.15), rgba(245,158,11,0.08));
+            border-bottom: 2px solid rgba(251,191,36,0.25);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .order-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--gold), var(--gold-light));
+        }
+
+        .order-header:hover {
+            background: linear-gradient(135deg, rgba(251,191,36,0.25), rgba(245,158,11,0.15));
+            transform: translateX(2px);
+        }
+
+        .order-header-left {
+            flex: 1;
+        }
+
+        .order-number {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #fbbf24;
+            margin-bottom: 4px;
+        }
+
+        .order-info {
+            font-size: 0.85rem;
+            color: #fde047;
+            display: flex;
+            gap: 16px;
+            margin-top: 6px;
+        }
+
+        .order-toggle {
+            font-size: 1.5rem;
+            color: #fbbf24;
+            transition: transform 0.3s ease;
+        }
+
+        .order-toggle.expanded {
+            transform: rotate(180deg);
+        }
+
+        .order-tasks {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .order-tasks.expanded {
+            max-height: 5000px;
+        }
+
+        .task-card {
+            background: linear-gradient(145deg, var(--panel), var(--bg));
             border-radius: 12px;
             padding: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            transition: transform 0.2s;
+            margin: 10px 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        .task-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, var(--accent), var(--accent-light));
+            border-radius: 12px 0 0 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .checklist-section {
+            margin-top: 18px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .checklist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .checklist-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .checklist-progress {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .checklist-required {
+            font-size: 0.7rem;
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 999px;
+            padding: 2px 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .checklist-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+            background: rgba(148, 163, 184, 0.08);
+            border-radius: 10px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            padding: 10px 12px;
+        }
+
+        .checklist-item.done {
+            opacity: 0.75;
+            background: rgba(16, 185, 129, 0.12);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .checklist-item label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text);
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .checklist-item label span {
+            font-size: 0.95rem;
+            line-height: 1.3;
+        }
+
+        .checklist-hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            margin-left: 30px;
+        }
+
+        .checklist-image {
+            margin-left: 30px;
+            margin-top: 4px;
+        }
+
+        .checklist-image img {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .checklist-remove {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 6px;
+        }
+
+        .checklist-remove:hover {
+            color: var(--error);
+            background: rgba(239, 68, 68, 0.15);
+        }
+
+        .checklist-empty {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            padding: 8px 0;
+        }
+
+        .checklist-add {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .checklist-add input {
+            flex: 1;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            background: rgba(15, 23, 42, 0.8);
+            color: var(--text);
+        }
+
+        .checklist-add button {
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: none;
+            background: var(--accent);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .checklist-add button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .task-card:hover {
-            transform: translateY(-2px);
+            transform: translateX(4px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .task-card:hover::before {
+            opacity: 1;
         }
 
         .task-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
         }
 
         .task-title {
-            font-size: 1.1rem;
-            font-weight: 600;
+            font-size: 1.3rem;
+            font-weight: 700;
             color: var(--text);
+            line-height: 1.3;
         }
 
         .task-status {
-            padding: 4px 8px;
-            border-radius: 12px;
+            padding: 7px 14px;
+            border-radius: 20px;
             font-size: 0.8rem;
-            font-weight: 500;
+            font-weight: 700;
+            white-space: nowrap;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
 
-        .status-pending { background: var(--warning); color: white; }
-        .status-in-progress { background: var(--accent); color: white; }
-        .status-completed { background: var(--success); color: white; }
-        .status-paused { background: var(--muted); color: var(--bg); }
+        .status-todo { 
+            background: linear-gradient(135deg, var(--warning), #fbbf24); 
+            color: white; 
+        }
+        .status-run { 
+            background: linear-gradient(135deg, var(--accent), var(--accent-light)); 
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        .status-done { 
+            background: linear-gradient(135deg, var(--success), var(--success-light)); 
+            color: white; 
+        }
+        .status-paused { 
+            background: linear-gradient(135deg, #64748b, #94a3b8); 
+            color: white; 
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3); }
+            50% { box-shadow: 0 2px 12px rgba(59, 130, 246, 0.6); }
+        }
 
         .task-details {
             display: grid;
@@ -278,13 +585,17 @@
 
         .detail-label {
             color: var(--muted);
-            font-size: 0.8rem;
-            margin-bottom: 2px;
+            font-size: 0.75rem;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
         }
 
         .detail-value {
             color: var(--text);
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 0.95rem;
         }
 
         .detail-value.notes {
@@ -299,43 +610,58 @@
 
         .btn {
             flex: 1;
-            padding: 10px 16px;
+            padding: 10px 18px;
             border: none;
-            border-radius: 8px;
-            font-weight: 500;
+            border-radius: 10px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
             text-align: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
 
         .btn-primary {
-            background: var(--accent);
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
             color: white;
         }
 
         .btn-primary:hover {
-            background: #1d4ed8;
-            transform: translateY(-1px);
+            background: linear-gradient(135deg, #2563eb, var(--accent));
         }
 
         .btn-success {
-            background: var(--success);
+            background: linear-gradient(135deg, var(--success), var(--success-light));
             color: white;
         }
 
         .btn-success:hover {
-            background: #15803d;
-            transform: translateY(-1px);
+            background: linear-gradient(135deg, #059669, var(--success));
         }
 
         .btn-warning {
-            background: var(--warning);
+            background: linear-gradient(135deg, var(--warning), #fbbf24);
             color: white;
         }
 
         .btn-warning:hover {
-            background: #b45309;
-            transform: translateY(-1px);
+            background: linear-gradient(135deg, #d97706, var(--warning));
         }
 
         .btn-large {
@@ -360,39 +686,6 @@
             background: #6b7280;
         }
 
-        .sync-section {
-            background: var(--panel);
-            padding: 16px;
-            border-radius: 12px;
-            margin-top: 16px;
-            text-align: center;
-        }
-
-        .sync-btn {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            margin-top: 8px;
-        }
-
-        .sync-btn:hover {
-            background: #1d4ed8;
-        }
-
-        .sync-btn.secondary {
-            background: var(--panel);
-            color: var(--text);
-            border: 1px solid rgba(148, 163, 184, 0.4);
-        }
-
-        .sync-btn.secondary:hover {
-            background: rgba(148, 163, 184, 0.2);
-        }
-
         .offline-indicator {
             position: fixed;
             top: 10px;
@@ -403,15 +696,6 @@
             border-radius: 4px;
             font-size: 0.8rem;
             display: none;
-        }
-
-        .timer {
-            background: rgba(0,0,0,0.2);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            margin-top: 8px;
-            display: inline-block;
         }
 
         .notification-settings {
@@ -654,7 +938,7 @@
     </div>
 
     <div class="header">
-    <h1>📋 Lista Zadań <span class="version-badge">v2,1</span></h1>
+    <h1>📋 Lista Zadań <span class="version-badge">v6.1.2</span></h1>
         <div class="date" id="current-date"></div>
         <div class="worker-access">
             <div id="login-card" class="login-card">
@@ -672,18 +956,21 @@
                 <button class="logout-button" onclick="logoutWorker()">🚪 Wyloguj</button>
             </div>
         </div>
+        <button class="btn btn-primary" id="reload-firebase-tasks" onclick="reloadTasksFromFirebase()">
+            🔄 Przeładuj zadania z Firebase
+        </button>
     </div>
 
     <div class="stats">
-        <div class="stat-card">
+        <div class="stat-card" onclick="setFilter('all')">
             <div class="stat-number" id="total-tasks">0</div>
             <div class="stat-label">Razem zadań</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" onclick="setFilter('done')">
             <div class="stat-number" id="completed-tasks">0</div>
             <div class="stat-label">Ukończonych</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" onclick="setFilter('run')">
             <div class="stat-number" id="in-progress-tasks">0</div>
             <div class="stat-label">W trakcie</div>
         </div>
@@ -692,16 +979,6 @@
     <div id="task-list" class="task-list">
         <div class="task-placeholder">
             Ładowanie zadań...
-        </div>
-    </div>
-
-    <div class="sync-section">
-        <div>Import zadań z systemu głównego</div>
-        <button class="sync-btn" onclick="importTasksFromMainApp()">� Importuj zadania</button>
-        <button class="sync-btn" id="reload-firebase-tasks" onclick="reloadTasksFromFirebase()">🔄 Przeładuj z Firebase</button>
-        <button class="sync-btn secondary" onclick="clearWorkerCache()">🧹 Wyczyść dane lokalne</button>
-        <div class="last-sync" id="last-sync">
-            Brak zaimportowanych zadań
         </div>
     </div>
 
@@ -719,6 +996,7 @@
         // Dane aplikacji
         let tasks = [];
         let allEmployees = [];
+        let allOrders = []; // Cache zleceń dla mapowania orderNumber
         let currentUser = null;
         let isOnline = navigator.onLine;
         let firebaseApp = null;
@@ -729,6 +1007,9 @@
         
         // Blokada zapobiegająca wielokrotnym jednoczesnym kliknięciom
         let taskOperationInProgress = new Set();
+        let taskSnapshotUnsubscribe = null;
+        let activeTaskCollectionName = null;
+        let realtimeSubscriptionInProgress = false;
     const DEFAULT_APP_ID = 'doors-demo';
     const DEFAULT_USER_ID = 'hala-1';
     const LOGIN_PROOF_KEY = 'worker-login-proof';
@@ -750,6 +1031,16 @@
             }
         };
     let allowDemoTasks = false;
+    const PLANNER_IMPORT_FLAG_KEY = 'worker-planner-import-enabled-v2';
+    const legacyPlannerFlag = localStorage.getItem('worker-allow-planner-state');
+    if (legacyPlannerFlag !== null) {
+        localStorage.removeItem('worker-allow-planner-state');
+    }
+    // NAPRAWIONE: Włącz import danych z Firebase domyślnie
+    if (localStorage.getItem(PLANNER_IMPORT_FLAG_KEY) === null) {
+        localStorage.setItem(PLANNER_IMPORT_FLAG_KEY, '1');
+    }
+    const ALLOW_PLANNER_STATE_IMPORT = true;
     let cachedPlannerUserDoc = null;
         
         // Ustawienia powiadomień
@@ -762,6 +1053,408 @@
         
         // Timery przypomnień
         let reminderIntervals = new Map();
+
+        const DEFAULT_TASK_CHECKLIST = [
+            'Przygotuj stanowisko i narzędzia',
+            'Zweryfikuj materiały z dokumentacji',
+            'Sprawdź parametry i wymiary zlecenia',
+            'Zgłoś braki lub ryzyka do prowadzącego',
+            'Wykonaj zadanie i odnotuj wynik'
+        ];
+        const CHECKLIST_ITEM_DEFAULT_TYPE = 'checkbox';
+
+        function generateChecklistItemId() {
+            if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+                return crypto.randomUUID();
+            }
+            return 'chk_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+        }
+
+        function createDefaultChecklist() {
+            return DEFAULT_TASK_CHECKLIST.map(label => ({
+                id: generateChecklistItemId(),
+                label,
+                done: false,
+                type: CHECKLIST_ITEM_DEFAULT_TYPE,
+                required: false
+            }));
+        }
+
+        function normalizeChecklist(list) {
+            if (!Array.isArray(list)) return [];
+            const normalized = [];
+            list.forEach(item => {
+                if (item == null) return;
+
+                if (typeof item === 'string') {
+                    const label = item.trim();
+                    if (!label) return;
+                    normalized.push({
+                        id: generateChecklistItemId(),
+                        label,
+                        done: false,
+                        type: CHECKLIST_ITEM_DEFAULT_TYPE,
+                        required: false,
+                        hint: ''
+                    });
+                    return;
+                }
+
+                if (typeof item === 'object') {
+                    const label = typeof item.label === 'string'
+                        ? item.label
+                        : typeof item.text === 'string'
+                            ? item.text
+                            : '';
+                    if (!label) return;
+
+                    const normalizedItem = {};
+                    for (const key in item) {
+                        if (Object.prototype.hasOwnProperty.call(item, key)) {
+                            normalizedItem[key] = item[key];
+                        }
+                    }
+
+                    normalizedItem.id = item.id ? String(item.id) : generateChecklistItemId();
+                    normalizedItem.label = label;
+                    normalizedItem.done = Boolean(
+                        item.done ??
+                        item.completed ??
+                        item.checked ??
+                        (typeof item.defaultState === 'string' && item.defaultState.toLowerCase() === 'checked')
+                    );
+                    normalizedItem.type = item.type || CHECKLIST_ITEM_DEFAULT_TYPE;
+                    normalizedItem.required = Boolean(item.required);
+                    normalizedItem.hint = typeof item.hint === 'string'
+                        ? item.hint
+                        : typeof item.description === 'string'
+                            ? item.description
+                            : typeof item.help === 'string'
+                                ? item.help
+                                : '';
+
+                    normalized.push(normalizedItem);
+                }
+            });
+            return normalized;
+        }
+
+        function mergeChecklists(localList = [], incomingList = []) {
+            const local = normalizeChecklist(localList);
+            const incoming = normalizeChecklist(incomingList);
+            if (!local.length && !incoming.length) return [];
+
+            const makeKey = item => {
+                if (!item) return '';
+                if (item.id) return `id:${item.id}`;
+                return `label:${(item.label || '').trim().toLowerCase()}`;
+            };
+
+            const localMap = new Map();
+            local.forEach(item => {
+                const key = makeKey(item);
+                if (key) {
+                    localMap.set(key, item);
+                }
+            });
+
+            const merged = [];
+            incoming.forEach(item => {
+                const key = makeKey(item);
+                if (key && localMap.has(key)) {
+                    const localItem = localMap.get(key);
+                    const mergedItem = Object.assign({}, localItem, item);
+                    mergedItem.done = typeof localItem.done === 'boolean' ? localItem.done : item.done;
+                    mergedItem.label = item.label || localItem.label;
+                    merged.push(mergedItem);
+                    localMap.delete(key);
+                } else {
+                    merged.push(Object.assign({}, item));
+                }
+            });
+
+            localMap.forEach(item => {
+                merged.push(Object.assign({}, item));
+            });
+
+            return merged;
+        }
+
+        function ensureChecklist(task) {
+            if (!task) return [];
+            if (!Array.isArray(task.checklist)) {
+                task.checklist = [];
+            }
+            task.checklist = normalizeChecklist(task.checklist);
+            // Wyłączone auto-generowanie - checklisty dostarczane przez planer z operacji
+            // const allowDefault = task.checklistUseDefault !== false;
+            // if (task.checklist.length === 0 && allowDefault) {
+            //     task.checklist = createDefaultChecklist();
+            // }
+            if (typeof task.checklistAllowAdd === 'undefined') {
+                task.checklistAllowAdd = true;
+            }
+            return task.checklist;
+        }
+
+        function seedChecklistDefaults(taskList) {
+            // Funkcja wyłączona - checklisty są teraz dostarczane przez planer z operacji
+            if (!Array.isArray(taskList)) return;
+            // taskList.forEach(task => ensureChecklist(task));
+        }
+
+        function getChecklistInputId(taskId) {
+            return `checklist-input-${String(taskId).replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+        }
+
+        function handleChecklistInputKey(event, taskId) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                addChecklistItem(taskId);
+            }
+        }
+
+        function addChecklistItem(taskId) {
+            const task = findTaskById(taskId);
+            if (!task) return;
+            if (task.checklistAllowAdd === false) {
+                showNotification('Dodawanie punktów jest zablokowane dla tego zadania.', 'error');
+                return;
+            }
+
+            const inputId = getChecklistInputId(task.id);
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const value = input.value.trim();
+            if (!value) {
+                showNotification('Wpisz treść punktu checklisty.', 'info');
+                return;
+            }
+
+            const checklist = ensureChecklist(task);
+            checklist.push({
+                id: generateChecklistItemId(),
+                label: value,
+                done: false,
+                type: CHECKLIST_ITEM_DEFAULT_TYPE,
+                required: false
+            });
+            input.value = '';
+            recentlyEditedTasks.set(task.id, Date.now());
+            saveTasks();
+            // Zamiast pełnego re-renderu - aktualizuj tylko checklistę dla tego zadania
+            updateTaskCardUI(task);
+            updateChecklistProgressUI(task.id, input);
+            updateTaskInFirebase(task);
+        }
+
+        function toggleChecklistItem(taskId, itemId) {
+            const task = findTaskById(taskId);
+            if (!task) return;
+            
+            // 🔒 Blokada: można zaznaczać checklistę tylko gdy zadanie jest rozpoczęte
+            if (task.status === 'todo') {
+                showNotification('❌ Rozpocznij zadanie aby odznaczać punkty checklisty', 'warning');
+                // Przywróć poprzedni stan checkboxa - bez pełnego re-renderu
+                return;
+            }
+            
+            const checklist = ensureChecklist(task);
+            const entry = checklist.find(item => String(item.id) === String(itemId));
+            if (!entry) return;
+            entry.done = !entry.done;
+            
+            // Zaktualizuj tylko UI bez pełnego re-renderowania
+            updateChecklistItemUI(taskId, itemId, entry.done);
+            
+            recentlyEditedTasks.set(task.id, Date.now());
+            saveTasks();
+            updateTaskInFirebase(task);
+        }
+        
+        function updateChecklistItemUI(taskId, itemId, isDone) {
+            // Znajdź checkbox po onchange atrybucie - użyj bardziej precyzyjnego selektora
+            const checkbox = document.querySelector(`input[type="checkbox"][onchange*="'${taskId}'"][onchange*="'${itemId}'"]`);
+            if (!checkbox) {
+                console.warn('Nie znaleziono checkboxa dla', taskId, itemId);
+                return;
+            }
+            
+            // Aktualizuj checkbox
+            checkbox.checked = isDone;
+            
+            // Aktualizuj klasę na parent li
+            const li = checkbox.closest('.checklist-item');
+            if (li) {
+                if (isDone) {
+                    li.classList.add('done');
+                } else {
+                    li.classList.remove('done');
+                }
+            }
+            
+            // Zaktualizuj progress bez re-renderowania - tylko dla tego zadania
+            updateChecklistProgressUI(taskId, checkbox);
+        }
+        
+        function updateChecklistProgressUI(taskId, referenceElement) {
+            const task = findTaskById(taskId);
+            if (!task) return;
+            const checklist = ensureChecklist(task);
+            const completed = checklist.filter(item => item.done).length;
+            const progressText = checklist.length ? `${completed}/${checklist.length} ukończone` : 'Brak elementów';
+            
+            // Znajdź progress span w tym samym task-card co referenceElement
+            const taskCard = referenceElement ? referenceElement.closest('.task-card') : null;
+            if (taskCard) {
+                const progressSpan = taskCard.querySelector('.checklist-progress');
+                if (progressSpan) {
+                    progressSpan.textContent = progressText;
+                }
+            }
+        }
+
+        // Funkcja do selektywnej aktualizacji UI karty zadania bez pełnego re-renderu
+        function updateTaskCardUI(task) {
+            // Szukamy karty .task-card z odpowiednim data-task-id
+            const taskCard = document.querySelector(`.task-card[data-task-id="${task.id}"]`);
+            if (!taskCard) {
+                console.warn('⚠️ Nie znaleziono karty zadania:', task.id);
+                // Spróbuj pełny re-render jako fallback
+                console.log('🔄 Próbuję pełny re-render...');
+                renderTasks(true);
+                return;
+            }
+            
+            console.log('🎨 Aktualizuję UI karty:', task.id, 'status:', task.status);
+
+            // Sprawdź czy zadanie pasuje do aktualnego filtra
+            const shouldBeVisible = (currentFilter === 'all') || 
+                                   (currentFilter === 'run' && task.status === 'run') ||
+                                   (currentFilter === 'done' && task.status === 'done');
+            
+            if (!shouldBeVisible) {
+                // Ukryj kartę z płynną animacją zamiast usuwać ją z DOM
+                taskCard.style.transition = 'opacity 0.3s, transform 0.3s';
+                taskCard.style.opacity = '0';
+                taskCard.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    taskCard.style.display = 'none';
+                }, 300);
+                console.log('✅ Ukryto kartę zadania (nie pasuje do filtra):', task.id);
+                return;
+            }
+
+            // Upewnij się że karta jest widoczna
+            taskCard.style.display = '';
+            taskCard.style.opacity = '1';
+            taskCard.style.transform = 'scale(1)';
+
+            // Aktualizuj status badge
+            const statusBadge = taskCard.querySelector('.task-status');
+            if (statusBadge) {
+                statusBadge.className = 'task-status status-' + task.status;
+                const statusMap = {
+                    'todo': 'Do zrobienia',
+                    'run': 'W trakcie',
+                    'paused': 'Wstrzymane',
+                    'done': 'Zakończone'
+                };
+                statusBadge.textContent = statusMap[task.status] || task.status;
+            }
+
+            // Aktualizuj przyciski akcji (używamy data-action dla event delegation)
+            const actionsDiv = taskCard.querySelector('.task-actions');
+            if (actionsDiv) {
+                const taskId = String(task.id);
+                // NIE escapujemy taskId - atrybuty data-* są bezpieczne
+                let buttonsHTML = '';
+                
+                if (task.status === 'todo' || task.status === 'pending') {
+                    buttonsHTML = `<button class="btn btn-primary btn-large" data-action="start" data-task-id="${taskId}">▶️ Rozpocznij zadanie</button>`;
+                } else if (task.status === 'run' || task.status === 'in-progress') {
+                    buttonsHTML = `
+                        <button class="btn btn-success" data-action="complete" data-task-id="${taskId}">✅ Zakończ</button>
+                        <button class="btn btn-warning" data-action="pause" data-task-id="${taskId}">⏸️ Wstrzymaj</button>
+                    `;
+                } else if (task.status === 'paused') {
+                    buttonsHTML = `
+                        <button class="btn btn-primary" data-action="resume" data-task-id="${taskId}">▶️ Wznów</button>
+                        <button class="btn btn-success" data-action="complete" data-task-id="${taskId}">✅ Zakończ</button>
+                    `;
+                } else if (task.status === 'done' || task.status === 'completed') {
+                    buttonsHTML = `<button class="btn btn-secondary" disabled>✅ Ukończone</button>`;
+                }
+                
+                actionsDiv.innerHTML = buttonsHTML;
+            }
+
+            // Aktualizuj timer jeśli istnieje
+            const timerDiv = taskCard.querySelector('.task-timer');
+            if (timerDiv) {
+                if (task.status === 'run' || task.status === 'paused') {
+                    const timeSpent = (task.timeSpent || 0) + 
+                        (task.status === 'run' && task.lastResumeTime 
+                            ? Math.floor((Date.now() - new Date(task.lastResumeTime)) / 1000)
+                            : 0);
+                    const hours = Math.floor(timeSpent / 3600);
+                    const minutes = Math.floor((timeSpent % 3600) / 60);
+                    const seconds = timeSpent % 60;
+                    timerDiv.textContent = `Czas: ${hours}h ${minutes}m ${seconds}s`;
+                    timerDiv.style.display = 'block';
+                } else {
+                    timerDiv.style.display = 'none';
+                }
+            }
+
+            console.log('✅ Zaktualizowano UI karty zadania:', task.id);
+        }
+
+        // Funkcja do aktualizacji liczników statystyk bez pełnego re-renderu
+        function updateStatsCounters() {
+            const totalTasks = tasks.length;
+            const completedTasks = tasks.filter(t => t.status === 'done').length;
+            const runningTasks = tasks.filter(t => t.status === 'run').length;
+
+            // Aktualizuj licznik wszystkich zadań
+            const allValueEl = document.querySelector('.stat-card:nth-child(1) .stat-value');
+            if (allValueEl) allValueEl.textContent = totalTasks;
+
+            // Aktualizuj licznik ukończonych
+            const doneValueEl = document.querySelector('.stat-card:nth-child(2) .stat-value');
+            if (doneValueEl) doneValueEl.textContent = completedTasks;
+
+            // Aktualizuj licznik w trakcie
+            const runValueEl = document.querySelector('.stat-card:nth-child(3) .stat-value');
+            if (runValueEl) runValueEl.textContent = runningTasks;
+
+            console.log('📊 Zaktualizowano statystyki:', { totalTasks, completedTasks, runningTasks });
+        }
+
+        function removeChecklistItem(taskId, itemId) {
+            const task = findTaskById(taskId);
+            if (!task) return;
+            if (task.checklistAllowAdd === false) {
+                showNotification('Usuwanie punktów jest zablokowane dla tego zadania.', 'error');
+                return;
+            }
+            const checklist = ensureChecklist(task);
+            const index = checklist.findIndex(item => String(item.id) === String(itemId));
+            if (index === -1) return;
+            checklist.splice(index, 1);
+            recentlyEditedTasks.set(task.id, Date.now());
+            saveTasks();
+            // Zamiast pełnego re-renderu - renderuj tylko tę kartę zadania
+            const taskCard = document.querySelector(`[data-task-id="${task.id}"]`);
+            if (taskCard) {
+                const checklistSection = taskCard.querySelector('.checklist-section');
+                if (checklistSection) {
+                    // Re-renderuj tylko sekcję checklisty
+                    checklistSection.outerHTML = renderChecklistSection(task);
+                }
+            }
+            updateTaskInFirebase(task);
+        }
 
         function escapeHtml(value) {
             if (value === null || value === undefined) return '';
@@ -797,6 +1490,19 @@
                 str = str.slice(1, -1).trim();
             }
             return str;
+        }
+
+        function buildCollectionOrder(preferredName, aliasList) {
+            const order = [];
+            if (preferredName) {
+                order.push(preferredName);
+            }
+            aliasList.forEach(name => {
+                if (!order.includes(name)) {
+                    order.push(name);
+                }
+            });
+            return order;
         }
 
         const ALT_TASK_ID_FIELDS = ['taskId', 'code', 'reference', 'uid', 'firebaseId', 'externalId'];
@@ -1013,6 +1719,20 @@
             normalizedTask.leadEmployeeName = rawTask.leadEmployeeName || order.leadEmployeeName || '';
             normalizedTask.installDate = toTimestampMillis(rawTask.installDate || order.installDate || rawTask.installationDate);
             normalizedTask.orderNotes = normalizeNotes(rawTask.orderNotes || rawTask.notes || order.notes || '');
+            normalizedTask.taskNumber = rawTask.taskNumber || rawTask.task_number || rawTask.taskCode || '';
+            normalizedTask.departTime = rawTask.departTime || rawTask.depart_time || rawTask.departureTime || '';
+            normalizedTask.visitTime = rawTask.visitTime || rawTask.visit_time || rawTask.arrivalTime || '';
+            const checklistSource = rawTask.checklist || rawTask.taskChecklist || [];
+            normalizedTask.checklist = normalizeChecklist(checklistSource);
+            if (typeof rawTask.checklistAllowAdd === 'boolean') {
+                normalizedTask.checklistAllowAdd = rawTask.checklistAllowAdd;
+            }
+            if (typeof rawTask.checklistRequired === 'boolean') {
+                normalizedTask.checklistRequired = rawTask.checklistRequired;
+            }
+            if (Object.prototype.hasOwnProperty.call(rawTask, 'checklistUseDefault')) {
+                normalizedTask.checklistUseDefault = rawTask.checklistUseDefault;
+            }
 
             return normalizedTask;
         }
@@ -1356,7 +2076,8 @@
                 hideWorkerInfo();
                 document.title = 'Worker App';
                 saveTasks();
-                renderTasks();
+                // Renderuj BEZ skakania - wylogowanie pracownika
+                renderTasks(false, false);
                 updateStats();
                 updateLoginUI();
                 return false;
@@ -1386,10 +2107,13 @@
             document.title = `Worker App - ${employee.name || employee.displayName || employeeId}`;
 
             const allTasksStr = localStorage.getItem('worker-all-tasks');
-            if (allTasksStr) {
+            // W trybie produkcyjnym bez importu planera, ignoruj worker-all-tasks (może zawierać testowe dane)
+            if (allTasksStr && (ALLOW_PLANNER_STATE_IMPORT || currentUser)) {
                 try {
                     const allTasks = JSON.parse(allTasksStr);
+                    applyDependencyLocks(allTasks);
                     tasks = filterTasksForEmployee(allTasks, employeeId);
+                    seedChecklistDefaults(tasks);
                     saveTasks();
                 } catch (error) {
                     console.warn('Błąd parsowania listy zadań dla pracownika:', error);
@@ -1401,7 +2125,8 @@
                 saveTasks();
             }
 
-            renderTasks();
+            // Renderuj BEZ skakania - to nie jest inicjalne ładowanie strony
+            renderTasks(false, false);
             updateStats();
             startRemindersForActiveTasks();
             updateLoginUI();
@@ -1474,27 +2199,28 @@
         // Inicjalizacja Firebase
         async function initializeFirebase() {
             try {
-                // Dynamiczne ładowanie Firebase SDK - czekaj na wszystkie skrypty
-                await new Promise((resolve, reject) => {
-                    let loaded = 0;
-                    const scripts = [
-                        'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
-                        'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js',
-                        'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js'
-                    ];
-                    
-                    scripts.forEach((src, index) => {
+                // Dynamiczne ładowanie Firebase SDK - sekwencyjnie, po kolei
+                const scripts = [
+                    'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
+                    'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js',
+                    'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js'
+                ];
+                
+                // Załaduj skrypty SEKWENCYJNIE (jeden po drugim)
+                for (let i = 0; i < scripts.length; i++) {
+                    await new Promise((resolve, reject) => {
                         const script = document.createElement('script');
-                        script.src = src;
+                        script.src = scripts[i];
                         script.onload = () => {
-                            loaded++;
-                            console.log(`✅ Loaded ${index + 1}/${scripts.length}: ${src.split('/').pop()}`);
-                            if (loaded === scripts.length) resolve();
+                            console.log(`✅ Loaded ${i + 1}/${scripts.length}: ${scripts[i].split('/').pop()}`);
+                            resolve();
                         };
-                        script.onerror = () => reject(new Error(`Failed to load ${src}`));
+                        script.onerror = () => reject(new Error(`Failed to load ${scripts[i]}`));
                         document.head.appendChild(script);
                     });
-                });
+                    // Dodatkowe czekanie między skryptami
+                    await new Promise(r => setTimeout(r, 100));
+                }
 
                 // Czekaj aż firebase będzie dostępny globalnie
                 let attempts = 0;
@@ -1521,8 +2247,9 @@
 
                 console.log('✅ Firebase zainicjalizowany');
                 
-                // Pobierz pracowników i zadania
+                // Pobierz pracowników, zlecenia i zadania
                 await loadEmployeesFromFirebase();
+                await loadOrdersFromFirebase();
                 await loadTasksFromFirebase();
                 
             } catch (error) {
@@ -1616,6 +2343,8 @@
 
         // Fallback - załaduj pracowników z localStorage
         async function loadEmployeesFromLocalStorage() {
+            console.log('📂 Próbuję załadować pracowników z localStorage jako fallback...');
+
             const plannerData = localStorage.getItem('planner-state');
             if (plannerData) {
                 try {
@@ -1633,6 +2362,41 @@
 
             allEmployees = [];
             await finalizeEmployeesLoad();
+        }
+
+        // Ładowanie zleceń z Firebase
+        async function loadOrdersFromFirebase() {
+            try {
+                console.log('🔍 Ładowanie zleceń z Firebase...');
+                let appId = normalizeIdentifier(localStorage.getItem('planner-app-id'));
+                let userId = normalizeIdentifier(localStorage.getItem('planner-user-id'));
+
+                if (!appId && DEFAULT_APP_ID) appId = normalizeIdentifier(DEFAULT_APP_ID);
+                if (!userId && DEFAULT_USER_ID) userId = normalizeIdentifier(DEFAULT_USER_ID);
+
+                if (!appId || !userId) {
+                    console.warn('⚠️ Brak appId/userId - nie można załadować zleceń');
+                    return;
+                }
+
+                const userDocRef = await resolvePlannerUserDoc(appId, userId);
+                if (!userDocRef) {
+                    console.warn('⚠️ Nie udało się odnaleźć dokumentu użytkownika dla zleceń');
+                    return;
+                }
+
+                const ordersResult = await fetchFromFirstAvailableCollection(userDocRef, ['orders', 'zlecenia'], 'orders');
+                if (ordersResult && Array.isArray(ordersResult.items)) {
+                    allOrders = ordersResult.items;
+                    console.log(`✅ Załadowano ${allOrders.length} zleceń z Firebase`);
+                } else {
+                    console.warn('⚠️ Nie znaleziono zleceń w Firebase');
+                    allOrders = [];
+                }
+            } catch (error) {
+                console.error('❌ Błąd ładowania zleceń:', error);
+                allOrders = [];
+            }
         }
 
         // Pobieranie zadań z Firebase
@@ -1705,6 +2469,63 @@
 
                 console.log(`✅ Załadowano ${allTasks.length} zadań z Firebase`);
                 
+                // Debug: sprawdź pierwsze zadanie
+                if (allTasks.length > 0) {
+                    console.log('🔍 Przykładowe zadanie:', {
+                        id: allTasks[0].id,
+                        orderId: allTasks[0].orderId,
+                        name: allTasks[0].name,
+                        allKeys: Object.keys(allTasks[0])
+                    });
+                }
+                
+                // Zmapuj orderNumber, model, client i estMin z plannerState
+                const plannerState = loadPlannerState();
+                if (plannerState && plannerState.orders) {
+                    allOrders = plannerState.orders; // Zapisz do cache globalnego
+                    const ordersById = new Map(plannerState.orders.map(o => [o.id, o]));
+                    const tasksById = new Map(plannerState.tasks.map(t => [t.id, t]));
+                    allTasks.forEach(task => {
+                        const order = ordersById.get(task.orderId);
+                        if (order) {
+                            if (order.name) {
+                                task.orderNumber = order.name;
+                            }
+                            if (order.model) {
+                                task.model = order.model;
+                            }
+                            if (order.client) {
+                                task.client = order.client;
+                            }
+                        }
+                        // Zmapuj czas operacji z plannerState.tasks
+                        const plannerTask = tasksById.get(task.id);
+                        if (plannerTask) {
+                            if (plannerTask.estMin) {
+                                task.estMin = plannerTask.estMin;
+                            }
+                            if (plannerTask.status) {
+                                task.status = plannerTask.status;
+                            }
+                            if (Array.isArray(plannerTask.dependsOn)) {
+                                task.dependsOn = [...plannerTask.dependsOn];
+                            }
+                            if (!window._estMinDebugDone) {
+                                window._estMinDebugDone = true;
+                                console.log('🔍 Zadanie z plannerState:', {
+                                    id: plannerTask.id,
+                                    name: plannerTask.name || plannerTask.opName,
+                                    estMin: plannerTask.estMin,
+                                    duration: plannerTask.duration,
+                                    allKeys: Object.keys(plannerTask)
+                                });
+                            }
+                        }
+                    });
+                    console.log('✅ Zmapowano orderNumber, model, client i estMin dla zadań z Firebase');
+                }
+                applyDependencyLocks(allTasks);
+                
                 // Zapisz wszystkie zadania
                 localStorage.setItem('worker-all-tasks', JSON.stringify(allTasks));
                 
@@ -1722,13 +2543,75 @@
                                 console.log(`🛡️ Ignoruję zmianę z Firebase dla ${fbTask.id} - ostatnio edytowane lokalnie (przed ${Math.round((now - lastEdit) / 1000)}s)`);
                                 return;
                             }
-                            // Aktualizuj zadanie z Firebase
-                            tasks[idx] = fbTask;
+                            
+                            const existing = tasks[idx];
+                            const mergedChecklist = mergeChecklists(existing.checklist, fbTask.checklist);
+                            
+                            // KLUCZOWE: Zachowaj lokalny status jeśli jest "bardziej zaawansowany"
+                            // done > run > paused > todo (wyższy priorytet = nie cofaj)
+                            // WYJĄTEK: Jeśli planer jawnie resetuje zadanie (_resetAt), akceptuj reset
+                            const statusPriority = { 'done': 4, 'run': 3, 'paused': 2, 'todo': 1 };
+                            const localPriority = statusPriority[existing.status] || 1;
+                            const remotePriority = statusPriority[fbTask.status] || 1;
+                            
+                            // Sprawdź czy to jawny reset z planera
+                            const isExplicitReset = fbTask._resetAt && (!existing._resetAt || fbTask._resetAt > existing._resetAt);
+                            
+                            let finalStatus = existing.status;
+                            let finalStartTime = existing.startTime;
+                            let finalEndTime = existing.endTime;
+                            let finalChecklist = mergedChecklist;
+                            
+                            // Dodatkowe pola do resetu
+                            let finalStartedBy = existing.startedBy;
+                            let finalClosedBy = existing.closedBy;
+                            let finalStartedAt = existing.startedAt;
+                            let finalClosedAt = existing.closedAt;
+                            
+                            if (isExplicitReset && fbTask.status === 'todo') {
+                                // Planer jawnie resetuje zadanie - akceptuj!
+                                finalStatus = 'todo';
+                                finalStartTime = null;
+                                finalEndTime = null;
+                                finalStartedBy = null;
+                                finalClosedBy = null;
+                                finalStartedAt = null;
+                                finalClosedAt = null;
+                                // Resetuj checklistę
+                                finalChecklist = (fbTask.checklist || []).map(item => ({...item, done: false}));
+                                console.log(`🔄 [Firebase] RESET zadania ${fbTask.id} z planera (${existing.status} → todo)`);
+                            } else if (remotePriority > localPriority) {
+                                // Firebase ma wyższy priorytet - aktualizuj
+                                finalStatus = fbTask.status;
+                                finalStartTime = fbTask.startTime || existing.startTime;
+                                finalEndTime = fbTask.endTime || existing.endTime;
+                            } else if (remotePriority < localPriority) {
+                                // Lokalny status jest bardziej zaawansowany - zachowaj lokalny
+                                console.log(`🛡️ Zachowuję lokalny status "${existing.status}" zamiast Firebase "${fbTask.status}" dla ${fbTask.id}`);
+                            } else {
+                                // Ten sam priorytet - weź dane z Firebase dla innych pól
+                                finalStatus = fbTask.status;
+                            }
+                            
+                            tasks[idx] = Object.assign({}, existing, fbTask, {
+                                status: finalStatus,
+                                startTime: finalStartTime,
+                                endTime: finalEndTime,
+                                startedBy: finalStartedBy,
+                                closedBy: finalClosedBy,
+                                startedAt: finalStartedAt,
+                                closedAt: finalClosedAt,
+                                checklist: finalChecklist,
+                                _resetAt: fbTask._resetAt || existing._resetAt
+                            });
                         } else {
                             // Dodaj nowe zadanie
-                            tasks.push(fbTask);
+                            tasks.push(Object.assign({}, fbTask, {
+                                checklist: normalizeChecklist(fbTask.checklist || [])
+                            }));
                         }
                     });
+                    seedChecklistDefaults(tasks);
                     
                     // Wyczyść stare wpisy z recentlyEditedTasks (starsze niż 10 sekund)
                     for (const [taskId, timestamp] of recentlyEditedTasks.entries()) {
@@ -1738,7 +2621,14 @@
                     }
                     
                     saveTasks();
-                    renderTasks();  // Renderuj bezpośrednio zamiast loadTasks() który ładuje demo
+                    // NIE renderuj jeśli to pierwsze ładowanie Firebase (zaraz po starcie)
+                    // setFilter('all', true) już to zrobi
+                    if (hasRenderedOnce) {
+                        console.log('🔄 Firebase: renderuję zmiany (nie pierwsze ładowanie)');
+                        renderTasks(false, false);
+                    } else {
+                        console.log('⏭️ Firebase: pomijam render (pierwsze ładowanie - czekam na setFilter)');
+                    }
                     updateStats();
                 }
 
@@ -1754,11 +2644,255 @@
                         }
                     }
                 }
+                subscribeToRealtimeTasks(usedCollection);
             } catch (error) {
                 console.error('❌ Błąd pobierania zadań:', error);
                 if (showToast) {
                     showNotification('❌ Nie udało się odświeżyć zadań z Firebase', 'error');
                 }
+            }
+        }
+
+        async function subscribeToRealtimeTasks(preferredCollection) {
+            if (!firestore) return;
+
+            if (taskSnapshotUnsubscribe && (!preferredCollection || preferredCollection === activeTaskCollectionName)) {
+                return;
+            }
+
+            if (realtimeSubscriptionInProgress) return;
+            realtimeSubscriptionInProgress = true;
+
+            try {
+                if (typeof taskSnapshotUnsubscribe === 'function') {
+                    taskSnapshotUnsubscribe();
+                    taskSnapshotUnsubscribe = null;
+                }
+
+                const cachedDoc = cachedPlannerUserDoc;
+                let userDocRef = cachedDoc ? cachedDoc.docRef : null;
+                let appId = cachedDoc ? cachedDoc.appId : normalizeIdentifier(localStorage.getItem('planner-app-id'));
+                let userId = cachedDoc ? cachedDoc.userId : normalizeIdentifier(localStorage.getItem('planner-user-id'));
+
+                if (!userDocRef) {
+                    if (!appId || !userId) {
+                        realtimeSubscriptionInProgress = false;
+                        return;
+                    }
+                    userDocRef = await resolvePlannerUserDoc(appId, userId);
+                }
+
+                if (!userDocRef) {
+                    console.warn('⚠️ Brak dokumentu użytkownika do subskrypcji zadań');
+                    return;
+                }
+
+                const collectionOrder = buildCollectionOrder(preferredCollection, TASK_COLLECTION_ALIASES);
+                let subscribed = false;
+
+                for (let i = 0; i < collectionOrder.length; i++) {
+                    const collectionName = collectionOrder[i];
+                    try {
+                        const collectionRef = userDocRef.collection(collectionName);
+                        taskSnapshotUnsubscribe = collectionRef.onSnapshot(snapshot => {
+                            handleRealtimeTaskSnapshot(snapshot, collectionName);
+                        }, error => {
+                            console.error('❌ Błąd subskrypcji zadań:', error);
+                        });
+                        activeTaskCollectionName = collectionName;
+                        console.log(`🟢 Aktywowano subskrypcję zadań (${collectionName})`);
+                        subscribed = true;
+                        break;
+                    } catch (listenerError) {
+                        console.warn(`⚠️ Nie udało się subskrybować kolekcji ${collectionName}`, listenerError);
+                    }
+                }
+
+                if (!subscribed) {
+                    console.warn('⚠️ Nie udało się skonfigurować subskrypcji zadań');
+                }
+            } catch (subscriptionError) {
+                console.error('❌ Błąd konfiguracji subskrypcji zadań:', subscriptionError);
+            } finally {
+                realtimeSubscriptionInProgress = false;
+            }
+        }
+
+        function handleRealtimeTaskSnapshot(snapshot, collectionName) {
+            if (!snapshot) return;
+
+            if (snapshot.metadata && snapshot.metadata.hasPendingWrites) {
+                console.log(`⏳ Pomijam lokalny snapshot z kolekcji ${collectionName}`);
+                return;
+            }
+
+            const remoteTasks = snapshot.docs.map(doc => {
+                const data = doc.data() || {};
+                if (!Object.prototype.hasOwnProperty.call(data, 'id')) {
+                    data.id = doc.id;
+                }
+                return normalizeFirebaseTask(data);
+            });
+
+            // Mapuj orderNumber z cache zleceń
+            if (allOrders && allOrders.length > 0) {
+                const ordersById = new Map(allOrders.map(o => [o.id, o]));
+                remoteTasks.forEach(task => {
+                    const order = ordersById.get(task.orderId);
+                    if (order && order.name) {
+                        task.orderNumber = order.name;
+                        console.log(`📋 Zmapowano orderNumber dla ${task.id}: ${order.name}`);
+                    } else {
+                        console.warn(`⚠️ Brak orderNumber dla ${task.id}, orderId: ${task.orderId}`);
+                    }
+                });
+            } else {
+                console.warn('⚠️ allOrders jest puste - nie można zmapować orderNumber');
+            }
+
+            applyDependencyLocks(remoteTasks);
+            seedChecklistDefaults(remoteTasks);
+            localStorage.setItem('worker-all-tasks', JSON.stringify(remoteTasks));
+            window.allTasks = remoteTasks;
+
+            if (!currentUser) {
+                updateLastSync();
+                return;
+            }
+
+            const filteredTasks = filterTasksForEmployee(remoteTasks, currentUser.id);
+            const now = Date.now();
+            let changed = false;
+            let newAssignments = 0;
+
+            filteredTasks.forEach(fbTask => {
+                const index = tasks.findIndex(task => task.id === fbTask.id);
+                const lastEdit = recentlyEditedTasks.get(fbTask.id);
+                if (lastEdit && (now - lastEdit < 8000)) {
+                    return;
+                }
+
+                if (index >= 0) {
+                    const existing = tasks[index];
+                    
+                    // 🔄 RESET CHECKLISTY gdy zadanie wraca do todo z Firebase
+                    // Resetuj TYLKO gdy status ZMIENIA SIĘ z done/run/paused na todo
+                    const wasCompleted = existing.status === 'done' || existing.status === 'run' || existing.status === 'paused';
+                    const incomingIsTodo = fbTask.status === 'todo';
+                    const statusChanged = existing.status !== fbTask.status;
+                    
+                    // Sprawdź czy to jawny reset z planera (ma _resetAt nowszy niż lokalny)
+                    const isExplicitReset = fbTask._resetAt && (!existing._resetAt || fbTask._resetAt > existing._resetAt);
+                    const shouldResetChecklist = (wasCompleted && incomingIsTodo && statusChanged) || (isExplicitReset && incomingIsTodo);
+                    
+                    // KLUCZOWE: Zachowaj lokalny status jeśli jest "bardziej zaawansowany"
+                    const statusPriority = { 'done': 4, 'run': 3, 'paused': 2, 'todo': 1 };
+                    const localPriority = statusPriority[existing.status] || 1;
+                    const remotePriority = statusPriority[fbTask.status] || 1;
+                    
+                    let finalStatus = existing.status;
+                    let finalStartTime = existing.startTime;
+                    let finalEndTime = existing.endTime;
+                    let finalStartedBy = existing.startedBy;
+                    let finalClosedBy = existing.closedBy;
+                    let finalStartedAt = existing.startedAt;
+                    let finalClosedAt = existing.closedAt;
+                    
+                    if (shouldResetChecklist || isExplicitReset) {
+                        // Planer jawnie resetuje zadanie - pozwól na to
+                        finalStatus = 'todo';
+                        finalStartTime = null;
+                        finalEndTime = null;
+                        finalStartedBy = null;
+                        finalClosedBy = null;
+                        finalStartedAt = null;
+                        finalClosedAt = null;
+                        console.log(`🔄 Firebase RESET zadania ${fbTask.id}: ${existing.status} → todo (explicit: ${isExplicitReset})`);
+                    } else if (remotePriority > localPriority) {
+                        // Firebase ma wyższy priorytet - aktualizuj
+                        finalStatus = fbTask.status;
+                        finalStartTime = fbTask.startTime || existing.startTime;
+                        finalEndTime = fbTask.endTime || existing.endTime;
+                    } else if (remotePriority < localPriority) {
+                        // Lokalny status jest bardziej zaawansowany - zachowaj lokalny
+                        console.log(`🛡️ Zachowuję lokalny status "${existing.status}" zamiast Firebase "${fbTask.status}" dla ${fbTask.id}`);
+                    }
+                    
+                    if (statusChanged) {
+                        console.log(`🔍 Firebase update - zmiana statusu zadania ${fbTask.id}:`, {
+                            existingStatus: existing.status,
+                            incomingStatus: fbTask.status,
+                            finalStatus: finalStatus,
+                            shouldReset: shouldResetChecklist
+                        });
+                    }
+                    
+                    let mergedChecklist;
+                    if (shouldResetChecklist) {
+                        // Resetuj całą checklistę - wszystkie done=false
+                        mergedChecklist = normalizeChecklist(fbTask.checklist || []).map(item => ({...item, done: false}));
+                        console.log(`🔄 RESET checklisty dla zadania ${fbTask.id} (Firebase: ${existing.status} → todo)`);
+                    } else {
+                        // Zachowaj lokalne zaznaczenia checklisty (existing ma pierwszeństwo)
+                        mergedChecklist = mergeChecklists(existing.checklist, fbTask.checklist);
+                    }
+                    
+                    const updatedTask = Object.assign({}, existing, fbTask, {
+                        status: finalStatus,
+                        startTime: finalStartTime,
+                        endTime: finalEndTime,
+                        startedBy: finalStartedBy,
+                        closedBy: finalClosedBy,
+                        startedAt: finalStartedAt,
+                        closedAt: finalClosedAt,
+                        checklist: mergedChecklist,
+                        _resetAt: fbTask._resetAt || existing._resetAt,
+                        // Użyj orderNumber z fbTask (już zmapowane z cache) lub zachowaj existing
+                        orderNumber: fbTask.orderNumber || existing.orderNumber || existing.orderId
+                    });
+                    
+                    if (!areTasksShallowEqual(existing, updatedTask)) {
+                        tasks[index] = updatedTask;
+                        changed = true;
+                    }
+                } else {
+                    tasks.push(Object.assign({}, fbTask, {
+                        checklist: normalizeChecklist(fbTask.checklist || [])
+                    }));
+                    newAssignments++;
+                    changed = true;
+                }
+            });
+
+            for (const [taskId, timestamp] of recentlyEditedTasks.entries()) {
+                if (now - timestamp > 10000) {
+                    recentlyEditedTasks.delete(taskId);
+                }
+            }
+
+            if (changed) {
+                seedChecklistDefaults(tasks);
+                saveTasks();
+                // Renderuj BEZ skakania - to aktualizacja z Firebase, nie inicjalne ładowanie
+                renderTasks(false, false);
+                updateStats();
+                startRemindersForActiveTasks();
+
+                if (newAssignments > 0 && notificationSettings.task) {
+                    showNotification(`📥 Nowe zadania (${newAssignments}) z Firebase`, 'success');
+                }
+            }
+
+            updateLastSync();
+        }
+
+        function areTasksShallowEqual(taskA, taskB) {
+            if (taskA === taskB) return true;
+            if (!taskA || !taskB) return false;
+            try {
+                return JSON.stringify(taskA) === JSON.stringify(taskB);
+            } catch (err) {
+                return false;
             }
         }
 
@@ -1806,6 +2940,25 @@
                 }
 
                 return false;
+            });
+        }
+
+        function applyDependencyLocks(tasksArray){
+            if(!Array.isArray(tasksArray) || tasksArray.length === 0) return;
+            const tasksMap = new Map(tasksArray.map(t => [t.id, t]));
+            tasksArray.forEach(task => {
+                if(!Array.isArray(task.dependsOn) || task.dependsOn.length === 0) return;
+                const allDepsDone = task.dependsOn.every(depId => {
+                    const depTask = tasksMap.get(depId);
+                    return depTask && depTask.status === 'done';
+                });
+                if(!allDepsDone){
+                    if(task.status !== 'blocked'){
+                        task.status = 'blocked';
+                    }
+                } else if(task.status === 'blocked'){
+                    task.status = 'todo';
+                }
             });
         }
 
@@ -1876,9 +3029,37 @@
 
         // Inicjalizacja aplikacji
         document.addEventListener('DOMContentLoaded', function() {
+            // KLUCZOWE: Resetuj scroll na sam górę przy odświeżeniu
+            // Zapobiega automatycznemu przywracaniu pozycji przez przeglądarkę
+            window.scrollTo(0, 0);
+            
+            // 🔒 AGRESYWNA BLOKADA SCROLLA podczas inicjalizacji
+            // Przez pierwsze 2 sekundy wymuszaj scroll=0
+            let scrollBlockActive = true;
+            const forceScrollTop = () => {
+                if (scrollBlockActive && window.scrollY !== 0) {
+                    console.log('🚫 Blokuję automatyczny scroll - wymuszam 0');
+                    window.scrollTo(0, 0);
+                }
+            };
+            
+            // Monitoruj scroll co 50ms przez pierwsze 2 sekundy
+            const scrollBlockInterval = setInterval(forceScrollTop, 50);
+            setTimeout(() => {
+                scrollBlockActive = false;
+                clearInterval(scrollBlockInterval);
+                console.log('✅ Odblokowano scroll - inicjalizacja zakończona');
+            }, 2000);
+            
             initializeApp();
             updateDate();
             initializeFirebase(); // Uruchom Firebase
+            
+            // Opóźnij setFilter aby dać czas na stabilizację DOM
+            requestAnimationFrame(() => {
+                window.scrollTo(0, 0); // Dodatkowy reset przed renderowaniem
+                setFilter('all', true); // Ustaw domyślny filtr przy pierwszym załadowaniu
+            });
         });
 
         // Sprawdzanie połączenia internetowego
@@ -1892,20 +3073,50 @@
             document.getElementById('offline-indicator').style.display = 'block';
         });
 
+        window.addEventListener('beforeunload', function() {
+            if (typeof taskSnapshotUnsubscribe === 'function') {
+                taskSnapshotUnsubscribe();
+                taskSnapshotUnsubscribe = null;
+            }
+        });
+
         function initializeApp() {
+            // Zachowaj cache zadań przy starcie aplikacji
+            console.log('🚀 Inicjalizacja aplikacji worker-app v6.1.2 - import włączony');
+
             // Próba wczytania danych z localStorage
+            const savedEmployeeId = localStorage.getItem('worker-current-employee-id');
             const savedTasks = localStorage.getItem('worker-tasks');
-            if (savedTasks) {
-                tasks = JSON.parse(savedTasks);
+            if (savedTasks && savedEmployeeId) {
+                try {
+                    tasks = JSON.parse(savedTasks);
+                    seedChecklistDefaults(tasks);
+                } catch (parseError) {
+                    console.warn('Nie udało się odczytać lokalnych zadań – czyszczę cache.', parseError);
+                    tasks = [];
+                    localStorage.removeItem('worker-tasks');
+                }
+            } else if (savedTasks && !savedEmployeeId) {
+                console.log('🧹 Wykryto porzuconą listę testową – czyszczę localStorage.');
+                localStorage.removeItem('worker-tasks');
+                tasks = [];
             }
 
-            const plannerState = loadPlannerState();
-            if (plannerState) {
-                const imported = mapPlannerTasks(plannerState);
-                if (imported.length) {
-                    mergeIncomingTasks(imported);
-                    saveTasks();
-                    updateLastSync();
+            if (ALLOW_PLANNER_STATE_IMPORT) {
+                const plannerState = loadPlannerState();
+                if (plannerState) {
+                    console.log('🔍 PlannerState załadowany, mapowanie zadań...');
+                    const imported = mapPlannerTasks(plannerState);
+                    console.log(`📋 Zmapowano ${imported.length} zadań dla użytkownika`);
+                    if (imported.length) {
+                        mergeIncomingTasks(imported);
+                        saveTasks();
+                        updateLastSync();
+                    } else {
+                        console.warn('⚠️ Brak zadań po mapowaniu - sprawdź czy użytkownik ma przypisane zadania');
+                    }
+                } else {
+                    console.warn('⚠️ Nie znaleziono plannerState w localStorage');
                 }
             }
 
@@ -1929,13 +3140,31 @@
 
             // Ustawienie nazwy użytkownika w tytule (tylko jeśli currentUser istnieje)
             if (currentUser && currentUser.name) {
-                document.title = `Worker App v6.0.4 - ${currentUser.name}`;
+                document.title = `Worker App v6.1.2 - ${currentUser.name}`;
             } else {
-                document.title = 'Worker App v6.0.4';
+                document.title = 'Worker App v6.1.2';
             }
             
             // Uruchomienie przypomnień dla aktywnych zadań
             startRemindersForActiveTasks();
+            
+            // Timer do aktualizacji czasu w aktywnych zadaniach (co 10 sekund)
+            setInterval(() => {
+                const hasActiveTasks = tasks.some(t => t.status === 'run' || t.status === 'paused');
+                if (hasActiveTasks) {
+                    // Aktualizuj tylko liczniki czasu bez przebudowy całego HTML
+                    tasks.forEach(task => {
+                        if (task.status === 'run' || task.status === 'paused') {
+                            const timerElement = document.querySelector(`[data-timer-task-id="${task.id}"]`);
+                            if (timerElement && task.startTime) {
+                                const elapsedTime = getElapsedTime(task.startTime);
+                                timerElement.textContent = elapsedTime;
+                            }
+                        }
+                    });
+                }
+            }, 10000); // 10 sekund
+            
             setupLoginInteractions();
             updateLoginUI();
         }
@@ -1998,114 +3227,327 @@
                 saveTasks();
             }
 
-            renderTasks();
+            seedChecklistDefaults(tasks);
+            renderTasks(true, true);
         }
 
-        function renderTasks() {
-            const taskList = document.getElementById('task-list');
+        let renderTasksTimer = null;
+        let lastRenderTime = 0;
+        let hasRenderedOnce = false; // Śledź czy już renderowaliśmy po starcie aplikacji
+        const MIN_RENDER_INTERVAL = 100; // Minimalny odstęp między renderowaniami (ms)
+        
+        function renderTasks(immediate = false, initialLoad = false) {
+            // 🔒 ANTY-SPAM: Zapobiegaj zbyt częstym renderowaniom
+            const now = Date.now();
+            if (!immediate && (now - lastRenderTime) < MIN_RENDER_INTERVAL) {
+                console.log(`⏳ Zbyt częste wywołanie renderTasks - pomijam (${now - lastRenderTime}ms od ostatniego)`);
+                return;
+            }
+            
+            // Debounce - zapobiega wielokrotnym renderowaniom
+            if (!immediate && renderTasksTimer) {
+                console.log('⏳ RenderTasks już zaplanowany - pomijam duplikat');
+                return;
+            }
+            
+            if (!immediate) {
+                renderTasksTimer = setTimeout(() => {
+                    renderTasksTimer = null;
+                    lastRenderTime = Date.now();
+                    renderTasksNow(initialLoad);
+                }, 50);
+                return;
+            }
+            
+            if (renderTasksTimer) {
+                clearTimeout(renderTasksTimer);
+                renderTasksTimer = null;
+            }
+            
+            lastRenderTime = now;
+            renderTasksNow(initialLoad);
+        }
 
-            if (tasks.length === 0) {
+        function renderTasksNow(initialLoad = false) {
+            const taskList = document.getElementById('task-list');
+            if (!taskList) return;
+            
+            // 🔒 ZABEZPIECZENIE PRZED SKAKANIEM SCROLLA
+            // Jeśli to pierwsze renderowanie od załadowania strony - traktuj jako initialLoad
+            const isFirstRender = !hasRenderedOnce;
+            const treatAsInitial = initialLoad || isFirstRender;
+            
+            console.log(`🎨 renderTasksNow - initialLoad: ${initialLoad}, isFirstRender: ${isFirstRender}, treatAsInitial: ${treatAsInitial}`);
+            
+            let anchorId = null;
+            let anchorTop = 0;
+            let savedScrollPos = window.scrollY;
+            
+            if (!treatAsInitial) {
+                // Zapisz aktualną pozycję scrolla jako backup
+                savedScrollPos = window.scrollY;
+                
+                // Złap kotwicę (pierwsza widoczna karta) PRZED zmianą DOM
+                const beforeCards = Array.from(document.querySelectorAll('.task-card'));
+                const anchorCard = beforeCards.find(el => {
+                    const rect = el.getBoundingClientRect();
+                    // Zwiększ tolerancję - szukaj karty która jest przynajmniej częściowo widoczna
+                    return rect.top >= -50 && rect.top < window.innerHeight + 50;
+                });
+                
+                if (anchorCard) {
+                    anchorId = anchorCard.getAttribute('data-task-id');
+                    anchorTop = anchorCard.getBoundingClientRect().top;
+                    console.log(`📌 Kotwica: zadanie ${anchorId} na pozycji ${anchorTop}px`);
+                }
+            }
+            
+            // Przechowaj wszystkie zadania globalnie dla getTaskActions
+            window.allTasks = tasks;
+
+            // Filtruj zadania według wybranego filtra
+            let filteredTasks = tasks;
+            if (currentFilter === 'run') {
+                filteredTasks = tasks.filter(t => t.status === 'run' || t.status === 'paused');
+            } else if (currentFilter === 'done') {
+                filteredTasks = tasks.filter(t => t.status === 'done');
+            }
+
+            if (filteredTasks.length === 0) {
+                const message = currentFilter === 'all' ? 'Brak zadań na dziś 🎉' : 
+                               currentFilter === 'run' ? 'Brak zadań w trakcie' : 
+                               'Brak ukończonych zadań';
                 taskList.innerHTML = `
                     <div class="task-placeholder">
-                        Brak zadań na dziś 🎉<br>
-                        <small>Świetna robota!</small>
+                        ${message}<br>
+                        <small>${currentFilter === 'all' ? 'Świetna robota!' : ''}</small>
                     </div>
                 `;
                 return;
             }
 
-            taskList.innerHTML = tasks.map(task => {
-                const statusClass = `status-${task.status}`;
-                const statusText = getStatusText(task.status);
-                const elapsedTime = task.startTime ? getElapsedTime(task.startTime) : '';
-                const plannedWindow = escapeHtml(getPlannedWindow(task));
-                const title = escapeHtml(task.title || `Zadanie ${task.id}`);
-                const model = escapeHtml(task.model || '-');
-                const quantityValue = escapeHtml(`${task.quantity || '-'} ${task.unit || ''}`.trim());
-                const deadlineValue = escapeHtml(task.deadline || '-');
-                const estimatedTime = escapeHtml(task.estimatedTime != null ? `${task.estimatedTime} min` : '-');
-                const orderIdValue = escapeHtml(task.orderId || '-');
-                const client = escapeHtml(task.client || '-');
-                const address = escapeHtml(task.address || '-');
-                const postalCode = escapeHtml(task.postalCode || '-');
-                const leadName = escapeHtml(task.leadEmployeeName || task.leadEmployeeId || '-');
-                const phoneLink = formatPhoneLink(task.contactPhone);
-                const installDate = escapeHtml(formatInstallDate(task.installDate));
-                const orderNotes = task.orderNotes ? escapeHtml(task.orderNotes).replace(/\n/g, '<br>') : '-';
+            // Grupuj zadania według zlecenia
+            const orderGroups = {};
+            filteredTasks.forEach(task => {
+                const orderKey = task.orderNumber || task.orderId || 'brak-zlecenia';
+                if (!orderGroups[orderKey]) {
+                    orderGroups[orderKey] = {
+                        orderNumber: task.orderNumber || task.orderId || '-',
+                        client: task.client || '-',
+                        model: task.model || '-',
+                        deadline: task.deadline || '-',
+                        tasks: []
+                    };
+                }
+                orderGroups[orderKey].tasks.push(task);
+            });
+
+            taskList.innerHTML = Object.entries(orderGroups).map(([orderKey, orderData]) => {
+                const tasksHtml = orderData.tasks.map(task => {
+                    const statusClass = `status-${task.status}`;
+                    const statusText = getStatusText(task.status);
+                    const elapsedTime = task.startTime ? getElapsedTime(task.startTime) : '';
+                    const title = escapeHtml(task.title || `Zadanie ${task.id}`);
+                    const quantityValue = escapeHtml(`${task.quantity || '-'} ${task.unit || ''}`.trim());
+                    const estimatedTime = escapeHtml(task.estimatedTime != null ? `${task.estimatedTime} min` : '-');
+                    const phoneLink = formatPhoneLink(task.contactPhone || task.phone || task.contact_phone || task.contactPhoneNumber);
+                    const checklistSection = renderChecklistSection(task);
+                    
+                    // Sprawdź czy to zadanie montażowe
+                    const isAssembly = task.assemblyId || task.operationId === 'montaż-block' || task.isAssemblyTask;
+                    const taskNumberDisplay = task.taskNumber ? `<div style="font-size:0.75rem;color:var(--gold);background:rgba(251,191,36,0.2);padding:4px 10px;border-radius:6px;display:inline-block;margin-bottom:6px;font-weight:700;border:1px solid rgba(251,191,36,0.4)">🔢 ${escapeHtml(task.taskNumber)}</div>` : '';
+
+                    return `
+                        <div class="task-card" data-task-id="${task.id}">
+                            <div class="task-header">
+                                <div style="flex:1">
+                                    <div style="background:linear-gradient(135deg, rgba(251,191,36,0.12), rgba(245,158,11,0.06));padding:10px 12px;border-radius:10px;border:1.5px solid rgba(251,191,36,0.25);box-shadow:0 2px 8px rgba(251,191,36,0.1)">
+                                        ${taskNumberDisplay}
+                                        <div style="font-size:0.65rem;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;font-weight:600">${isAssembly ? '🔧 MONTAŻ' : '⚙️ ZADANIE'}</div>
+                                        <div style="font-size:1rem;color:var(--gold-light);font-weight:700;line-height:1.3">${title}</div>
+                                    </div>
+                                </div>
+                                <div class="task-status ${statusClass}">${statusText}</div>
+                            </div>
+
+                            ${isAssembly ? `
+                            <div style="background:linear-gradient(135deg, rgba(139,92,246,0.12), rgba(139,92,246,0.04));padding:12px;border-radius:10px;border:1.5px solid rgba(139,92,246,0.25);margin:16px 0">
+                                <div style="font-size:0.7rem;color:var(--gold-light);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">📍 INFORMACJE O ZADANIU</div>
+                                ${task.address ? `<div style="margin:6px 0;color:#e2e8f0;font-size:0.85rem"><strong>📍 Adres:</strong> ${escapeHtml(task.address)}${task.postalCode ? `, ${escapeHtml(task.postalCode)}` : ''}</div>` : ''}
+                                ${(task.contactPhone || task.phone || task.contact_phone) ? `<div style="margin:6px 0;color:#e2e8f0;font-size:0.85rem"><strong>📞 Telefon:</strong> ${phoneLink}</div>` : ''}
+                                ${task.departTime ? `<div style="margin:6px 0;color:#e2e8f0;font-size:0.85rem"><strong>🚗 Wyjazd:</strong> ${escapeHtml(task.departTime)}</div>` : ''}
+                                ${task.visitTime ? `<div style="margin:6px 0;color:#e2e8f0;font-size:0.85rem"><strong>🏠 Wizyta:</strong> ${escapeHtml(task.visitTime)}</div>` : ''}
+                                ${task.assemblyDesc || task.notes ? `<div style="margin:8px 0;color:#e2e8f0;font-size:0.85rem"><strong>📝 Opis:</strong> ${escapeHtml(task.assemblyDesc || task.notes || '')}</div>` : ''}
+                            </div>
+                            ` : ''}
+
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0">
+                                <div style="background:linear-gradient(135deg, rgba(59,130,246,0.12), rgba(59,130,246,0.04));padding:12px;border-radius:10px;border:1.5px solid rgba(59,130,246,0.25);text-align:center;box-shadow:0 2px 6px rgba(59,130,246,0.1)">
+                                    <div style="color:var(--accent-light);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">${isAssembly ? '🏗️ Typ' : '🔢 Ilość'}</div>
+                                    <div style="font-size:1.1rem;color:var(--accent-light);font-weight:700">${isAssembly ? escapeHtml(task.assemblyType || 'montaż') : quantityValue}</div>
+                                </div>
+                                <div style="background:linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.04));padding:12px;border-radius:10px;border:1.5px solid rgba(16,185,129,0.25);text-align:center;box-shadow:0 2px 6px rgba(16,185,129,0.1)">
+                                    <div style="color:var(--success-light);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">⏱️ Czas na wykonanie</div>
+                                    <div style="font-size:1.1rem;color:var(--success-light);font-weight:700">${estimatedTime}</div>
+                                </div>
+                            </div>
+
+                            ${checklistSection}
+
+                            ${(task.status === 'run' || task.status === 'paused') && elapsedTime ?
+                                `<div style="background:linear-gradient(135deg, rgba(16,185,129,0.18), rgba(16,185,129,0.08));padding:16px;border-radius:12px;margin:16px 0;border:2px solid var(--success);text-align:center;box-shadow:0 4px 12px rgba(16,185,129,0.2)">
+                                    <div style="font-size:0.75rem;color:var(--success-light);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:1px">⏱️ CZAS PRACY</div>
+                                    <div style="font-size:2rem;font-weight:900;color:var(--success-light);letter-spacing:3px;text-shadow:0 2px 4px rgba(0,0,0,0.2)" data-timer-task-id="${task.id}">${elapsedTime}</div>
+                                </div>` : ''}
+
+                            <div class="task-actions">
+                                ${getTaskActions(task)}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                const taskCount = orderData.tasks.length;
+                const doneCount = orderData.tasks.filter(t => t.status === 'done').length;
+                const inProgressCount = orderData.tasks.filter(t => t.status === 'run' || t.status === 'paused').length;
 
                 return `
-                    <div class="task-card">
-                        <div class="task-header">
-                            <div class="task-title">${title}</div>
-                            <div class="task-status ${statusClass}">${statusText}</div>
+                    <div class="order-group">
+                        <div class="order-header" onclick="toggleOrder('${orderKey}')">
+                            <div class="order-header-left">
+                                <div class="order-number">📋 Zadanie <strong>${escapeHtml(orderData.orderNumber)}</strong>${orderData.tasks[0]?.taskNumber ? ` • 🔢 <strong>${escapeHtml(orderData.tasks[0].taskNumber)}</strong>` : ''}</div>
+                                <div class="order-info">
+                                    <span style="background:rgba(139,92,246,0.15);padding:4px 10px;border-radius:6px;border:1px solid rgba(139,92,246,0.3)">👤 ${escapeHtml(orderData.client)}</span>
+                                    <span style="background:rgba(59,130,246,0.15);padding:4px 10px;border-radius:6px;border:1px solid rgba(59,130,246,0.3)">📦 ${escapeHtml(orderData.model)}</span>
+                                    <span style="background:rgba(239,68,68,0.15);padding:4px 10px;border-radius:6px;border:1px solid rgba(239,68,68,0.3)">📅 ${escapeHtml(orderData.deadline)}</span>
+                                </div>
+                                <div style="margin-top:8px;font-size:0.75rem;color:var(--gold-light);display:flex;gap:12px;font-weight:600">
+                                    <span>📊 Zadań: <strong>${taskCount}</strong></span>
+                                    <span style="color:var(--success-light)">✓ Ukończono: <strong>${doneCount}</strong></span>
+                                    <span style="color:var(--accent-light)">▶ W trakcie: <strong>${inProgressCount}</strong></span>
+                                </div>
+                            </div>
+                            <div class="order-toggle" id="toggle-${orderKey}">▼</div>
                         </div>
-
-                        <div class="task-details">
-                            <div class="task-detail">
-                                <div class="detail-label">Model</div>
-                                <div class="detail-value">${model}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Ilość</div>
-                                <div class="detail-value">${quantityValue}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Termin</div>
-                                <div class="detail-value">${deadlineValue}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Szacowany czas</div>
-                                <div class="detail-value">${estimatedTime}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Planowany termin</div>
-                                <div class="detail-value">${plannedWindow}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Zlecenie</div>
-                                <div class="detail-value">${orderIdValue}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Klient</div>
-                                <div class="detail-value">${client}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Adres</div>
-                                <div class="detail-value">${address}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Kod pocztowy</div>
-                                <div class="detail-value">${postalCode}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Telefon</div>
-                                <div class="detail-value">${phoneLink}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Prowadzący</div>
-                                <div class="detail-value">${leadName}</div>
-                            </div>
-                            <div class="task-detail">
-                                <div class="detail-label">Data montażu</div>
-                                <div class="detail-value">${installDate}</div>
-                            </div>
-                            <div class="task-detail full">
-                                <div class="detail-label">Opis / uwagi</div>
-                                <div class="detail-value notes">${orderNotes}</div>
-                            </div>
-                        </div>
-
-                        ${task.status === 'in-progress' && elapsedTime ?
-                            `<div class="timer">⏱️ ${elapsedTime}</div>` : ''}
-
-                        <div class="task-actions">
-                            ${getTaskActions(task)}
+                        <div class="order-tasks" id="tasks-${orderKey}">
+                            ${tasksHtml}
                         </div>
                     </div>
                 `;
             }).join('');
 
+            // Przywróć stan rozwinięcia po renderowaniu
+            setTimeout(() => {
+                expandedOrders.forEach(orderKey => {
+                    const tasksContainer = document.getElementById(`tasks-${orderKey}`);
+                    const toggleIcon = document.getElementById(`toggle-${orderKey}`);
+                    if (tasksContainer && toggleIcon) {
+                        tasksContainer.classList.add('expanded');
+                        toggleIcon.classList.add('expanded');
+                    }
+                });
+            }, 0);
+
+            // Oznacz że już renderowaliśmy przynajmniej raz
+            hasRenderedOnce = true;
+            
+            // 🔒 PRZYWRACANIE POZYCJI SCROLLA
+            if (treatAsInitial) {
+                // Przy pierwszym renderowaniu - WYMUŚ scroll na górę
+                requestAnimationFrame(() => {
+                    window.scrollTo(0, 0);
+                    console.log('✅ Pierwsze renderowanie - scroll wymuszony na 0');
+                });
+            } else if (!treatAsInitial) {
+                // Przy kolejnych renderach - przywróć pozycję
+                requestAnimationFrame(() => {
+                    if (anchorId) {
+                        // Spróbuj użyć kotwicy (najdokładniejsza metoda)
+                        const target = document.querySelector(`.task-card[data-task-id="${anchorId}"]`);
+                        if (target) {
+                            const newTop = target.getBoundingClientRect().top;
+                            const delta = newTop - anchorTop;
+                            if (Math.abs(delta) > 2) {
+                                console.log(`🔧 Korekcja scrolla: ${delta}px dla zadania ${anchorId}`);
+                                window.scrollBy({ top: delta, behavior: 'instant' });
+                            } else {
+                                console.log(`✅ Scroll stabilny dla zadania ${anchorId}`);
+                            }
+                            return;
+                        }
+                    }
+                    
+                    // Fallback: jeśli kotwica nie działa, przywróć zapisaną pozycję
+                    const currentScroll = window.scrollY;
+                    if (Math.abs(currentScroll - savedScrollPos) > 5) {
+                        console.log(`🔧 Fallback: przywracam scroll z ${currentScroll}px na ${savedScrollPos}px`);
+                        window.scrollTo({ top: savedScrollPos, behavior: 'instant' });
+                    }
+                });
+            }
+
             updateStats();
+        }
+
+        function renderChecklistSection(task) {
+            console.log('🔍 renderChecklistSection - task:', task.id, 'task.checklist:', task.checklist);
+            const checklist = ensureChecklist(task);
+            console.log('🔍 renderChecklistSection - ensured checklist length:', checklist.length);
+            const allowAdd = task.checklistAllowAdd !== false;
+            const completed = checklist.filter(item => item.done).length;
+            const progressText = checklist.length ? `${completed}/${checklist.length} ukończone` : 'Brak elementów';
+            const requiredBadge = task.checklistRequired ? '<span class="checklist-required">Wymagane</span>' : '';
+            const taskIdLiteral = JSON.stringify(String(task.id));
+            const inputId = getChecklistInputId(task.id);
+
+            const isLocked = task.status === 'todo'; // Blokada checklisty przed rozpoczęciem
+            const itemsHtml = checklist.length ? `
+                <ul class="checklist-list">
+                    ${checklist.map(item => {
+                        const itemIdLiteral = JSON.stringify(String(item.id));
+                        const hint = item.hint ? `<div class="checklist-hint">${escapeHtml(item.hint)}</div>` : '';
+                        const imageUrl = item.metadata?.imageUrl || '';
+                        // Używamy loading="lazy" i style dla stabilności
+                        const image = imageUrl ? `<div class="checklist-image" style="min-height:50px"><img src="${escapeHtml(imageUrl)}" alt="Schemat" loading="lazy" style="max-width:100%;max-height:200px;border-radius:4px;margin-top:4px;cursor:pointer;display:block;" onclick="window.open('${escapeHtml(imageUrl)}','_blank')"></div>` : '';
+                        const itemRequired = item.required ? '<span class="checklist-required">Wymagane</span>' : '';
+                        const removeButton = allowAdd ? `<button class="checklist-remove" onclick='removeChecklistItem(${taskIdLiteral}, ${itemIdLiteral})'>✕</button>` : '';
+                        return `
+                            <li class=\"checklist-item ${item.done ? 'done' : ''}\">
+                                <div style=\"flex:1;\">
+                                    <label>
+                                        <input type="checkbox" ${item.done ? 'checked' : ''} ${isLocked ? 'disabled' : ''} onchange='toggleChecklistItem(${taskIdLiteral}, ${itemIdLiteral})'>
+                                        <span>${escapeHtml(item.label)}</span>
+                                    </label>
+                                    ${hint}
+                                    ${image}
+                                </div>
+                                <div style=\"display:flex;align-items:center;gap:6px;\">
+                                    ${itemRequired}
+                                    ${removeButton}
+                                </div>
+                            </li>
+                        `;
+                    }).join('')}
+                </ul>
+            ` : '<div class="checklist-empty">Brak elementów w liście</div>';
+
+            const addSection = allowAdd ? `
+                <div class="checklist-add">
+                    <input type="text" id="${inputId}" placeholder="Dodaj punkt..." onkeydown='handleChecklistInputKey(event, ${taskIdLiteral})'>
+                    <button onclick='addChecklistItem(${taskIdLiteral})'>➕</button>
+                </div>
+            ` : '<div class="checklist-empty" style="padding-top:4px;">Dodawanie punktów zablokowane</div>';
+
+            return `
+                <div class="checklist-section">
+                    <div class="checklist-header">
+                        <span class="checklist-title">Lista kontrolna ${requiredBadge}</span>
+                        <span class="checklist-progress">${progressText}</span>
+                    </div>
+                    ${itemsHtml}
+                    ${addSection}
+                </div>
+            `;
         }
 
         function getStatusText(status) {
@@ -2116,7 +3558,8 @@
                 'paused': 'Wstrzymane',
                 'todo': 'Oczekuje',
                 'run': 'W trakcie',
-                'done': 'Ukończone'
+                'done': 'Ukończone',
+                'blocked': '🔒 Zablokowane'
             };
             return statusMap[status] || status;
         }
@@ -2159,17 +3602,30 @@
         }
 
         function getTaskActions(task) {
-            const taskId = escapeHtml(String(task.id));
+            const taskId = String(task.id);
+            // NIE escapujemy taskId - atrybuty data-* są bezpieczne i muszą być dokładne
             switch (task.status) {
+                case 'blocked':
+                    // Pokaż informację o zależnościach
+                    let blockedMsg = '🔒 Zablokowane - oczekuje na ukończenie poprzednich zadań';
+                    if(task.dependsOn && task.dependsOn.length > 0) {
+                        const depNames = task.dependsOn.map(depId => {
+                            const depTask = window.allTasks?.find(t => t.id === depId);
+                            return depTask ? (depTask.opName || depTask.name || depId) : depId;
+                        }).join(', ');
+                        blockedMsg = `🔒 Oczekuje na: ${depNames}`;
+                    }
+                    return `<button class="btn btn-secondary" disabled>${blockedMsg}</button>`;
+                    
                 case 'todo':
                 case 'pending':
-                    return `<button class="btn btn-primary btn-large" onclick="startTask('${taskId}')">▶️ Rozpocznij zadanie</button>`;
+                    return `<button class="btn btn-primary btn-large" data-action="start" data-task-id="${taskId}">▶️ Rozpocznij zadanie</button>`;
 
                 case 'run':
                 case 'in-progress':
                     return `
-                        <button class="btn btn-success" onclick="showCompleteConfirmation('${taskId}')">✅ Zakończ</button>
-                        <button class="btn btn-warning" onclick="pauseTask('${taskId}')">⏸️ Wstrzymaj</button>
+                        <button class="btn btn-success" data-action="complete" data-task-id="${taskId}">✅ Zakończ</button>
+                        <button class="btn btn-warning" data-action="pause" data-task-id="${taskId}">⏸️ Wstrzymaj</button>
                     `;
 
                 case 'done':
@@ -2178,8 +3634,8 @@
 
                 case 'paused':
                     return `
-                        <button class="btn btn-primary" onclick="resumeTask('${taskId}')">▶️ Wznów</button>
-                        <button class="btn btn-success" onclick="showCompleteConfirmation('${taskId}')">✅ Zakończ</button>
+                        <button class="btn btn-primary" data-action="resume" data-task-id="${taskId}">▶️ Wznów</button>
+                        <button class="btn btn-success" data-action="complete" data-task-id="${taskId}">✅ Zakończ</button>
                     `;
 
                 default:
@@ -2187,10 +3643,64 @@
             }
         }
 
+        // Event delegation dla przycisków akcji
+        document.addEventListener('click', function(e) {
+            // Ignoruj kliknięcia na nagłówek zlecenia
+            if (e.target.closest('.order-header')) {
+                return;
+            }
+            
+            const btn = e.target.closest('[data-action]');
+            if (!btn) return;
+            
+            const action = btn.getAttribute('data-action');
+            const taskId = btn.getAttribute('data-task-id');
+            
+            console.log('🖱️ Kliknięcie przycisku:', { action, taskId, element: btn });
+            
+            if (!taskId) {
+                console.error('❌ Brak taskId w przycisku!');
+                return;
+            }
+            
+            // Zapobiegaj wielokrotnym kliknięciom
+            if (btn.disabled) {
+                console.log('⏳ Przycisk już wyłączony - ignoruję kliknięcie');
+                return;
+            }
+            
+            // Wyłącz przycisk na moment wykonywania akcji
+            btn.disabled = true;
+            setTimeout(() => { btn.disabled = false; }, 1500);
+            
+            switch(action) {
+                case 'start':
+                    startTask(taskId);
+                    break;
+                case 'complete':
+                    showCompleteConfirmation(taskId);
+                    break;
+                case 'pause':
+                    pauseTask(taskId);
+                    break;
+                case 'resume':
+                    resumeTask(taskId);
+                    break;
+                default:
+                    console.warn('⚠️ Nieznana akcja:', action);
+            }
+        });
+
         let pendingFirebaseUpdates = new Set();
 
         async function updateTaskInFirebase(task) {
-            if (!firestore) return;
+            console.log(`🔥 [updateTaskInFirebase] Rozpoczynam aktualizację zadania ${task.id}`);
+            console.log(`📊 Status: ${task.status}, Firestore: ${firestore ? 'połączony' : 'brak połączenia'}`);
+            
+            if (!firestore) {
+                console.warn('⚠️ Brak połączenia z Firestore - pomijam aktualizację');
+                return;
+            }
             
             // Zapobiegaj wielokrotnym jednoczesnym zapisom tego samego zadania
             if (pendingFirebaseUpdates.has(task.id)) {
@@ -2203,13 +3713,18 @@
             try {
                 const appId = normalizeIdentifier(localStorage.getItem('planner-app-id'));
                 const userId = normalizeIdentifier(localStorage.getItem('planner-user-id'));
+                
+                console.log(`🔑 AppId: ${appId}, UserId: ${userId}`);
+                
                 if (!appId || !userId) {
+                    console.error('❌ Brak appId lub userId - nie można zapisać do Firebase');
                     pendingFirebaseUpdates.delete(task.id);
                     return;
                 }
 
                 const userDocRef = await resolvePlannerUserDoc(appId, userId);
                 if (!userDocRef) {
+                    console.error('❌ Nie można uzyskać userDocRef');
                     pendingFirebaseUpdates.delete(task.id);
                     return;
                 }
@@ -2217,13 +3732,17 @@
                 const taskResult = await fetchFromFirstAvailableCollection(userDocRef, TASK_COLLECTION_ALIASES, 'tasks');
                 const collectionName = taskResult.usedCollection || TASK_COLLECTION_ALIASES[0];
 
+                console.log(`📁 Zapisuję do kolekcji: ${collectionName}`);
+
                 const taskRef = userDocRef.collection(collectionName).doc(task.id);
                 const payload = JSON.parse(JSON.stringify(task));
                 await taskRef.set(payload, { merge: true });
 
-                console.log(`✅ Zaktualizowano zadanie ${task.id} w Firebase`);
+                console.log(`✅ Zaktualizowano zadanie ${task.id} w Firebase (${collectionName})`);
+                console.log(`📊 Zapisany status: ${payload.status}`);
             } catch (error) {
                 console.error('❌ Błąd aktualizacji zadania w Firebase:', error);
+                console.error('Stack trace:', error.stack);
             } finally {
                 // Usuń z kolejki po 500ms, żeby zapobiec duplikatom
                 setTimeout(() => {
@@ -2254,13 +3773,26 @@
             task.status = 'run';
             task.startTime = Date.now();
             task.startedAt = new Date().toISOString();
-            task.startedBy = currentUser ? currentUser.name : 'Worker App v6.0.4';
+            task.startedBy = currentUser ? currentUser.name : 'Worker App v6.1.2';
+            
+            // 🔥 WAŻNE: Zaktualizuj zadanie w tablicy tasks[]
+            const taskIndex = tasks.findIndex(t => t.id === task.id);
+            if (taskIndex !== -1) {
+                tasks[taskIndex] = task;
+                console.log('✅ Zaktualizowano zadanie w tablicy tasks[]:', taskIndex);
+            }
             
             // Oznacz jako ostatnio edytowane - ignoruj zmiany z Firebase przez 5 sekund
             recentlyEditedTasks.set(task.id, Date.now());
             
             saveTasks();
-            renderTasks();
+            
+            // Zaktualizuj tylko UI tej karty bez pełnego re-renderu
+            updateTaskCardUI(task);
+            updateStatsCounters();
+            
+            // Synchronizuj z planerem (localStorage i Firebase)
+            updateTaskInPlannerState(task);
             updateTaskInFirebase(task);
             startRemindersForActiveTasks();
             console.log('✅ Zadanie rozpoczęte:', task.id);
@@ -2290,21 +3822,54 @@
             }
 
             console.log('✅ Znaleziono zadanie do ukończenia:', task);
+            
+            // 🔍 WALIDACJA CHECKLISTY
+            if (task.checklistRequired && Array.isArray(task.checklist) && task.checklist.length > 0) {
+                const requiredItems = task.checklist.filter(item => item.required);
+                const incompletRequired = requiredItems.filter(item => !item.done);
+                
+                if (incompletRequired.length > 0) {
+                    taskOperationInProgress.delete(taskId);
+                    const itemsList = incompletRequired.map(item => `• ${item.label}`).join('\n');
+                    showNotification(
+                        `❌ Nie można zakończyć zadania!\n\nWymagane punkty checklisty do ukończenia:\n${itemsList}`,
+                        'error'
+                    );
+                    console.warn('⚠️ Blokada zakończenia - niekompletna checklist:', incompletRequired);
+                    return;
+                }
+                console.log('✅ Wszystkie wymagane punkty checklisty ukończone');
+            }
+            
             console.log('📊 Status przed:', task.status);
             task.status = 'done';
-            console.log('📊 Status po:', task.status);
             task.endTime = Date.now();
             task.closedAt = new Date().toISOString();
-            task.closedBy = currentUser ? currentUser.name : 'Worker App v6.0.4';
+            task.closedBy = currentUser ? currentUser.name : 'Worker App v6.1.2';
+            
+            // 🔥 WAŻNE: Zaktualizuj zadanie w tablicy tasks[]
+            const taskIndex = tasks.findIndex(t => t.id === task.id);
+            if (taskIndex !== -1) {
+                tasks[taskIndex] = task;
+                console.log('✅ Zaktualizowano zadanie w tablicy tasks[]:', taskIndex);
+            } else {
+                console.error('❌ Nie znaleziono zadania w tablicy tasks[]!');
+            }
+            console.log('📊 Status po:', task.status);
             
             // Oznacz jako ostatnio edytowane
             recentlyEditedTasks.set(task.id, Date.now());
             
             console.log('💾 Zapisuję zadanie do localStorage...');
             saveTasks();
-            console.log('🎨 Renderuję zadania...');
-            renderTasks();
-            console.log('🔥 Aktualizuję Firebase...');
+            console.log('🎨 Aktualizuję UI karty i statystyki...');
+            
+            // Zaktualizuj tylko UI tej karty bez pełnego re-renderu
+            updateTaskCardUI(task);
+            updateStatsCounters();
+            
+            console.log('🔥 Synchronizuję z planerem...');
+            updateTaskInPlannerState(task);
             updateTaskInFirebase(task);
 
             const reminderKey = getReminderKey(task);
@@ -2346,11 +3911,24 @@
             console.log('✅ Wstrzymuję zadanie:', task);
             task.status = 'paused';
             
+            // 🔥 WAŻNE: Zaktualizuj zadanie w tablicy tasks[]
+            const taskIndex = tasks.findIndex(t => t.id === task.id);
+            if (taskIndex !== -1) {
+                tasks[taskIndex] = task;
+                console.log('✅ Zaktualizowano zadanie w tablicy tasks[]:', taskIndex);
+            }
+            
             // Oznacz jako ostatnio edytowane
             recentlyEditedTasks.set(task.id, Date.now());
             
             saveTasks();
-            renderTasks();
+            
+            // Zaktualizuj tylko UI tej karty bez pełnego re-renderu
+            updateTaskCardUI(task);
+            updateStatsCounters();
+            
+            // Synchronizuj z planerem (localStorage i Firebase)
+            updateTaskInPlannerState(task);
             updateTaskInFirebase(task);
             console.log('✅ Zadanie wstrzymane:', task.id);
             
@@ -2387,6 +3965,13 @@
             console.log('✅ Znaleziono zadanie do wznowienia:', task);
             console.log('📊 Status przed:', task.status);
             task.status = 'run';
+            
+            // 🔥 WAŻNE: Zaktualizuj zadanie w tablicy tasks[]
+            const taskIndex = tasks.findIndex(t => t.id === task.id);
+            if (taskIndex !== -1) {
+                tasks[taskIndex] = task;
+                console.log('✅ Zaktualizowano zadanie w tablicy tasks[]:', taskIndex);
+            }
             console.log('📊 Status po:', task.status);
             
             // Oznacz jako ostatnio edytowane - WAŻNE dla stabilności wznowienia!
@@ -2394,9 +3979,14 @@
             
             console.log('💾 Zapisuję zadanie do localStorage...');
             saveTasks();
-            console.log('🎨 Renderuję zadania...');
-            renderTasks();
-            console.log('🔥 Aktualizuję Firebase...');
+            console.log('🎨 Aktualizuję UI karty i statystyki...');
+            
+            // Zaktualizuj tylko UI tej karty bez pełnego re-renderu
+            updateTaskCardUI(task);
+            updateStatsCounters();
+            
+            console.log('🔥 Synchronizuję z planerem...');
+            updateTaskInPlannerState(task);
             updateTaskInFirebase(task);
             startRemindersForActiveTasks();
             console.log('✅ Zadanie wznowione:', task.id);
@@ -2407,14 +3997,74 @@
             }, 1000);
         }
 
+        let currentFilter = 'all'; // 'all', 'run', 'done'
+        let expandedOrders = new Set(); // Pamiętaj które zlecenia są rozwinięte
+
+        function toggleOrder(orderKey) {
+            const tasksContainer = document.getElementById(`tasks-${orderKey}`);
+            const toggleIcon = document.getElementById(`toggle-${orderKey}`);
+            
+            if (tasksContainer.classList.contains('expanded')) {
+                tasksContainer.classList.remove('expanded');
+                toggleIcon.classList.remove('expanded');
+                expandedOrders.delete(orderKey);
+            } else {
+                tasksContainer.classList.add('expanded');
+                toggleIcon.classList.add('expanded');
+                expandedOrders.add(orderKey);
+            }
+        }
+
         function updateStats() {
             const total = tasks.length;
-            const completed = tasks.filter(t => t.status === 'completed').length;
-            const inProgress = tasks.filter(t => t.status === 'in-progress').length;
+            const completed = tasks.filter(t => t.status === 'done').length;
+            const inProgress = tasks.filter(t => t.status === 'run' || t.status === 'paused').length;
 
             document.getElementById('total-tasks').textContent = total;
             document.getElementById('completed-tasks').textContent = completed;
             document.getElementById('in-progress-tasks').textContent = inProgress;
+        }
+        
+        function setFilter(filter, initialLoad = false) {
+            currentFilter = filter;
+            // Usuń aktywną klasę ze wszystkich kart
+            document.querySelectorAll('.stat-card').forEach(card => card.classList.remove('active-filter'));
+            // Dodaj aktywną klasę do wybranej karty
+            if (filter === 'all') document.querySelector('.stat-card:nth-child(1)').classList.add('active-filter');
+            if (filter === 'done') document.querySelector('.stat-card:nth-child(2)').classList.add('active-filter');
+            if (filter === 'run') document.querySelector('.stat-card:nth-child(3)').classList.add('active-filter');
+            
+            // Przy pierwszym załadowaniu musimy wyrenderować wszystko
+            // Przy zmianie filtra przez użytkownika - tylko ukryj/pokaż istniejące karty
+            if (initialLoad) {
+                renderTasks(true, true); // Przekaż flagę że to pierwsze renderowanie
+            } else {
+                // Ukryj/pokaż karty bez pełnego re-renderu
+                document.querySelectorAll('.task-card').forEach(card => {
+                    const taskId = card.getAttribute('data-task-id');
+                    const task = findTaskById(taskId);
+                    if (task) {
+                        const shouldBeVisible = (filter === 'all') || 
+                                               (filter === 'run' && task.status === 'run') ||
+                                               (filter === 'done' && task.status === 'done');
+                        
+                        if (shouldBeVisible) {
+                            card.style.display = '';
+                            card.style.opacity = '1';
+                            card.style.transform = 'scale(1)';
+                        } else {
+                            card.style.transition = 'opacity 0.3s, transform 0.3s';
+                            card.style.opacity = '0';
+                            card.style.transform = 'scale(0.95)';
+                            setTimeout(() => {
+                                if (card.style.opacity === '0') {
+                                    card.style.display = 'none';
+                                }
+                            }, 300);
+                        }
+                    }
+                });
+            }
         }
 
         // Udostępnij funkcje globalnie dla onclick
@@ -2423,20 +4073,37 @@
         window.pauseTask = pauseTask;
         window.resumeTask = resumeTask;
         window.showCompleteConfirmation = showCompleteConfirmation;
-        window.confirmCompleteTask = confirmCompleteTask;
+        window.handleChecklistInputKey = handleChecklistInputKey;
+        window.addChecklistItem = addChecklistItem;
+        window.toggleChecklistItem = toggleChecklistItem;
+        window.removeChecklistItem = removeChecklistItem;
 
         function saveTasks() {
             localStorage.setItem('worker-tasks', JSON.stringify(tasks));
         }
 
         function loadPlannerState() {
-            const possibleKeys = ['door_v5627_state', 'door_planner_state', 'state_backup'];
+            if (!ALLOW_PLANNER_STATE_IMPORT) {
+                console.log('⏭️ Pomijam import lokalnego door_v50_state (tryb produkcyjny).');
+                return null;
+            }
+            const possibleKeys = ['door_v50_state', 'door_v5627_state', 'door_planner_state', 'state_backup'];
             for (const key of possibleKeys) {
                 try {
                     const raw = localStorage.getItem(key);
                     if (!raw) continue;
                     const parsed = JSON.parse(raw);
                     if (parsed && typeof parsed === 'object' && Array.isArray(parsed.tasks)) {
+                        console.log(`🔍 PlannerState z klucza "${key}":`, {
+                            tasks: parsed.tasks.length,
+                            orders: (parsed.orders || []).length,
+                            employees: (parsed.employees || []).length,
+                            firstOrder: (parsed.orders && parsed.orders[0]) ? {
+                                id: parsed.orders[0].id,
+                                name: parsed.orders[0].name,
+                                allKeys: Object.keys(parsed.orders[0])
+                            } : 'brak'
+                        });
                         return parsed;
                     }
                 } catch (err) {
@@ -2446,6 +4113,92 @@
             return null;
         }
 
+        // Funkcja do aktualizacji zadania w planner-state (synchronizacja z planerem)
+        function updateTaskInPlannerState(task) {
+            if (!ALLOW_PLANNER_STATE_IMPORT) {
+                console.log('⏭️ Pomijam aktualizację localStorage - tryb produkcyjny');
+                return;
+            }
+
+            console.log(`🔄 [updateTaskInPlannerState] Aktualizuję zadanie ${task.id} w localStorage`);
+            console.log(`📊 Status zadania: ${task.status}`);
+
+            const possibleKeys = ['door_v50_state', 'door_v5627_state', 'door_planner_state'];
+            let found = false;
+
+            for (const key of possibleKeys) {
+                try {
+                    const raw = localStorage.getItem(key);
+                    if (!raw) {
+                        console.log(`⏭️ Brak klucza ${key} w localStorage`);
+                        continue;
+                    }
+                    
+                    const plannerState = JSON.parse(raw);
+                    if (plannerState && Array.isArray(plannerState.tasks)) {
+                        const taskIndex = plannerState.tasks.findIndex(t => t.id === task.id);
+                        if (taskIndex !== -1) {
+                            const oldStatus = plannerState.tasks[taskIndex].status;
+                            const oldTask = plannerState.tasks[taskIndex];
+                            
+                            // KLUCZOWE POLA do aktualizacji
+                            const updatedTask = {
+                                ...oldTask,
+                                status: task.status,
+                                startTime: task.startTime,
+                                endTime: task.endTime,
+                                startedAt: task.startedAt,
+                                closedAt: task.closedAt,
+                                startedBy: task.startedBy,
+                                closedBy: task.closedBy,
+                                checklist: task.checklist || oldTask.checklist
+                            };
+                            
+                            plannerState.tasks[taskIndex] = updatedTask;
+                            localStorage.setItem(key, JSON.stringify(plannerState));
+                            
+                            // 🔔 WYŚLIJ EVENT aby planer odświeżył się
+                            window.dispatchEvent(new CustomEvent('plannerStateChanged', {
+                                detail: {
+                                    source: 'worker-app',
+                                    taskId: task.id,
+                                    newStatus: updatedTask.status,
+                                    timestamp: Date.now()
+                                }
+                            }));
+                            
+                            // 🔔 Alternatywny event dla storage
+                            window.dispatchEvent(new StorageEvent('storage', {
+                                key: key,
+                                oldValue: raw,
+                                newValue: JSON.stringify(plannerState),
+                                url: window.location.href,
+                                storageArea: localStorage
+                            }));
+                            
+                            console.log(`✅ Zaktualizowano zadanie ${task.id} w ${key}`);
+                            console.log(`📊 Status: ${oldStatus} → ${updatedTask.status}`);
+                            console.log(`⏰ Czasy: start=${updatedTask.startedAt}, end=${updatedTask.closedAt}`);
+                            console.log(`🔔 Wysłano eventy powiadomienia do planera`);
+                            
+                            found = true;
+                            return;
+                        } else {
+                            console.warn(`⚠️ Nie znaleziono zadania ${task.id} w tablicy tasks (${key})`);
+                        }
+                    } else {
+                        console.warn(`⚠️ Nieprawidłowa struktura danych w ${key}`);
+                    }
+                } catch (err) {
+                    console.error(`❌ Błąd aktualizacji zadania w ${key}:`, err);
+                }
+            }
+
+            if (!found) {
+                console.error(`❌ Nie udało się zaktualizować zadania ${task.id} w żadnym kluczu localStorage`);
+            }
+        }
+
         function mapPlannerTasks(plannerState) {
             if (!plannerState || !Array.isArray(plannerState.tasks)) return [];
             const currentId = currentUser && currentUser.id;
@@ -2453,18 +4206,56 @@
             const employeesById = new Map((plannerState.employees || []).map(e => [e.id, e]));
             const keepAll = !currentId;
 
+            console.log(`🔍 Filtrowanie zadań dla użytkownika: ${currentId || 'wszyscy'}`);
+            console.log(`📊 Wszystkich zadań w plannerState: ${plannerState.tasks.length}`);
+
             const filtered = plannerState.tasks.filter(task => {
                 if (keepAll) return true;
                 const direct = task.employeeId && task.employeeId === currentId;
                 const assigneeHit = Array.isArray(task.assignees) && task.assignees.includes(currentId);
-                return direct || assigneeHit;
+                const match = direct || assigneeHit;
+                if (match) {
+                    console.log(`✅ Zadanie ${task.id} przypisane do użytkownika`);
+                }
+                return match;
             });
+            
+            console.log(`✅ Po filtrowaniu: ${filtered.length} zadań`);
 
             return filtered.map(task => {
                 const order = ordersById.get(task.orderId) || {};
-                const baseDuration = task.estMin || task.duration || 0;
+                // Debug: sprawdź jakie pola ma order (tylko raz dla pierwszego zadania)
+                if (Object.keys(order).length > 0 && !window._orderDebugDone) {
+                    window._orderDebugDone = true;
+                    console.log('📦 Order - wszystkie pola:', order);
+                    console.log('📦 Order.name:', order.name);
+                    console.log('📦 Order klucze:', Object.keys(order));
+                }
+                const baseDuration = task.estMin || task.duration || task.estimatedTime || 0;
+                if (!window._timeDebugDone && baseDuration === 0) {
+                    window._timeDebugDone = true;
+                    console.log('⚠️ Brak czasu w zadaniu:', {
+                        id: task.id,
+                        name: task.name,
+                        estMin: task.estMin,
+                        duration: task.duration,
+                        estimatedTime: task.estimatedTime,
+                        allKeys: Object.keys(task)
+                    });
+                }
                 const leadEmployeeId = order.leadEmployeeId || '';
                 const lead = leadEmployeeId ? employeesById.get(leadEmployeeId) : null;
+                const checklistSource = task.checklist || order.checklist || [];
+                const checklistAllowAdd = typeof task.checklistAllowAdd === 'boolean'
+                    ? task.checklistAllowAdd
+                    : typeof order.checklistAllowAdd === 'boolean'
+                        ? order.checklistAllowAdd
+                        : true;
+                const checklistRequired = Boolean(
+                    task.checklistRequired ||
+                    (task.checklistConfig && task.checklistConfig.required) ||
+                    order.checklistRequired
+                );
                 return {
                     id: task.id,
                     title: task.name || task.opName || `Zadanie ${task.id}`,
@@ -2478,16 +4269,24 @@
                     estimatedTime: baseDuration,
                     priority: task.priority || 'normal',
                     orderId: task.orderId || '-',
+                    orderNumber: order.name || '-',
                     startPlanned: task.startPlanned || null,
                     endPlanned: task.endPlanned || null,
                     client: order.client || '',
-                    address: order.address || '',
-                    postalCode: order.postalCode || '',
-                    contactPhone: order.phone || '',
-                    installDate: order.installDate || '',
+                    address: order.address || task.address || '',
+                    postalCode: order.postalCode || task.postalCode || '',
+                    contactPhone: order.phone || task.phone || '',
+                    installDate: order.installDate || task.installDate || '',
                     leadEmployeeId,
                     leadEmployeeName: lead && lead.name ? lead.name : '',
-                    orderNotes: order.notes || ''
+                    orderNotes: order.notes || '',
+                    taskNumber: task.taskNumber || '',
+                    departTime: task.departTime || '',
+                    visitTime: task.visitTime || '',
+                    checklist: normalizeChecklist(checklistSource),
+                    checklistAllowAdd,
+                    checklistRequired,
+                    checklistUseDefault: task.checklistUseDefault
                 };
             });
         }
@@ -2512,14 +4311,53 @@
             tasks = importedTasks.map(task => {
                 const existing = existingMap.get(task.id);
                 if (existing) {
+                    // 🔄 RESET CHECKLISTY gdy zadanie wraca do todo
+                    // Sprawdź czy status zmienił się z done/run na todo (planer resetuje zadanie)
+                    const wasCompleted = existing.status === 'done' || existing.status === 'run' || existing.status === 'paused';
+                    const incomingIsTodo = task.status === 'todo';
+                    const shouldResetChecklist = wasCompleted && incomingIsTodo;
+
+                    console.log(`🔍 Merge zadania ${task.id}:`, {
+                        existingStatus: existing.status,
+                        incomingStatus: task.status,
+                        wasCompleted,
+                        incomingIsTodo,
+                        shouldReset: shouldResetChecklist
+                    });
+
+                    let mergedChecklist;
+                    let finalStatus;
+                    let finalStartTime;
+                    let finalEndTime;
+
+                    if (shouldResetChecklist) {
+                        // Resetuj całe zadanie do stanu początkowego
+                        mergedChecklist = normalizeChecklist(task.checklist || []).map(item => ({...item, done: false}));
+                        finalStatus = 'todo';
+                        finalStartTime = null;
+                        finalEndTime = null;
+                        console.log(`🔄 RESET zadania ${task.id} do stanu początkowego (checklist, status, czasy)`);
+                    } else {
+                        mergedChecklist = mergeChecklists(existing.checklist, task.checklist);
+                        finalStatus = existing.status;
+                        finalStartTime = existing.startTime;
+                        finalEndTime = existing.endTime;
+                    }
+
                     return Object.assign({}, existing, task, {
-                        status: existing.status,
-                        startTime: existing.startTime,
-                        endTime: existing.endTime
+                        status: finalStatus,
+                        startTime: finalStartTime,
+                        endTime: finalEndTime,
+                        checklist: mergedChecklist,
+                        checklistAllowAdd: typeof task.checklistAllowAdd === 'boolean' ? task.checklistAllowAdd : existing.checklistAllowAdd,
+                        checklistRequired: typeof task.checklistRequired === 'boolean' ? task.checklistRequired : existing.checklistRequired
                     });
                 }
-                return task;
+                return Object.assign({}, task, {
+                    checklist: normalizeChecklist(task.checklist || [])
+                });
             });
+            seedChecklistDefaults(tasks);
         }
 
         function updateLastSync() {
@@ -2565,117 +4403,6 @@
             
             if (navigator.vibrate) {
                 navigator.vibrate([200, 100, 200]);
-            }
-        }
-
-        function importTasksFromMainApp() {
-            const plannerState = loadPlannerState();
-            if (plannerState) {
-                const importedTasks = mapPlannerTasks(plannerState);
-                if (importedTasks.length) {
-                    mergeIncomingTasks(importedTasks);
-                    saveTasks();
-                    renderTasks();
-                    startRemindersForActiveTasks();
-                    updateLastSync();
-                    if (notificationSettings.task) {
-                        showNotification(`📥 Załadowano ${importedTasks.length} zadań z planera`, 'success');
-                        playNotificationSound('success');
-                    }
-                    if (navigator.vibrate) {
-                        navigator.vibrate([120, 60, 120]);
-                    }
-                    return;
-                } else {
-                    showNotification('ℹ️ Brak dopasowanych zadań w planerze', 'info');
-                    return;
-                }
-            }
-
-            // Utwórz selektor plików JSON do importu z dysku
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            input.onchange = function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        try {
-                            const importData = JSON.parse(event.target.result);
-                            
-                            if (importData.tasks && Array.isArray(importData.tasks)) {
-                                // Importuj nowe zadania
-                                const newTasks = importData.tasks.filter(importedTask => 
-                                    !tasks.some(existingTask => existingTask.id === importedTask.id)
-                                );
-                                
-                                if (newTasks.length > 0) {
-                                    for (let index = 0; index < newTasks.length; index++) {
-                                        tasks.push(newTasks[index]);
-                                    }
-                                    saveTasks();
-                                    renderTasks();
-                                    startRemindersForActiveTasks();
-                                    
-                                    // Powiadomienie o nowych zadaniach
-                                    if (notificationSettings.task) {
-                                        showNotification(`📥 Zaimportowano ${newTasks.length} nowych zadań!`, 'success');
-                                    }
-                                    
-                                    updateLastSync();
-                                    
-                                    if (navigator.vibrate) {
-                                        navigator.vibrate([100, 50, 100, 50, 100]);
-                                    }
-                                } else {
-                                    showNotification('ℹ️ Brak nowych zadań do zaimportowania', 'info');
-                                }
-                            } else {
-                                showNotification('❌ Nieprawidłowy format pliku importu', 'error');
-                            }
-                        } catch (error) {
-                            console.error('Błąd podczas importu:', error);
-                            showNotification('❌ Błąd podczas importu pliku', 'error');
-                        }
-                    };
-                    reader.readAsText(file);
-                }
-            };
-            input.click();
-        }
-
-        function clearWorkerCache() {
-            try {
-                reminderIntervals.forEach(interval => clearInterval(interval));
-                reminderIntervals.clear();
-                
-                // Wyczyść wszystkie dane Worker Panel
-                localStorage.removeItem('worker-tasks');
-                localStorage.removeItem('worker-all-tasks'); // WAŻNE - usuń cache wszystkich zadań
-                localStorage.removeItem('worker-notifications');
-                localStorage.removeItem('worker-current-employee-id');
-                
-                // Wyczyść mapy ochronne
-                recentlyEditedTasks.clear();
-                pendingFirebaseUpdates.clear();
-                taskOperationInProgress.clear();
-                
-                // Nie usuwamy worker-user, żeby zachować profil pracownika
-                tasks = [];
-                currentUser = null;
-                renderTasks();
-                updateStats();
-                updateLoginUI();
-                
-                const lastSync = document.getElementById('last-sync');
-                if (lastSync) {
-                    lastSync.textContent = 'Pamięć lokalna wyczyszczona — zaimportuj zadania ponownie.';
-                }
-                showNotification('🧹 Pamięć lokalna wyczyszczona. Zaimportuj zadania i zaloguj się ponownie.', 'success');
-            } catch (error) {
-                console.error('Błąd czyszczenia pamięci:', error);
-                showNotification('❌ Nie udało się wyczyścić danych lokalnych', 'error');
             }
         }
 
@@ -2813,7 +4540,15 @@
 
             const modal = document.getElementById('confirmation-modal');
             if (modal) {
+                // 📍 Zapisz scroll i zablokuj body
+                window._savedScrollBeforeModal = window.pageYOffset || document.documentElement.scrollTop;
+                document.body.style.overflow = 'hidden';
+                document.body.style.position = 'fixed';
+                document.body.style.top = `-${window._savedScrollBeforeModal}px`;
+                document.body.style.width = '100%';
+                
                 modal.classList.add('show');
+                console.log('📍 Modal otwarty, scroll zapisany:', window._savedScrollBeforeModal);
             }
 
             if (navigator.vibrate) {
@@ -2824,10 +4559,22 @@
         function hideConfirmationModal() {
             const modal = document.getElementById('confirmation-modal');
             modal.classList.remove('show');
+            
+            // 📍 Przywróć scroll i odblokuj body
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.width = '';
+            
+            if (typeof window._savedScrollBeforeModal === 'number') {
+                window.scrollTo(0, window._savedScrollBeforeModal);
+                console.log('📍 Modal zamknięty, scroll przywrócony:', window._savedScrollBeforeModal);
+            }
         }
 
         function confirmCompleteTask() {
             console.log('✅ confirmCompleteTask wywołane');
+            
             const confirmBtn = document.getElementById('confirm-complete-btn');
             if (!confirmBtn) {
                 console.error('❌ Nie znaleziono przycisku potwierdzenia');
@@ -2836,6 +4583,7 @@
 
             const taskIdAttr = confirmBtn.getAttribute('data-task-id');
             console.log('💾 Odczytano taskId z przycisku:', taskIdAttr);
+            
             hideConfirmationModal();
 
             if (taskIdAttr === null) {
@@ -2847,6 +4595,10 @@
             console.log('🎯 Wywołuję completeTask z:', taskIdAttr);
             completeTask(taskIdAttr);
         }
+
+        // 🔥 WAŻNE: Eksport funkcji modala do window (po ich definicji)
+        window.hideConfirmationModal = hideConfirmationModal;
+        window.confirmCompleteTask = confirmCompleteTask;
 
         function showNotification(message, type = 'info') {
             // Prosta implementacja powiadomień
@@ -2934,6 +4686,24 @@
             // Można dodać przycisk instalacji
             console.log('App can be installed');
         });
+
+        // Funkcja czyszczenia cache (dostępna w konsoli)
+        window.clearWorkerCache = function() {
+            const keysToRemove = [
+                'worker-all-tasks',
+                'worker-tasks',
+                'worker-current-employee-id',
+                'planner-state',
+                'door_v50_state'
+            ];
+            keysToRemove.forEach(key => {
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                    console.log(`🧹 Usunięto: ${key}`);
+                }
+            });
+            console.log('✅ Cache wyczyszczony. Odśwież stronę (F5).');
+        };
     </script>
 </body>
 </html>
