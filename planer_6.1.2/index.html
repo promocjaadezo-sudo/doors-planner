@@ -12466,7 +12466,14 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
     }catch(e){ console.warn('subscribeToTaskUpdates error', e && e.message); }
   }
 
-  (async function autoSubscribeIfNeeded(){ try{ if(state.storage && state.storage.mode==='firebase' && state.storage.autoLoadFromDB){ await subscribeToTaskUpdates(); await subscribeToProcessUpdates(); } }catch(e){ console.warn('autoSubscribeIfNeeded err', e && e.message); } })();
+  (async function autoSubscribeIfNeeded(){ 
+    try{ 
+      if(state.storage && state.storage.mode==='firebase' && state.storage.autoLoadFromDB){ 
+        await subscribeToTaskUpdates(); 
+        // subscribeToProcessUpdates i subscribeToOperationUpdates są wywoływane później
+      } 
+    }catch(e){ console.warn('autoSubscribeIfNeeded err', e && e.message); } 
+  })();
 
   // ================================
   // Realtime listener dla PROCESÓW
@@ -12616,6 +12623,18 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
     }catch(e){ console.warn('subscribeToOperationUpdates error', e && e.message); }
   }
   window.subscribeToOperationUpdates = subscribeToOperationUpdates;
+
+  // 🔄 AUTO-SUBSCRIBE dla procesów i operacji (po definicji funkcji)
+  (async function autoSubscribeProcessesAndOperations(){ 
+    try{ 
+      if(state.storage && state.storage.mode==='firebase' && state.storage.autoLoadFromDB){ 
+        console.log('🔄 [Auto-Subscribe] Uruchamiam subskrypcje procesów i operacji...');
+        await subscribeToProcessUpdates(); 
+        await subscribeToOperationUpdates(); 
+        console.log('✅ [Auto-Subscribe] Subskrypcje procesów i operacji aktywne');
+      } 
+    }catch(e){ console.warn('autoSubscribeProcessesAndOperations err', e && e.message); } 
+  })();
   
   // 🔄 NASŁUCHIWACZ na zmiany z Worker App (cross-tab sync via localStorage)
   (function setupWorkerAppSync() {
