@@ -4992,6 +4992,37 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       if(feed){ feed.textContent = msg; feed.className='ok'; setTimeout(()=>{ if(feed.textContent===msg) feed.textContent=''; }, 6000); }
       else { (window.logDev||console.log)('[order-form] feedback', msg); }
       (window.logDev||console.log)('[order-form] done in', (performance.now()-t0).toFixed(1)+'ms');
+      
+      // 🔥 ZAPISZ ZLECENIE DO FIREBASE w czasie rzeczywistym
+      if(state.storage && state.storage.mode === 'firebase'){
+        (async () => {
+          try {
+            if (await ensureFirebase()) {
+              const isNew = !id;
+              console.log(`🔥 [SAVE ORDER] ${isNew ? 'Dodaję' : 'Aktualizuję'} zlecenie w Firebase:`, orderObj.id, orderObj.orderName);
+              await fbRoot().collection('orders').doc(orderObj.id).set(JSON.parse(JSON.stringify(orderObj)), { merge: true });
+              console.log('✅ [SAVE ORDER] Zapisano do Firebase:', orderObj.id);
+              
+              // Zapisz też wygenerowane zadania
+              const orderTasks = (state.tasks||[]).filter(t=>t.orderId === orderObj.id);
+              if(orderTasks.length > 0){
+                console.log(`🔥 [SAVE ORDER] Zapisuję ${orderTasks.length} zadań do Firebase...`);
+                for(const task of orderTasks){
+                  await fbRoot().collection('tasks').doc(task.id).set(JSON.parse(JSON.stringify(task)), { merge: true });
+                }
+                console.log('✅ [SAVE ORDER] Zapisano zadania do Firebase');
+              }
+              
+              // Aktualizuj timestamp
+              await fbRoot().collection('metadata').doc('sync').set({
+                lastModified: Date.now()
+              }, { merge: true });
+            }
+          } catch(err) {
+            console.error('❌ [SAVE ORDER] Błąd zapisu do Firebase:', err);
+          }
+        })();
+      }
     } catch(err){
       console.error('[order-form] fatal', err); alert('Błąd zapisu zlecenia: '+(err.message||err));
     }
@@ -12717,14 +12748,91 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
   }
   window.subscribeToOperationUpdates = subscribeToOperationUpdates;
 
+  // ================================
+  // Realtime listener dla ZLECEŃ (ORDERS)
+  // ================================
+  async function subscribeToOrderUpdates(){
+    if(state.storage.mode !== 'firebase') return;
+    let isInitialLoad = true;
+    try{
+      const ok = await ensureFirebase(); if(!ok) return;
+      if(window._ordersUnsub) try{ window._ordersUnsub(); }catch(_){ }
+      const col = fbRoot().collection('orders');
+      
+      console.log('🔄 [subscribeToOrderUpdates] Subskrybuję zmiany zleceń...');
+      
+      window._ordersUnsub = col.onSnapshot(snapshot=>{
+        const initialSnapshot = isInitialLoad;
+        try{
+          const deletedOrdersSet = new Set(Array.isArray(state.deletedOrders) ? state.deletedOrders : []);
+          const syncingDelete = !!window._isSyncingDelete;
+          const docChanges = snapshot.docChanges();
+          
+          if(docChanges.length === 0 && !initialSnapshot){
+            return;
+          }
+          
+          let changed = false;
+          docChanges.forEach(ch=>{
+            const data = Object.assign({id: ch.doc.id}, ch.doc.data());
+            
+            // Pomiń jeśli zlecenie jest na liście usuniętych lub trwa usuwanie
+            if ((ch.type === 'added' || ch.type === 'modified') && (syncingDelete || deletedOrdersSet.has(data.id))) {
+              console.log('🛡️ [subscribeToOrderUpdates] Pomijam zlecenie na liście usuniętych:', data.id);
+              return;
+            }
+            
+            if(ch.type === 'added' || ch.type === 'modified'){
+              console.log(`🔄 [Firebase Orders] ${ch.type} zlecenie:`, data.id, data.name || data.orderName);
+              const idx = (state.orders||[]).findIndex(o=>o.id === data.id);
+              if(idx >= 0){
+                console.log(`✏️ [Firebase Orders] Aktualizuję istniejące zlecenie na pozycji ${idx}`);
+                state.orders[idx] = Object.assign({}, state.orders[idx], data);
+              } else if(!syncingDelete) {
+                console.log('➕ [Firebase Orders] Dodaję nowe zlecenie do listy');
+                state.orders = state.orders || [];
+                state.orders.push(data);
+              }
+              changed = true;
+            } else if(ch.type === 'removed'){
+              console.log(`🗑️ [Firebase Orders] Usunięto zlecenie:`, data.id, data.name || data.orderName);
+              state.orders = (state.orders||[]).filter(o=>o.id !== data.id);
+              changed = true;
+            }
+          });
+
+          isInitialLoad = false;
+
+          if(changed){
+            save();
+            try{ 
+              if(typeof renderOrderPage === 'function') renderOrderPage(state);
+              if(typeof renderDash === 'function') renderDash(state);
+              // Aktualizuj licznik zleceń
+              const orderCountEl = document.querySelector('#ord-count');
+              if(orderCountEl) orderCountEl.textContent = (state.orders || []).length;
+            }catch(_){ }
+            console.log(`✅ [subscribeToOrderUpdates] Zaktualizowano - zleceń: ${(state.orders||[]).length}`);
+          }
+        }catch(e){
+          console.warn('subscribeToOrderUpdates snapshot error', e && e.message);
+        }
+      }, err=>{ console.warn('orders onSnapshot error', err && err.message); });
+      
+      console.log('✅ [subscribeToOrderUpdates] Subskrypcja aktywna');
+    }catch(e){ console.warn('subscribeToOrderUpdates error', e && e.message); }
+  }
+  window.subscribeToOrderUpdates = subscribeToOrderUpdates;
+
   // 🔄 AUTO-SUBSCRIBE dla procesów i operacji (po definicji funkcji)
   (async function autoSubscribeProcessesAndOperations(){ 
     try{ 
       if(state.storage && state.storage.mode==='firebase' && state.storage.autoLoadFromDB){ 
-        console.log('🔄 [Auto-Subscribe] Uruchamiam subskrypcje procesów i operacji...');
+        console.log('🔄 [Auto-Subscribe] Uruchamiam subskrypcje procesów, operacji i zleceń...');
         await subscribeToProcessUpdates(); 
-        await subscribeToOperationUpdates(); 
-        console.log('✅ [Auto-Subscribe] Subskrypcje procesów i operacji aktywne');
+        await subscribeToOperationUpdates();
+        await subscribeToOrderUpdates();
+        console.log('✅ [Auto-Subscribe] Subskrypcje procesów, operacji i zleceń aktywne');
       } 
     }catch(e){ console.warn('autoSubscribeProcessesAndOperations err', e && e.message); } 
   })();
