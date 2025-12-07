@@ -5740,12 +5740,36 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     ev.preventDefault(); const id=qs('#proc-id').value||uid(); const name=(qs('#proc-name').value||'').trim(); if(!name||(state.PROC_TMP||[]).length===0) return;
     const templateId = qs('#proc-template-select')?.value || null;
     const payload={id,name,operations:(state.PROC_TMP||[]).map(op=>({id:op.id||uid('op'),name:op.name,time:op.time||0, assignee: op.assignee || null, dependsOn: op.dependsOn})), materialTemplateId: templateId};
+    const isNew = !state.processes.find(x=>x.id===id);
     const ex=state.processes.find(x=>x.id===id); if(ex) Object.assign(ex,payload); else state.processes.push(payload);
-    state.PROC_TMP=[]; save(); ev.target.reset(); 
+    state.PROC_TMP=[]; 
+    state.lastModified = Date.now();
+    save(); 
+    ev.target.reset(); 
     // Zwiń formularz po zapisie
     qs('#proc-form').classList.add('hidden');
     qs('#proc-form-toggle').textContent = '▼';
     renderProcPage();
+    
+    // 🔥 ZAPISZ DO FIREBASE w czasie rzeczywistym
+    if(state.storage && state.storage.mode === 'firebase'){
+      (async () => {
+        try {
+          if (await ensureFirebase()) {
+            console.log(`🔥 [SAVE PROCESS] ${isNew ? 'Dodaję' : 'Aktualizuję'} proces w Firebase:`, id, name);
+            await fbRoot().collection('processes').doc(id).set(JSON.parse(JSON.stringify(payload)), { merge: true });
+            console.log('✅ [SAVE PROCESS] Zapisano do Firebase:', id);
+            
+            // Aktualizuj timestamp
+            await fbRoot().collection('metadata').doc('sync').set({
+              lastModified: Date.now()
+            }, { merge: true });
+          }
+        } catch(err) {
+          console.error('❌ [SAVE PROCESS] Błąd zapisu do Firebase:', err);
+        }
+      })();
+    }
   });
 
   // Funkcja zwijania/rozwijania formularza procesu
