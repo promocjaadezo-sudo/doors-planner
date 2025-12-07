@@ -20,7 +20,7 @@ h4{color:#ffffff;font-size:16px;font-weight:700;margin:8px 0;text-shadow:0 1px 2
 .btn:hover{background:#475569;transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.3)}
 .btn:active{transform:translateY(0);box-shadow:0 1px 2px rgba(0,0,0,0.2)}
 .btn.gray{background:#475569;color:#ffffff;border:1px solid rgba(255,255,255,0.15)}
-.btn.primary{background:var(--acc);color:#fff;border:1px solid rgba(59,130,246,0.5)}.btn.red{background:var(--err);border:1px solid rgba(220,38,38,0.5)}.btn.green{background:var(--ok);border:1px solid rgba(22,163,74,0.5)}.btn.amber{background:var(--warn);border:1px solid rgba(217,119,6,0.5)}.btn.blue{background:#3b82f6;border:1px solid rgba(59,130,246,0.5)}.btn.small{padding:6px 12px;font-size:13px;color:#fff;background:#475569;border:1px solid rgba(255,255,255,0.15)}
+.btn.primary{background:var(--acc);color:#fff;border:1px solid rgba(59,130,246,0.5)}.btn.red{background:var(--err);border:1px solid rgba(220,38,38,0.5)}.btn.green{background:var(--ok);border:1px solid rgba(22,163,74,0.5)}.btn.amber{background:var(--warn);border:1px solid rgba(217,119,6,0.5)}.btn.blue{background:#3b82f6;border:1px solid rgba(59,130,246,0.5)}.btn.orange{background:#f59e0b;color:#000;border:1px solid rgba(245,158,11,0.5)}.btn.small{padding:6px 12px;font-size:13px;color:#fff;background:#475569;border:1px solid rgba(255,255,255,0.15)}
 .hidden{display:none!important}
 input,select,textarea{background:#111827;color:#e5e7eb;border:1px solid var(--b);border-radius:10px;padding:8px 10px;width:100%;transition:all 0.2s}
 input:hover,select:hover,textarea:hover{border-color:#475569}
@@ -2125,6 +2125,7 @@ Pracownik: MALINA" draggable="true">Szlifowanie (...</div></div></div><div class
         <button class="btn" id="export-data">Eksportuj dane</button>
         <button class="btn" id="import-data">Importuj dane</button>
         <button class="btn red" id="clear-data">Wyczyść dane</button>
+        <button class="btn orange" id="cleanup-operations" title="Usuń duplikaty operacji z Firebase i zsynchronizuj">🧹 Wyczyść duplikaty operacji</button>
       </div>
       <div id="set-info" style="color: rgb(255, 255, 255); font-weight: 600; font-size: 14px; background: rgb(5, 150, 105); padding: 4px 8px; border-radius: 4px; border: 1px solid rgb(51, 65, 85);">✅ Zapisano kolekcje do DB.</div>
     </div>
@@ -11847,6 +11848,484 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
   }
   window.purgeOrderFromFirebase = purgeOrderFromFirebase;
 
+  // ================================
+  // Funkcja TYLKO DO ODCZYTU operationsCatalog z Firebase
+  // ================================
+  async function getOperationsFromFirebase() {
+    console.log('[getOperationsFromFirebase] 📖 Pobieram operacje z Firebase (tylko odczyt)...');
+    
+    const ok = await ensureFirebase();
+    if (!ok) {
+      console.error('[getOperationsFromFirebase] ❌ Firebase not ready');
+      return { success: false, error: 'Firebase not ready' };
+    }
+    
+    try {
+      const root = fbRoot();
+      const opsRef = root.collection('operationsCatalog');
+      const snapshot = await opsRef.get();
+      
+      const operations = [];
+      const nameCount = {};
+      
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        operations.push({
+          id: doc.id,
+          name: data.name,
+          time: data.time,
+          category: data.category
+        });
+        
+        // Licz duplikaty po nazwie
+        const normName = (data.name || '').trim().toUpperCase();
+        nameCount[normName] = (nameCount[normName] || 0) + 1;
+      });
+      
+      // Znajdź duplikaty
+      const duplicates = Object.entries(nameCount)
+        .filter(([name, count]) => count > 1)
+        .map(([name, count]) => ({ name, count }));
+      
+      const uniqueNames = Object.keys(nameCount).length;
+      
+      console.log(`[getOperationsFromFirebase] ✅ Firebase ma ${operations.length} operacji`);
+      console.log(`[getOperationsFromFirebase] 📊 Unikalne nazwy: ${uniqueNames}`);
+      
+      if (duplicates.length > 0) {
+        console.log(`[getOperationsFromFirebase] ⚠️ Duplikaty (${duplicates.length}):`);
+        duplicates.forEach(d => console.log(`   - "${d.name}" x${d.count}`));
+      }
+      
+      // Pokaż listę operacji
+      console.log('[getOperationsFromFirebase] 📋 Lista operacji:');
+      operations.forEach((op, i) => {
+        console.log(`   ${i+1}. [${op.id}] ${op.name} (${op.time}min, ${op.category})`);
+      });
+      
+      return {
+        success: true,
+        total: operations.length,
+        uniqueNames: uniqueNames,
+        duplicates: duplicates,
+        operations: operations
+      };
+    } catch (err) {
+      console.error('[getOperationsFromFirebase] ❌ Błąd:', err);
+      return { success: false, error: err.message };
+    }
+  }
+  window.getOperationsFromFirebase = getOperationsFromFirebase;
+
+  // ================================
+  // Funkcja do sprawdzenia LOKALNYCH operacji (localStorage + state)
+  // ================================
+  function getLocalOperations() {
+    console.log('[getLocalOperations] 📖 Sprawdzam lokalne operacje...');
+    
+    // 1. Sprawdź state.operationsCatalog
+    const stateOps = (window.state || state).operationsCatalog || [];
+    console.log(`[getLocalOperations] 🔹 state.operationsCatalog: ${stateOps.length} operacji`);
+    
+    // 2. Sprawdź localStorage
+    let localStorageOps = [];
+    try {
+      const raw = localStorage.getItem('door_v50_state');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        localStorageOps = parsed.operationsCatalog || [];
+        console.log(`[getLocalOperations] 🔹 localStorage: ${localStorageOps.length} operacji`);
+      } else {
+        console.log('[getLocalOperations] 🔹 localStorage: BRAK danych door_v50_state');
+      }
+    } catch (e) {
+      console.error('[getLocalOperations] ❌ Błąd parsowania localStorage:', e);
+    }
+    
+    // 3. Analiza duplikatów w state
+    const nameCount = {};
+    stateOps.forEach(op => {
+      const normName = (op.name || '').trim().toUpperCase();
+      nameCount[normName] = (nameCount[normName] || 0) + 1;
+    });
+    
+    const duplicates = Object.entries(nameCount)
+      .filter(([name, count]) => count > 1)
+      .map(([name, count]) => ({ name, count }));
+    
+    const uniqueNames = Object.keys(nameCount).length;
+    
+    console.log(`[getLocalOperations] 📊 Unikalne nazwy: ${uniqueNames}`);
+    
+    if (duplicates.length > 0) {
+      console.log(`[getLocalOperations] ⚠️ Duplikaty w state (${duplicates.length}):`);
+      duplicates.forEach(d => console.log(`   - "${d.name}" x${d.count}`));
+    } else {
+      console.log('[getLocalOperations] ✅ Brak duplikatów w state');
+    }
+    
+    // 4. Wypisz listę operacji
+    console.log('[getLocalOperations] 📋 Lista operacji w state:');
+    stateOps.forEach((op, i) => {
+      console.log(`   ${i+1}. [${op.id}] ${op.name} (${op.time}min, ${op.category})`);
+    });
+    
+    return {
+      stateCount: stateOps.length,
+      localStorageCount: localStorageOps.length,
+      uniqueNames: uniqueNames,
+      duplicates: duplicates,
+      operations: stateOps
+    };
+  }
+  window.getLocalOperations = getLocalOperations;
+
+  // ================================
+  // Funkcja do sprawdzenia PROCESÓW z Firebase
+  // ================================
+  async function getProcessesFromFirebase() {
+    console.log('[getProcessesFromFirebase] 📖 Pobieram procesy z Firebase (tylko odczyt)...');
+    
+    const ok = await ensureFirebase();
+    if (!ok) {
+      console.error('[getProcessesFromFirebase] ❌ Firebase not ready');
+      return { success: false, error: 'Firebase not ready' };
+    }
+    
+    try {
+      const root = fbRoot();
+      const procRef = root.collection('processes');
+      const snapshot = await procRef.get();
+      
+      const processes = [];
+      const nameCount = {};
+      
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        processes.push({
+          id: doc.id,
+          name: data.name,
+          operations: data.operations?.length || 0,
+          ...data
+        });
+        
+        // Licz duplikaty po nazwie
+        const normName = (data.name || '').trim().toUpperCase();
+        nameCount[normName] = (nameCount[normName] || 0) + 1;
+      });
+      
+      // Znajdź duplikaty
+      const duplicates = Object.entries(nameCount)
+        .filter(([name, count]) => count > 1)
+        .map(([name, count]) => ({ name, count }));
+      
+      const uniqueNames = Object.keys(nameCount).length;
+      
+      console.log(`[getProcessesFromFirebase] ✅ Firebase ma ${processes.length} procesów`);
+      console.log(`[getProcessesFromFirebase] 📊 Unikalne nazwy: ${uniqueNames}`);
+      
+      if (duplicates.length > 0) {
+        console.log(`[getProcessesFromFirebase] ⚠️ Duplikaty (${duplicates.length}):`);
+        duplicates.forEach(d => console.log(`   - "${d.name}" x${d.count}`));
+      }
+      
+      // Pokaż listę procesów
+      console.log('[getProcessesFromFirebase] 📋 Lista procesów:');
+      processes.forEach((p, i) => {
+        console.log(`   ${i+1}. [${p.id}] ${p.name} (${p.operations} operacji)`);
+      });
+      
+      return {
+        success: true,
+        total: processes.length,
+        uniqueNames: uniqueNames,
+        duplicates: duplicates,
+        processes: processes
+      };
+    } catch (err) {
+      console.error('[getProcessesFromFirebase] ❌ Błąd:', err);
+      return { success: false, error: err.message };
+    }
+  }
+  window.getProcessesFromFirebase = getProcessesFromFirebase;
+
+  // ================================
+  // Funkcja do sprawdzenia LOKALNYCH procesów
+  // ================================
+  function getLocalProcesses() {
+    console.log('[getLocalProcesses] 📖 Sprawdzam lokalne procesy...');
+    
+    // 1. Sprawdź state.processes
+    const stateProc = (window.state || state).processes || [];
+    console.log(`[getLocalProcesses] 🔹 state.processes: ${stateProc.length} procesów`);
+    
+    // 2. Sprawdź localStorage
+    let localStorageProc = [];
+    try {
+      const raw = localStorage.getItem('door_v50_state');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        localStorageProc = parsed.processes || [];
+        console.log(`[getLocalProcesses] 🔹 localStorage: ${localStorageProc.length} procesów`);
+      } else {
+        console.log('[getLocalProcesses] 🔹 localStorage: BRAK danych door_v50_state');
+      }
+    } catch (e) {
+      console.error('[getLocalProcesses] ❌ Błąd parsowania localStorage:', e);
+    }
+    
+    // 3. Analiza duplikatów w state
+    const nameCount = {};
+    stateProc.forEach(p => {
+      const normName = (p.name || '').trim().toUpperCase();
+      nameCount[normName] = (nameCount[normName] || 0) + 1;
+    });
+    
+    const duplicates = Object.entries(nameCount)
+      .filter(([name, count]) => count > 1)
+      .map(([name, count]) => ({ name, count }));
+    
+    const uniqueNames = Object.keys(nameCount).length;
+    
+    console.log(`[getLocalProcesses] 📊 Unikalne nazwy: ${uniqueNames}`);
+    
+    if (duplicates.length > 0) {
+      console.log(`[getLocalProcesses] ⚠️ Duplikaty w state (${duplicates.length}):`);
+      duplicates.forEach(d => console.log(`   - "${d.name}" x${d.count}`));
+    } else {
+      console.log('[getLocalProcesses] ✅ Brak duplikatów w state');
+    }
+    
+    // 4. Wypisz listę procesów
+    console.log('[getLocalProcesses] 📋 Lista procesów w state:');
+    stateProc.forEach((p, i) => {
+      console.log(`   ${i+1}. [${p.id}] ${p.name} (${p.operations?.length || 0} operacji)`);
+    });
+    
+    return {
+      stateCount: stateProc.length,
+      localStorageCount: localStorageProc.length,
+      uniqueNames: uniqueNames,
+      duplicates: duplicates,
+      processes: stateProc
+    };
+  }
+  window.getLocalProcesses = getLocalProcesses;
+
+  // ================================
+  // Funkcja WYMUŚ pobranie danych TYLKO z Firebase (nadpisuje lokalne)
+  // ================================
+  async function forceLoadFromFirebase() {
+    console.log('[forceLoadFromFirebase] 🔄 Wymuszam pobranie danych z Firebase...');
+    
+    const ok = await ensureFirebase();
+    if (!ok) {
+      console.error('[forceLoadFromFirebase] ❌ Firebase not ready');
+      return { success: false, error: 'Firebase not ready' };
+    }
+    
+    try {
+      const root = fbRoot();
+      const s = window.state || state;
+      
+      // Pobierz operationsCatalog
+      console.log('[forceLoadFromFirebase] 📥 Pobieram operationsCatalog...');
+      const opsSnap = await root.collection('operationsCatalog').get();
+      const firebaseOps = [];
+      opsSnap.forEach(doc => {
+        firebaseOps.push({ id: doc.id, ...doc.data() });
+      });
+      
+      // Deduplikuj po nazwie
+      const seenNames = new Map();
+      const dedupedOps = [];
+      for (const op of firebaseOps) {
+        const normName = (op.name || '').trim().toUpperCase();
+        if (!normName) continue;
+        if (!seenNames.has(normName)) {
+          seenNames.set(normName, true);
+          dedupedOps.push(op);
+        }
+      }
+      
+      console.log(`[forceLoadFromFirebase] Firebase: ${firebaseOps.length} → po deduplikacji: ${dedupedOps.length}`);
+      
+      // Pobierz employees
+      console.log('[forceLoadFromFirebase] 📥 Pobieram employees...');
+      const empSnap = await root.collection('employees').get();
+      const firebaseEmps = [];
+      empSnap.forEach(doc => {
+        firebaseEmps.push({ id: doc.id, ...doc.data() });
+      });
+      console.log(`[forceLoadFromFirebase] Employees: ${firebaseEmps.length}`);
+      
+      // Pobierz orders
+      console.log('[forceLoadFromFirebase] 📥 Pobieram orders...');
+      const ordSnap = await root.collection('orders').get();
+      const firebaseOrders = [];
+      ordSnap.forEach(doc => {
+        firebaseOrders.push({ id: doc.id, ...doc.data() });
+      });
+      console.log(`[forceLoadFromFirebase] Orders: ${firebaseOrders.length}`);
+      
+      // Pobierz tasks
+      console.log('[forceLoadFromFirebase] 📥 Pobieram tasks...');
+      const taskSnap = await root.collection('tasks').get();
+      const firebaseTasks = [];
+      taskSnap.forEach(doc => {
+        firebaseTasks.push({ id: doc.id, ...doc.data() });
+      });
+      console.log(`[forceLoadFromFirebase] Tasks: ${firebaseTasks.length}`);
+      
+      // Pobierz processes
+      console.log('[forceLoadFromFirebase] 📥 Pobieram processes...');
+      const procSnap = await root.collection('processes').get();
+      const firebaseProc = [];
+      procSnap.forEach(doc => {
+        firebaseProc.push({ id: doc.id, ...doc.data() });
+      });
+      // Deduplikuj procesy po nazwie
+      const seenProcNames = new Map();
+      const dedupedProc = [];
+      for (const p of firebaseProc) {
+        const normName = (p.name || '').trim().toUpperCase();
+        if (!normName) continue;
+        if (!seenProcNames.has(normName)) {
+          seenProcNames.set(normName, true);
+          dedupedProc.push(p);
+        }
+      }
+      console.log(`[forceLoadFromFirebase] Processes: ${firebaseProc.length} → po deduplikacji: ${dedupedProc.length}`);
+      
+      // Nadpisz lokalny state
+      s.operationsCatalog = dedupedOps;
+      s.employees = firebaseEmps;
+      s.orders = firebaseOrders;
+      s.tasks = firebaseTasks;
+      s.processes = dedupedProc;
+      s.lastModified = Date.now();
+      
+      // Zapisz do localStorage
+      save();
+      saveLocalSnapshot();
+      
+      console.log('[forceLoadFromFirebase] ✅ Dane pobrane i zapisane lokalnie!');
+      console.log(`   📋 Operacje: ${dedupedOps.length}`);
+      console.log(`   👷 Pracownicy: ${firebaseEmps.length}`);
+      console.log(`   📦 Zlecenia: ${firebaseOrders.length}`);
+      console.log(`   ✅ Zadania: ${firebaseTasks.length}`);
+      console.log(`   🔄 Procesy: ${dedupedProc.length}`);
+      
+      // Odśwież UI
+      if (typeof render === 'function') render();
+      if (typeof renderOperationsCatalog === 'function') renderOperationsCatalog();
+      if (typeof renderProcesses === 'function') renderProcesses();
+      
+      return {
+        success: true,
+        operations: dedupedOps.length,
+        employees: firebaseEmps.length,
+        orders: firebaseOrders.length,
+        tasks: firebaseTasks.length,
+        processes: dedupedProc.length
+      };
+    } catch (err) {
+      console.error('[forceLoadFromFirebase] ❌ Błąd:', err);
+      return { success: false, error: err.message };
+    }
+  }
+  window.forceLoadFromFirebase = forceLoadFromFirebase;
+
+  // ================================
+  // Funkcja czyszczenia operationsCatalog w Firebase
+  // ================================
+  async function cleanupOperationsCatalogInFirebase() {
+    console.log('[cleanupOperationsCatalog] 🧹 Rozpoczynam czyszczenie operationsCatalog w Firebase...');
+    
+    const ok = await ensureFirebase();
+    if (!ok) {
+      console.error('[cleanupOperationsCatalog] ❌ Firebase not ready');
+      return { success: false, error: 'Firebase not ready' };
+    }
+    
+    try {
+      const db = firebase.firestore();
+      const root = fbRoot();
+      
+      // 1. Pobierz aktualne operacje z Firebase
+      const opsRef = root.collection('operationsCatalog');
+      const snapshot = await opsRef.get();
+      const firebaseOpsCount = snapshot.size;
+      console.log(`[cleanupOperationsCatalog] Firebase ma ${firebaseOpsCount} operacji`);
+      
+      // 2. Usuń wszystkie operacje z Firebase
+      if (snapshot.size > 0) {
+        console.log('[cleanupOperationsCatalog] 🗑️ Usuwam wszystkie operacje z Firebase...');
+        const batchSize = 400;
+        const refs = [];
+        snapshot.forEach(doc => refs.push(doc.ref));
+        
+        for (let i = 0; i < refs.length; i += batchSize) {
+          const batch = db.batch();
+          refs.slice(i, i + batchSize).forEach(ref => batch.delete(ref));
+          await batch.commit();
+          console.log(`[cleanupOperationsCatalog] Usunięto ${Math.min(i + batchSize, refs.length)} / ${refs.length}`);
+        }
+      }
+      
+      // 3. Deduplikuj lokalne operacje
+      const localOps = state.operationsCatalog || [];
+      const seenNames = new Map();
+      const dedupedOps = [];
+      
+      for (const op of localOps) {
+        const normName = (op.name || '').trim().toUpperCase();
+        if (!normName) continue;
+        
+        if (!seenNames.has(normName)) {
+          seenNames.set(normName, true);
+          dedupedOps.push(op);
+        }
+      }
+      
+      console.log(`[cleanupOperationsCatalog] Lokalne operacje: ${localOps.length} → po deduplikacji: ${dedupedOps.length}`);
+      
+      // 4. Zapisz tylko unikalne operacje do Firebase
+      if (dedupedOps.length > 0) {
+        console.log('[cleanupOperationsCatalog] 📤 Zapisuję zdeduplikowane operacje do Firebase...');
+        const batchSize = 400;
+        
+        for (let i = 0; i < dedupedOps.length; i += batchSize) {
+          const batch = db.batch();
+          dedupedOps.slice(i, i + batchSize).forEach(op => {
+            const docRef = opsRef.doc(op.id);
+            batch.set(docRef, JSON.parse(JSON.stringify(op)));
+          });
+          await batch.commit();
+        }
+      }
+      
+      // 5. Aktualizuj lokalny stan
+      state.operationsCatalog = dedupedOps;
+      
+      // 6. Zapisz do localStorage
+      saveLocalSnapshot();
+      
+      console.log(`[cleanupOperationsCatalog] ✅ Zakończono! Firebase ma teraz ${dedupedOps.length} operacji`);
+      
+      return {
+        success: true,
+        before: firebaseOpsCount,
+        after: dedupedOps.length,
+        removed: firebaseOpsCount - dedupedOps.length
+      };
+    } catch (err) {
+      console.error('[cleanupOperationsCatalog] ❌ Błąd:', err);
+      return { success: false, error: err.message };
+    }
+  }
+  window.cleanupOperationsCatalogInFirebase = cleanupOperationsCatalogInFirebase;
+
   // Save single task document to Firestore (merge)
   async function _saveTaskToDB_once(taskId){
     const ok = await ensureFirebase(); if(!ok) throw new Error('Firebase not ready');
@@ -12286,6 +12765,29 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
               console.log(`  🧹 [loadFromDB] Pomijam ${removedLen} zdalnych operacji oznaczonych do usunięcia lokalnie`);
             }
           }
+          
+          // 🔧 AGRESYWNA DEDUPLIKACJA - usuń wszystkie duplikaty po nazwie (zachowaj pierwszy)
+          const beforeDedup = dataToLoad.length;
+          const seenNames = new Set();
+          const dedupedOps = [];
+          dataToLoad.forEach(op => {
+            const key = (op.name || '').replace(/\s+/g, ' ').trim().toLowerCase();
+            if (!key) return; // Pomiń operacje bez nazwy
+            if (seenNames.has(key)) {
+              console.log(`  🗑️ [loadFromDB] Usuwam duplikat operacji: "${op.name}" (ID: ${op.id})`);
+              return;
+            }
+            seenNames.add(key);
+            dedupedOps.push(op);
+          });
+          
+          if (dedupedOps.length !== beforeDedup) {
+            console.log(`  ⚠️ [loadFromDB] DEDUPLIKACJA operacji: ${beforeDedup} -> ${dedupedOps.length} (usunięto ${beforeDedup - dedupedOps.length})`);
+            dataToLoad = dedupedOps;
+          }
+          
+          // Przenumeruj operacje
+          dataToLoad.forEach((op, idx) => { op.no = idx + 1; });
         }
         
         if(key === 'employees' && Array.isArray(dataToLoad)){
@@ -12673,6 +13175,47 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
       }, 1000);
     } catch (err) {
       console.error('❌ Błąd usuwania:', err);
+      alert('❌ Błąd: ' + err.message);
+    }
+  });
+
+  // Wyczyść duplikaty operacji w Firebase
+  qs('#cleanup-operations').addEventListener('click', async () => {
+    const currentCount = (state.operationsCatalog || []).length;
+    if (!confirm(`🧹 Wyczyścić duplikaty operacji?\n\nAktualnie masz ${currentCount} operacji.\nFunkcja usunie wszystkie duplikaty i zsynchronizuje z Firebase.`)) return;
+    
+    try {
+      const infoEl = qs('#set-info');
+      if (infoEl) {
+        infoEl.textContent = '⏳ Czyszczenie operacji...';
+        infoEl.style.background = '#f59e0b';
+      }
+      
+      const result = await cleanupOperationsCatalogInFirebase();
+      
+      if (result.success) {
+        const msg = `✅ Wyczyszczono operacje!\n\nPrzed: ${result.before}\nPo: ${result.after}\nUsunięto: ${result.removed} duplikatów`;
+        console.log(msg);
+        alert(msg);
+        
+        if (infoEl) {
+          infoEl.textContent = `✅ Operacje: ${result.after} (usunięto ${result.removed} duplikatów)`;
+          infoEl.style.background = '#059669';
+        }
+        
+        // Odśwież listę operacji w UI jeśli jest widoczna
+        if (typeof renderOperationsCatalog === 'function') {
+          renderOperationsCatalog();
+        }
+      } else {
+        alert('❌ Błąd: ' + result.error);
+        if (infoEl) {
+          infoEl.textContent = '❌ Błąd czyszczenia: ' + result.error;
+          infoEl.style.background = '#dc2626';
+        }
+      }
+    } catch (err) {
+      console.error('❌ Błąd czyszczenia operacji:', err);
       alert('❌ Błąd: ' + err.message);
     }
   });
