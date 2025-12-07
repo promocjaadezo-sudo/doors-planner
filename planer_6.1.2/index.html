@@ -4008,6 +4008,11 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
         if(t.dataset.pdel2) {
           const id = t.dataset.pdel2;
           console.log('🗑️ [DELETE PROCESS] Usuwam proces:', id);
+          
+          // 🔒 BLOKUJ AUTO-SYNC podczas usuwania
+          window._isSyncingDelete = true;
+          console.log('🔒 [DELETE PROCESS] Blokuję auto-sync');
+          
           state.processes = state.processes.filter(x => x.id !== id);
           state.deletedProcesses = Array.isArray(state.deletedProcesses) ? state.deletedProcesses : [];
           if (!state.deletedProcesses.includes(id)) {
@@ -4017,21 +4022,47 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
             }
           }
           console.log('🗑️ [DELETE PROCESS] Lista usuniętych procesów:', state.deletedProcesses);
+          state.lastModified = Date.now(); // Aktualizuj timestamp
           save();
           renderProcList();
+          
           if(state.storage && state.storage.mode === 'firebase'){
             (async () => {
               try {
                 if (await ensureFirebase()) {
                   console.log('🔥 [DELETE PROCESS] Usuwam z Firebase:', id);
+                  
+                  // 1. Usuń proces z Firebase
                   await fbRoot().collection('processes').doc(id).delete();
                   console.log('✅ [DELETE PROCESS] Usunięto z Firebase:', id);
+                  
+                  // 2. Zapisz deletedProcesses do Firebase (aby inne karty/domeny wiedziały)
+                  await fbRoot().collection('metadata').doc('deletedProcesses').set({
+                    ids: state.deletedProcesses,
+                    updatedAt: Date.now()
+                  }, { merge: true });
+                  console.log('✅ [DELETE PROCESS] Zapisano deletedProcesses do Firebase');
+                  
+                  // 3. Aktualizuj metadata timestamp
+                  await fbRoot().collection('metadata').doc('sync').set({
+                    lastModified: Date.now()
+                  }, { merge: true });
                 }
               } catch(err) {
                 console.error('❌ [DELETE PROCESS] Błąd usuwania z Firebase:', err);
+              } finally {
+                // 🔓 ODBLOKUJ AUTO-SYNC po 3 sekundach
+                setTimeout(() => {
+                  window._isSyncingDelete = false;
+                  console.log('🔓 [DELETE PROCESS] Odblokowano auto-sync');
+                }, 3000);
               }
             })();
-            enqueueFirebaseDelete('processes', id, 30);
+          } else {
+            // Odblokuj jeśli nie Firebase
+            setTimeout(() => {
+              window._isSyncingDelete = false;
+            }, 1000);
           }
           break; }
         if(t.dataset.taskStart) {
@@ -12541,11 +12572,33 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
     const preservedDeletedOperations = backupDeletedOperations.length > 0 
       ? backupDeletedOperations 
       : (Array.isArray(state.deletedOperations) ? state.deletedOperations.slice() : []);
-    const preservedDeletedProcesses = Array.isArray(state.deletedProcesses) ? state.deletedProcesses.slice() : [];
+    let preservedDeletedProcesses = Array.isArray(state.deletedProcesses) ? state.deletedProcesses.slice() : [];
     const preservedDeletedOrders = Array.isArray(state.deletedOrders) ? state.deletedOrders.slice() : [];
+    
+    // 🔧 POBIERZ deletedProcesses z Firebase (aby inne karty/domeny wiedziały o usunięciach)
+    try {
+      const ok = await ensureFirebase();
+      if (ok) {
+        const deletedProcDoc = await fbRoot().collection('metadata').doc('deletedProcesses').get();
+        if (deletedProcDoc.exists) {
+          const firebaseDeletedProcesses = deletedProcDoc.data().ids || [];
+          console.log('📦 [loadFromDB] Pobrano deletedProcesses z Firebase:', firebaseDeletedProcesses);
+          // Połącz lokalne i zdalne listy usuniętych procesów
+          const mergedDeleted = [...new Set([...preservedDeletedProcesses, ...firebaseDeletedProcesses])];
+          if (mergedDeleted.length > preservedDeletedProcesses.length) {
+            console.log(`🔄 [loadFromDB] Połączono deletedProcesses: lokalne ${preservedDeletedProcesses.length} + Firebase ${firebaseDeletedProcesses.length} = ${mergedDeleted.length}`);
+            preservedDeletedProcesses = mergedDeleted;
+            state.deletedProcesses = mergedDeleted;
+          }
+        }
+      }
+    } catch(e) { console.warn('Nie udało się wczytać deletedProcesses z Firebase:', e); }
     
     if(preservedDeletedOperations.length > 0){
       console.log('🔒 [loadFromDB] Zachowuję deletedOperations przed wczytaniem z Firebase:', preservedDeletedOperations);
+    }
+    if(preservedDeletedProcesses.length > 0){
+      console.log('🔒 [loadFromDB] Zachowuję deletedProcesses przed wczytaniem z Firebase:', preservedDeletedProcesses);
     }
     
     // 🔒 BLOKADA PODCZAS USUWANIA - Nie wczytuj starych danych gdy usuwamy (TYLKO dla orders/tasks)
