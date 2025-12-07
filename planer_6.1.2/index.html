@@ -12105,6 +12105,67 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
   window.getProcessesFromFirebase = getProcessesFromFirebase;
 
   // ================================
+  // Funkcja do USUNIĘCIA WSZYSTKICH procesów z Firebase
+  // ================================
+  async function clearAllProcessesFromFirebase() {
+    console.log('[clearAllProcessesFromFirebase] 🗑️ Usuwam WSZYSTKIE procesy z Firebase...');
+    
+    const ok = await ensureFirebase();
+    if (!ok) {
+      console.error('[clearAllProcessesFromFirebase] ❌ Firebase not ready');
+      return { success: false, error: 'Firebase not ready' };
+    }
+    
+    try {
+      const root = fbRoot();
+      const procRef = root.collection('processes');
+      const snapshot = await procRef.get();
+      
+      if (snapshot.size === 0) {
+        console.log('[clearAllProcessesFromFirebase] ✅ Brak procesów do usunięcia');
+        return { success: true, deleted: 0 };
+      }
+      
+      console.log(`[clearAllProcessesFromFirebase] 🗑️ Usuwam ${snapshot.size} procesów...`);
+      
+      const db = firebase.firestore();
+      const batchSize = 400;
+      const refs = [];
+      snapshot.forEach(doc => refs.push(doc.ref));
+      
+      for (let i = 0; i < refs.length; i += batchSize) {
+        const batch = db.batch();
+        refs.slice(i, i + batchSize).forEach(ref => batch.delete(ref));
+        await batch.commit();
+        console.log(`[clearAllProcessesFromFirebase] Usunięto ${Math.min(i + batchSize, refs.length)} / ${refs.length}`);
+      }
+      
+      // Wyczyść też lokalne procesy
+      state.processes = [];
+      state.deletedProcesses = [];
+      state.lastModified = Date.now();
+      save();
+      
+      // Wyczyść metadata deletedProcesses
+      await root.collection('metadata').doc('deletedProcesses').set({
+        ids: [],
+        updatedAt: Date.now()
+      });
+      
+      console.log(`[clearAllProcessesFromFirebase] ✅ Usunięto ${snapshot.size} procesów z Firebase`);
+      
+      // Odśwież UI
+      if (typeof renderProcList === 'function') renderProcList();
+      
+      return { success: true, deleted: snapshot.size };
+    } catch (err) {
+      console.error('[clearAllProcessesFromFirebase] ❌ Błąd:', err);
+      return { success: false, error: err.message };
+    }
+  }
+  window.clearAllProcessesFromFirebase = clearAllProcessesFromFirebase;
+
+  // ================================
   // Funkcja do sprawdzenia LOKALNYCH procesów
   // ================================
   function getLocalProcesses() {
