@@ -12466,7 +12466,156 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
     }catch(e){ console.warn('subscribeToTaskUpdates error', e && e.message); }
   }
 
-  (async function autoSubscribeIfNeeded(){ try{ if(state.storage && state.storage.mode==='firebase' && state.storage.autoLoadFromDB){ await subscribeToTaskUpdates(); } }catch(e){ console.warn('autoSubscribeIfNeeded err', e && e.message); } })();
+  (async function autoSubscribeIfNeeded(){ try{ if(state.storage && state.storage.mode==='firebase' && state.storage.autoLoadFromDB){ await subscribeToTaskUpdates(); await subscribeToProcessUpdates(); } }catch(e){ console.warn('autoSubscribeIfNeeded err', e && e.message); } })();
+
+  // ================================
+  // Realtime listener dla PROCESÓW
+  // ================================
+  async function subscribeToProcessUpdates(){
+    if(state.storage.mode !== 'firebase') return;
+    let isInitialLoad = true;
+    try{
+      const ok = await ensureFirebase(); if(!ok) return;
+      if(window._processesUnsub) try{ window._processesUnsub(); }catch(_){ }
+      const col = fbRoot().collection('processes');
+      
+      console.log('🔄 [subscribeToProcessUpdates] Subskrybuję zmiany procesów...');
+      
+      window._processesUnsub = col.onSnapshot(snapshot=>{
+        const initialSnapshot = isInitialLoad;
+        try{
+          const deletedProcessesSet = new Set(Array.isArray(state.deletedProcesses) ? state.deletedProcesses : []);
+          const syncingDelete = !!window._isSyncingDelete;
+          const docChanges = snapshot.docChanges();
+          
+          if(docChanges.length === 0 && !initialSnapshot){
+            return;
+          }
+          
+          let changed = false;
+          docChanges.forEach(ch=>{
+            const data = Object.assign({id: ch.doc.id}, ch.doc.data());
+            
+            // Pomiń jeśli proces jest na liście usuniętych
+            if ((ch.type === 'added' || ch.type === 'modified') && deletedProcessesSet.has(data.id)) {
+              console.log('🛡️ [subscribeToProcessUpdates] Pomijam proces na liście usuniętych:', data.id);
+              return;
+            }
+            
+            if(ch.type === 'added' || ch.type === 'modified'){
+              console.log(`🔄 [Firebase Processes] ${ch.type} proces:`, data.id, data.name);
+              const idx = (state.processes||[]).findIndex(p=>p.id === data.id);
+              if(idx >= 0){
+                console.log(`✏️ [Firebase Processes] Aktualizuję istniejący proces na pozycji ${idx}`);
+                state.processes[idx] = Object.assign({}, state.processes[idx], data);
+              } else if(!syncingDelete) {
+                console.log('➕ [Firebase Processes] Dodaję nowy proces do listy');
+                state.processes = state.processes || [];
+                state.processes.push(data);
+              }
+              changed = true;
+            } else if(ch.type === 'removed'){
+              console.log(`🗑️ [Firebase Processes] Usunięto proces:`, data.id, data.name);
+              state.processes = (state.processes||[]).filter(p=>p.id !== data.id);
+              changed = true;
+            }
+          });
+
+          isInitialLoad = false;
+
+          if(changed){
+            save();
+            try{ 
+              renderProcList && renderProcList(); 
+              // Aktualizuj licznik procesów
+              const procCountEl = document.querySelector('#proc-count');
+              if(procCountEl) procCountEl.textContent = (state.processes || []).length;
+            }catch(_){ }
+            console.log(`✅ [subscribeToProcessUpdates] Zaktualizowano - procesów: ${(state.processes||[]).length}`);
+          }
+        }catch(e){
+          console.warn('subscribeToProcessUpdates snapshot error', e && e.message);
+        }
+      }, err=>{ console.warn('processes onSnapshot error', err && err.message); });
+      
+      console.log('✅ [subscribeToProcessUpdates] Subskrypcja aktywna');
+    }catch(e){ console.warn('subscribeToProcessUpdates error', e && e.message); }
+  }
+  window.subscribeToProcessUpdates = subscribeToProcessUpdates;
+
+  // ================================
+  // Realtime listener dla OPERACJI
+  // ================================
+  async function subscribeToOperationUpdates(){
+    if(state.storage.mode !== 'firebase') return;
+    let isInitialLoad = true;
+    try{
+      const ok = await ensureFirebase(); if(!ok) return;
+      if(window._operationsUnsub) try{ window._operationsUnsub(); }catch(_){ }
+      const col = fbRoot().collection('operationsCatalog');
+      
+      console.log('🔄 [subscribeToOperationUpdates] Subskrybuję zmiany operacji...');
+      
+      window._operationsUnsub = col.onSnapshot(snapshot=>{
+        const initialSnapshot = isInitialLoad;
+        try{
+          const deletedOpsSet = new Set(Array.isArray(state.deletedOperations) ? state.deletedOperations : []);
+          const docChanges = snapshot.docChanges();
+          
+          if(docChanges.length === 0 && !initialSnapshot){
+            return;
+          }
+          
+          let changed = false;
+          docChanges.forEach(ch=>{
+            const data = Object.assign({id: ch.doc.id}, ch.doc.data());
+            
+            // Pomiń jeśli operacja jest na liście usuniętych
+            if ((ch.type === 'added' || ch.type === 'modified') && deletedOpsSet.has(data.id)) {
+              console.log('🛡️ [subscribeToOperationUpdates] Pomijam operację na liście usuniętych:', data.id);
+              return;
+            }
+            
+            if(ch.type === 'added' || ch.type === 'modified'){
+              const idx = (state.operationsCatalog||[]).findIndex(o=>o.id === data.id);
+              if(idx >= 0){
+                state.operationsCatalog[idx] = Object.assign({}, state.operationsCatalog[idx], data);
+              } else {
+                // Sprawdź czy nie ma duplikatu po nazwie
+                const normName = (data.name || '').trim().toUpperCase();
+                const existsByName = (state.operationsCatalog||[]).some(o => 
+                  (o.name || '').trim().toUpperCase() === normName
+                );
+                if(!existsByName){
+                  state.operationsCatalog = state.operationsCatalog || [];
+                  state.operationsCatalog.push(data);
+                }
+              }
+              changed = true;
+            } else if(ch.type === 'removed'){
+              console.log(`🗑️ [Firebase Operations] Usunięto operację:`, data.id, data.name);
+              state.operationsCatalog = (state.operationsCatalog||[]).filter(o=>o.id !== data.id);
+              changed = true;
+            }
+          });
+
+          isInitialLoad = false;
+
+          if(changed){
+            save();
+            try{ 
+              renderOperationsCatalog && renderOperationsCatalog(); 
+            }catch(_){ }
+          }
+        }catch(e){
+          console.warn('subscribeToOperationUpdates snapshot error', e && e.message);
+        }
+      }, err=>{ console.warn('operationsCatalog onSnapshot error', err && err.message); });
+      
+      console.log('✅ [subscribeToOperationUpdates] Subskrypcja aktywna');
+    }catch(e){ console.warn('subscribeToOperationUpdates error', e && e.message); }
+  }
+  window.subscribeToOperationUpdates = subscribeToOperationUpdates;
   
   // 🔄 NASŁUCHIWACZ na zmiany z Worker App (cross-tab sync via localStorage)
   (function setupWorkerAppSync() {
