@@ -3324,6 +3324,14 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       const loadedData = JSON.parse(raw);
       console.log('📦 LOAD: Dane z localStorage (długość):', raw.length, 'znaków');
       Object.assign(state, loadedData);
+      
+      // 🔒 WYMUSZENIE STAŁEGO userId - zapewnia synchronizację między domenami
+      const FORCED_USER_ID = 'hala-1';
+      if (state.storage && state.storage.userId !== FORCED_USER_ID) {
+        console.log(`🔄 [SYNC] Wymuszam userId: ${state.storage.userId} → ${FORCED_USER_ID}`);
+        state.storage.userId = FORCED_USER_ID;
+      }
+      
       ensureOperationsCatalogChecklists(state.operationsCatalog);
       if(Array.isArray(state.operationsCatalog) && state.operationsCatalog.length > 1){
         const beforeOps = state.operationsCatalog.length;
