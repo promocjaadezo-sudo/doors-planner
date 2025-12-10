@@ -6,7 +6,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta name="last-modified" content="2025-11-27">
-<title>Planner Produkcji Drzwi — v6.1.1 (2025-11-27)</title>
+<title>Planner Produkcji Drzwi — v6.1.2 (2025-11-27)</title>
 <style>
 :root{--bg:#0f172a;--panel:#1f2937;--muted:#94a3b8;--b:#374151;--acc:#2563eb;--ok:#16a34a;--warn:#d97706;--err:#dc2626;--text:#ffffff;--text-secondary:#ffffff}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:#ffffff;line-height:1.5}
@@ -766,7 +766,7 @@ th,td{border-bottom:1px solid #2b3a59;padding:8px;text-align:left;background:#1f
 </div>
 
 <div class="wrap">
-  <div class="row" style="justify-content:space-between"><h1>Planner Produkcji Drzwi — v6.1.1</h1></div>
+  <div class="row" style="justify-content:space-between"><h1>Planner Produkcji Drzwi — v6.1.2</h1></div>
 
   <div class="card hidden" id="p-dash">
     <h3>Panel</h3>
@@ -2595,6 +2595,79 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
 
   let state={storage:{mode:'firebase',appId:'doors-demo',userId:'hala-1',fbConfig:JSON.parse(JSON.stringify(DEFAULT_FIREBASE_CONFIG))},
     employees:[],operationsCatalog:[],processes:[],orders:[],tasks:[],after:[],deletedOrders:[],deletedProcesses:[],PROC_TMP:[],page:'dash',_timers:{}};
+
+  state.meta = state.meta && typeof state.meta === 'object' ? state.meta : {};
+  state.meta.collections = state.meta.collections && typeof state.meta.collections === 'object' ? state.meta.collections : {};
+  function touchCollectionMeta(key){
+    if(!key) return;
+    const now = Date.now();
+    state.meta.collections[key] = state.meta.collections[key] && typeof state.meta.collections[key] === 'object' ? state.meta.collections[key] : {};
+    state.meta.collections[key].updatedAt = now;
+  }
+  function getCollectionMetaTimestamp(key){
+    const meta = state.meta && state.meta.collections && state.meta.collections[key];
+    return meta && typeof meta.updatedAt === 'number' ? meta.updatedAt : 0;
+  }
+  function setCollectionMetaTimestamp(key, timestamp){
+    if(!key || typeof timestamp !== 'number') return;
+    state.meta.collections[key] = state.meta.collections[key] && typeof state.meta.collections[key] === 'object' ? state.meta.collections[key] : {};
+    state.meta.collections[key].updatedAt = timestamp;
+  }
+
+  const DELETED_ORDER_TTL_MS = 5 * 60 * 1000;
+  function normalizeDeletedOrdersList(rawList){
+    const now = Date.now();
+    const limit = 200;
+    const normalized = [];
+    const entries = Array.isArray(rawList) ? rawList : [];
+    entries.forEach(entry => {
+      if(!entry) return;
+      let id = null;
+      let ts = now;
+      if(typeof entry === 'string'){
+        id = entry.trim();
+      } else if(typeof entry === 'object'){
+        id = entry.id || entry.orderId || entry.order || null;
+        if(typeof entry.ts === 'number') ts = entry.ts;
+        else if(typeof entry.timestamp === 'number') ts = entry.timestamp;
+        else if(typeof entry.deletedAt === 'number') ts = entry.deletedAt;
+        else if(typeof entry.time === 'number') ts = entry.time;
+      }
+      if(!id) return;
+      if(ts > now) ts = now;
+      if(now - ts > DELETED_ORDER_TTL_MS) return;
+      normalized.push({ id, ts });
+    });
+    const dedupedMap = new Map();
+    normalized.forEach(item => {
+      const existing = dedupedMap.get(item.id);
+      if(!existing || item.ts > existing.ts){
+        dedupedMap.set(item.id, item);
+      }
+    });
+    const cleaned = Array.from(dedupedMap.values()).sort((a,b)=>a.ts-b.ts);
+    while(cleaned.length > limit){ cleaned.shift(); }
+    return cleaned;
+  }
+  function ensureDeletedOrdersStructure(){
+    state.deletedOrders = normalizeDeletedOrdersList(state.deletedOrders);
+    return state.deletedOrders;
+  }
+  function getActiveDeletedOrdersSet(){
+    return new Set(ensureDeletedOrdersStructure().map(entry => entry.id));
+  }
+  function rememberDeletedOrder(id){
+    if(!id) return;
+    ensureDeletedOrdersStructure();
+    state.deletedOrders.push({ id, ts: Date.now() });
+    state.deletedOrders = normalizeDeletedOrdersList(state.deletedOrders);
+  }
+  function cloneDeletedOrdersState(){
+    return ensureDeletedOrdersStructure().map(entry => ({ id: entry.id, ts: entry.ts }));
+  }
+  function restoreDeletedOrdersState(source){
+    state.deletedOrders = normalizeDeletedOrdersList(Array.isArray(source) ? source : state.deletedOrders);
+  }
   state.uiShowTasksByEmpTable = false;
   
   // Natychmiast przypisz state do window
@@ -3081,6 +3154,9 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           console.warn(`[operationsCatalog][dedupe] save(): zredukowano operacje z ${beforeOps} do ${state.operationsCatalog.length}`);
         }
       }
+      if(Array.isArray(state.operationsCatalog) && state.operationsCatalog.length){
+        touchCollectionMeta('operationsCatalog');
+      }
       
       if(!remoteSave){
         state.lastModified = Date.now();
@@ -3502,7 +3578,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
   // ensure settings object exists and default autoCleanup = true
   state.settings = state.settings || {};
   if (typeof state.settings.autoCleanup === 'undefined') state.settings.autoCleanup = true;
-  state.deletedOrders = Array.isArray(state.deletedOrders) ? state.deletedOrders : [];
+  ensureDeletedOrdersStructure();
   state.deletedProcesses = Array.isArray(state.deletedProcesses) ? state.deletedProcesses : [];
   // expose state for debugging and console access
   try{ window.state = state; }catch(e){console.warn('unable to expose state', e);}
@@ -3693,13 +3769,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
           state.orders = state.orders.filter(x => x.id !== id); 
           state.tasks = state.tasks.filter(t => t.orderId !== id); 
           state.after = state.after.filter(a => a.order !== id); 
-          state.deletedOrders = Array.isArray(state.deletedOrders) ? state.deletedOrders : [];
-          if (!state.deletedOrders.includes(id)) {
-            state.deletedOrders.push(id);
-            if (state.deletedOrders.length > 200) {
-              state.deletedOrders = state.deletedOrders.slice(-200);
-            }
-          }
+          rememberDeletedOrder(id);
           
           console.log(`  Usunięto: zlecenie ${removedOrder?.name || id}, ${removedTasksCount} zadań`);
 
@@ -11574,6 +11644,11 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
       const deletedProcessIdsRemoved = [];
       const deletedOperationIdsRemoved = [];
       const r=fbRoot();
+      const collectionsMetaPayload = state.meta && state.meta.collections ? JSON.parse(JSON.stringify(state.meta.collections)) : {};
+      try{
+        const collectionsMetaRef = r.collection('metadata').doc('collections');
+        batch.set(collectionsMetaRef, collectionsMetaPayload, { merge: true });
+      }catch(metaErr){ console.warn('[saveToDB] Nie udało się zapisać metadata kolekcji:', metaErr && metaErr.message); }
 
       const collections = [
         { name: 'employees', items: targetState.employees || [] },
@@ -12518,7 +12593,7 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
       window._tasksUnsub = col.onSnapshot(snapshot=>{
         const initialSnapshot = isInitialLoad;
         try{
-          const deletedOrdersSet = new Set(Array.isArray(state.deletedOrders) ? state.deletedOrders : []);
+          const deletedOrdersSet = getActiveDeletedOrdersSet();
           const syncingDelete = !!window._isSyncingDelete;
           const docChanges = snapshot.docChanges();
           if(docChanges.length === 0 && !initialSnapshot){
@@ -12764,7 +12839,7 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
       window._ordersUnsub = col.onSnapshot(snapshot=>{
         const initialSnapshot = isInitialLoad;
         try{
-          const deletedOrdersSet = new Set(Array.isArray(state.deletedOrders) ? state.deletedOrders : []);
+          const deletedOrdersSet = getActiveDeletedOrdersSet();
           const syncingDelete = !!window._isSyncingDelete;
           const docChanges = snapshot.docChanges();
           
@@ -12942,7 +13017,7 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
       ? backupDeletedOperations 
       : (Array.isArray(state.deletedOperations) ? state.deletedOperations.slice() : []);
     let preservedDeletedProcesses = Array.isArray(state.deletedProcesses) ? state.deletedProcesses.slice() : [];
-    const preservedDeletedOrders = Array.isArray(state.deletedOrders) ? state.deletedOrders.slice() : [];
+    const preservedDeletedOrders = cloneDeletedOrdersState();
     
     // 🔧 POBIERZ deletedProcesses z Firebase (aby inne karty/domeny wiedziały o usunięciach)
     try {
@@ -12989,11 +13064,21 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
     try {
       const r=fbRoot();
       
-      // Get metadata with timestamp
-      const metadataDoc = await r.collection('metadata').doc('sync').get();
+      // Get metadata with timestamp + per-collection timestamps
+      const metadataDocRef = r.collection('metadata').doc('sync');
+      const collectionMetaDocRef = r.collection('metadata').doc('collections');
+      const [metadataDoc, collectionMetaDoc] = await Promise.all([
+        metadataDocRef.get(),
+        collectionMetaDocRef.get()
+      ]);
       const remoteTimestamp = metadataDoc.exists ? (metadataDoc.data().lastModified || 0) : 0;
       const localTimestamp = state.lastModified || 0;
       const lastRemoteSync = state.storage.lastRemoteSync || 0;
+      const remoteCollectionMeta = collectionMetaDoc.exists ? (collectionMetaDoc.data() || {}) : {};
+      state.meta = state.meta && typeof state.meta === 'object' ? state.meta : {};
+      state.meta.collections = state.meta.collections && typeof state.meta.collections === 'object' ? state.meta.collections : {};
+      const localCollectionsMeta = state.meta.collections;
+      const COLLECTION_META_GUARDED = new Set(['operationsCatalog']);
       const localCollections = {
         employees: state.employees || [],
         operationsCatalog: state.operationsCatalog || [],
@@ -13070,7 +13155,9 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
       }
 
       const remoteCollections = { employees, operationsCatalog, processes, orders, tasks, after, warehouseItems, materialTemplates, warehouseTasks };
-      const deletedOrdersSet = new Set(preservedDeletedOrders.length > 0 ? preservedDeletedOrders : (Array.isArray(state.deletedOrders) ? state.deletedOrders : []));
+      const deletedOrdersSet = preservedDeletedOrders.length
+        ? new Set(preservedDeletedOrders.map(entry => entry.id))
+        : getActiveDeletedOrdersSet();
       const deletedProcessesSet = new Set(preservedDeletedProcesses.length > 0 ? preservedDeletedProcesses : (Array.isArray(state.deletedProcesses) ? state.deletedProcesses : []));
       const deletedOperationsSet = new Set(preservedDeletedOperations.length > 0 ? preservedDeletedOperations : (Array.isArray(state.deletedOperations) ? state.deletedOperations : []));
       
@@ -13115,6 +13202,15 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
       Object.entries(remoteCollections).forEach(([key, collection])=>{
         const remoteLen = Array.isArray(collection) ? collection.length : (collection && typeof collection === 'object' ? Object.keys(collection).length : 0);
         const localLen = Array.isArray(localCollections[key]) ? localCollections[key].length : (localCollections[key] && typeof localCollections[key] === 'object' ? Object.keys(localCollections[key]).length : 0);
+        const remoteMeta = remoteCollectionMeta && remoteCollectionMeta[key];
+        const remoteUpdatedAt = remoteMeta && typeof remoteMeta.updatedAt === 'number' ? remoteMeta.updatedAt : 0;
+        const localMeta = localCollectionsMeta && localCollectionsMeta[key];
+        const localUpdatedAt = localMeta && typeof localMeta.updatedAt === 'number' ? localMeta.updatedAt : 0;
+        if(!forceLoad && COLLECTION_META_GUARDED.has(key) && remoteUpdatedAt > 0 && localUpdatedAt > remoteUpdatedAt){
+          console.log(`🛡️ [loadFromDB] Pomijam kolekcję '${key}' – lokalna wersja nowsza (local ${new Date(localUpdatedAt).toLocaleString('pl-PL')} > remote ${new Date(remoteUpdatedAt).toLocaleString('pl-PL')})`);
+          skipped.push(key);
+          return;
+        }
 
         // 🔒 BLOKADA PODCZAS USUWANIA - Nie nadpisuj orders/tasks gdy usuwamy
         if (window._isSyncingDelete && (key === 'orders' || key === 'tasks')) {
@@ -13298,6 +13394,13 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
           ensureOperationsCatalogChecklists(dataToLoad);
         }
         state[key] = dataToLoad;
+        if(COLLECTION_META_GUARDED.has(key)){
+          if(remoteUpdatedAt > 0){
+            setCollectionMetaTimestamp(key, remoteUpdatedAt);
+          } else {
+            touchCollectionMeta(key);
+          }
+        }
         updated.push(key);
       });
 
@@ -13320,9 +13423,7 @@ ${order.notes ? `📝 Uwagi:\n${order.notes}\n\n` : ''}✅ Proszę o potwierdzen
       if(preservedDeletedProcesses.length > 0){
         state.deletedProcesses = preservedDeletedProcesses;
       }
-      if(preservedDeletedOrders.length > 0){
-        state.deletedOrders = preservedDeletedOrders;
-      }
+      restoreDeletedOrdersState(preservedDeletedOrders);
       
       // KRYTYCZNE: Synchronizuj window.state z lokalną zmienną state
       window.state = state;
