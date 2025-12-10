@@ -4451,7 +4451,7 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       console.log('[rescue] Installing direct nav handlers');
       document.querySelectorAll('[data-nav]').forEach(el=>{
         if(el.__directNavBound) return;
-        el.addEventListener('click', (ev)=>{ if(window.disableGlobalClickDelegation){ ev.preventDefault(); ev.stopPropagation(); nav(el.getAttribute('data-nav')); } });
+        el.addEventListener('click', (ev)=>{ ev.preventDefault(); ev.stopPropagation(); nav(el.getAttribute('data-nav')); });
         el.__directNavBound = true;
       });
       // Magazyn przyciski
