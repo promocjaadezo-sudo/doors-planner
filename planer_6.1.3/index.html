@@ -2816,21 +2816,6 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
       console.error('localStorage nie działa:', e);
       alert('localStorage nie działa! Aplikacja może nie działać poprawnie.');
     }
-    
-    // Sprawdź czy wszystkie funkcje są dostępne
-    const requiredFunctions = ['qs', 'save', 'renderDash', 'updateConnectionStatus'];
-    const missing = requiredFunctions.filter(fn => typeof window[fn] !== 'function');
-    if(missing.length > 0){
-      console.error('Brakujące funkcje:', missing);
-      alert('Błąd ładowania aplikacji! Brakujące funkcje: ' + missing.join(', '));
-    } else {
-      console.log('Wszystkie funkcje załadowane poprawnie');
-    }
-    
-    // Wymuś aktualizację statusu
-    if(typeof updateConnectionStatus === 'function'){
-      updateConnectionStatus();
-    }
 
     // Inicjalizacja przełącznika wysokiego kontrastu ostrzeżeń
     try{
