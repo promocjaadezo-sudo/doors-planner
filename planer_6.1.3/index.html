@@ -4468,6 +4468,13 @@ console.log('Magazyn: Inicjalizacja systemu zarządzania magazynem...');
     return false;
   };
 
+  // Inicjalizuj obsługę nawigacji po załadowaniu DOM
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', window.initDirectNavHandlers);
+  } else {
+    window.initDirectNavHandlers();
+  }
+
   // NOWA FUNKCJA: Przywracanie normalnej delegacji kliknięć - PRZENIESIONA WYŻEJ
   // window.restoreNormalClickDelegation = function(){
   //   window.disableGlobalClickDelegation = false;
