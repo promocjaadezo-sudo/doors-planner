@@ -2213,28 +2213,27 @@ Pracownik: MALINA" draggable="true">Szlifowanie (...</div></div></div><div class
 </div>
 
 <!-- Wczytanie podstawowych utili oraz UI zanim główny skrypt inline uruchomi diagnostykę -->
-<!-- ZAKOMENTOWANE: Wszystkie funkcje są w pliku inline -->
-<!-- <script src="js/backup-manager.js?v=20251101-0100"></script>
+<script src="js/backup-manager.js?v=20251101-0100"></script>
 <script src="js/base-utils.js?v=20251005-1400"></script>
 <script src="js/store.js?v=20251005-1400"></script>
 <script src="js/ui.js?v=20251005-1415"></script>
 <script src="js/schedule.js?v=20251116-2050"></script>
 <script src="js/app-helpers.js?v=20251005-1400"></script>
 <script src="js/map.js?v=20251019-01"></script>
-<script src="js/auto-save.js?v=20251106-0900"></script> -->
+<script src="js/auto-save.js?v=20251106-0900"></script>
 <!-- Centralny Magazyn Stanu -->
-<!-- <script src="state/CentralnyMagazynStanu.js"></script>
+<script src="state/CentralnyMagazynStanu.js"></script>
 <script>
 // === INICJALIZACJA CENTRALNEGO MAGAZYNU STANU ===
 console.log('🚀 Inicjalizacja Centralnego Magazynu Stanu...');
 const centralnyMagazyn = CentralnyMagazynStanu.getInstance();
 window.centralnyMagazyn = centralnyMagazyn; // Dostęp globalny
 console.log('📊 Aktualny stan aplikacji:', centralnyMagazyn.getStan());
-</script> -->
+</script>
 <!-- Integracja Magazynu z Procesami Biznesowymi -->
-<!-- <script src="state/integration.js"></script> -->
+<script src="state/integration.js"></script>
 <!-- Monitoring Produkcyjny -->
-<!-- <script src="state/production-monitor.js"></script> -->
+<script src="state/production-monitor.js"></script>
 <script>
 // === MAGAZYN - NAJWYŻSZY PRIORYTET ===
 // System magazynowy zostanie zainicjalizowany później w kodzie
@@ -21566,12 +21565,12 @@ console.log('✅ Zainicjalizowano: Auto-sync + Grupowanie zadań');
 <!-- ============================================================================ -->
 <!-- FIREBASE SYNC QUEUE - Niezawodna synchronizacja -->
 <!-- ============================================================================ -->
-<!-- <script src="js/firebase-sync-queue.js"></script> -->
+<script src="js/firebase-sync-queue.js"></script>
 
 <!-- ============================================================================ -->
 <!-- DEVLOG PANEL FOR DEVELOPERS -->
 <!-- ============================================================================ -->
-<!-- <script src="js/devlog-panel.js"></script> -->
+<script src="js/devlog-panel.js"></script>
 <script>
 (function(){
   if(typeof DevLogPanel === 'undefined') {
@@ -21647,22 +21646,22 @@ console.log('✅ Zainicjalizowano: Auto-sync + Grupowanie zadań');
 <!-- ============================================================================ -->
 <!-- FIREBASE REAL-TIME SYNC MODULE -->
 <!-- ============================================================================ -->
-<!-- <script src="js/firebase-realtime-sync.js"></script> -->
+<script src="js/firebase-realtime-sync.js"></script>
 
 <!-- ============================================================================ -->
 <!-- RESOURCE CONFLICT DETECTOR MODULE -->
 <!-- ============================================================================ -->
-<!-- <script src="js/resource-conflict-detector.js"></script> -->
+<script src="js/resource-conflict-detector.js"></script>
 
 <!-- ============================================================================ -->
 <!-- AUTO-ASSIGN ALGORITHM MODULE -->
 <!-- ============================================================================ -->
-<!-- <script src="js/auto-assign-algorithm.js"></script> -->
+<script src="js/auto-assign-algorithm.js"></script>
 
 <!-- ============================================================================ -->
 <!-- E2E TEST SUITE -->
 <!-- ============================================================================ -->
-<!-- <script src="tests/e2e-test-suite.js"></script> -->
+<script src="tests/e2e-test-suite.js"></script>
 
 <script>
 // ============================================================================
